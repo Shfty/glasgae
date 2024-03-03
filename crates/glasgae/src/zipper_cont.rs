@@ -3,7 +3,7 @@ use crate::{
         control::zipper::{travel::Travel, Zipper},
         data::function::bifunction::BifunT,
     },
-    prelude::{Boxed, ChainM, Foldable, FunctionT, Functor, Pointed, ReturnM, WithPointed},
+    prelude::*,
     transformers::cont::Cont,
 };
 
@@ -241,13 +241,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::base::{
-        control::zipper::zip_travel::ZipTravel,
-        data::{
-            function::{Curry, Flip},
-            functor::identity::Identity,
-        },
-    };
+    use crate::base::{control::zipper::zip_travel::ZipTravel, data::functor::identity::Identity};
 
     use super::*;
 

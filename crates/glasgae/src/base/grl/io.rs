@@ -3,6 +3,7 @@
 use std::{
     io::{Read, Write},
     path::Path,
+    process::Termination,
 };
 
 use crate::{
@@ -11,20 +12,40 @@ use crate::{
 };
 
 /// A value of type [`IO<A>`] is a computation which, when performed,
-/// does some I/O before returning a value of type `A`.
+/// interacts with the outside world before returning a value of type `A`.
 ///
 /// In practice, this boils down to executing a closure (specifically, a [`NullaryT`])
-/// which performs some action that would not be representible within pure functional code.
+/// which performs some action that would not be representible in pure functional code,
+/// such as interacting with stdio, performing FFI, or interfacing with a hardware peripheral.
 ///
-/// Unlike traditional functional languages, where I/O is
-/// performed externally to the program by necessity,
-/// Rust is free to do so from an arbitrary function.
-/// As such, care should be taken to respect the boundary between
-/// pure and impure code. (For more details, see the documentation of [run](IO::run).)
+/// # Usage
 ///
-/// [`IO`] is a monad, so [`IO`] actions can be combined
+/// [`IO`] is a monad, so actions can be combined
 /// using the [`ThenM::then_m`] and [`ChainM::chain_m`] operations
 /// from the [`monad`](crate::base::control::monad) module.
+///
+/// In addition, a [`Termination`] implementation is derived from its `A` parameter,
+/// allowing it to be return from `main` to lift an entire program into a pure functional environment:
+/// ```
+/// use glasgae::prelude::{IO, print};
+///
+/// fn main() -> IO<()> {
+///     print("Hello, Pure Functional World!")
+/// }
+/// ```
+///
+/// # Purity
+///
+/// Unlike pure functional languages where side effects are external to the program by necessity,
+/// Rust is free to perform them from an arbitrary function.
+///
+/// Purity can be thought of as a parallel to the `unsafe` semantic in regular Rust;
+/// pure functions may only call other pure functions, and given some specific input,
+/// must always produce the same output.
+///
+/// As such, care should be taken to respect the boundaries between pure and impure code.
+///
+/// (For more details, see the documentation of [`IO::run`].)
 #[derive(Clone)]
 pub struct IO<A>(Nullary<A>)
 where
@@ -36,12 +57,12 @@ impl<T> IO<T> {
         IO(f.boxed())
     }
 
-    /// Run the I/O action, producing output of type `T`.
+    /// Run the I/O action, returning a value of type `T`.
     ///
     /// # Safety
     ///
     /// Intrinsically, this implements no functionality that would be
-    /// considered 'unsafe' in regular Rust; it simply calls an underlying closure.
+    /// considered 'unsafe' in regular Rust; it simply calls the underlying [`Nullary`].
     ///
     /// However, it has been marked as such to better illustrate the
     /// semantic boundary between pure and impure code;
@@ -49,35 +70,51 @@ impl<T> IO<T> {
     /// be invoked from call sites that are themselves
     /// considered impure - i.e. ones outside the pure functional environment.
     ///
-    /// The most basic example of valid usage is to have it comprise the entrypoint
-    /// of a program, in a manner comparable to Haskell:
     /// ```
     /// # use glasgae::prelude::{IO, print};
-    /// // This function is considered impure,
-    /// // by virtue of having access to all of Rust's
-    /// // imperative functionality.
-    /// fn main() {
-    ///     // Here, we construct a pure functional IO computation.
-    ///     let io = main_pure();
+    /// // This function - being a regular Rust function - is considered
+    /// // semantically impure, by virtue of access to 
+    /// // the language's full range of imperative power.
+    /// //
+    /// // Indeed, it takes no input and returns no output,
+    /// // so in functional terms, should do nothing at all.
+    /// fn impure() {
+    ///     // Here, we execute a pure function to
+    ///     // produce an I/O computation that
+    ///     // can be run in our impure environment.
+    ///     let io: IO<()> = pure();
     ///
     ///     // Since this part of the program is impure,
     ///     // it's safe to call IO::run and collapse
-    ///     // the computation into a final result.
+    ///     // the computation into a final result,
+    ///     // producing output as a side-effect.
     ///     unsafe { io.run() }
     /// }
     ///
-    /// // This function technically still has access to
-    /// // the full range of Rust's imperative power,
-    /// // since we lack the means to restrict it.
-    /// //
-    /// // However, it is rendered semantically pure
-    /// // by not - directly or indirectly - calling IO::run.
-    /// fn main_pure() -> IO<()> {
+    /// // This function technically has all of the
+    /// // same computational powers as the one above,
+    /// // but is rendered semantically pure
+    /// // by not - directly or indirectly - calling IO::run
+    /// // or other methods that may result in impure side-effects.
+    /// fn pure() -> IO<()> {
+    ///     // Return an IO action which,
+    ///     // when run outside of the pure environment, 
+    ///     // will print some text to standard output.
     ///     print("Hello, Pure Functional World!")
     /// }
     /// ```
     pub unsafe fn run(self) -> T {
         self.0()
+    }
+}
+
+impl<T> Termination for IO<T>
+where
+    T: Termination,
+{
+    fn report(self) -> std::process::ExitCode {
+        let out = unsafe { self.run() };
+        out.report()
     }
 }
 
@@ -228,4 +265,3 @@ pub fn append_file(
 pub fn interact(f: impl FunctionT<String, String> + Clone) -> IO<String> {
     get_contents().fmap(f)
 }
-

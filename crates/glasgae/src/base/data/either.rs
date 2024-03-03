@@ -11,6 +11,10 @@ use super::function::bifunction::BifunT;
 /// and the `Right` constructor is used to hold a correct value
 /// (mnemonic: "right" also means "correct").
 ///
+/// In practical terms, this is equivalent to Rust's native [`Result`] type
+/// (implementations for which are provided in [`base::data::result`],)
+/// but is preserved here on account of its more general Left / Right semantic.
+///
 /// ## Examples
 ///
 /// The type `Either<String, u32>` is the type of values which can be either a `String` or an `u32`.

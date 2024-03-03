@@ -3,3 +3,6 @@ name = "glasgae"
 version = "0.3.0"
 edition = "2021"
 
+[[example]]
+name = "turnstile"
+crate-type = ["bin"]
