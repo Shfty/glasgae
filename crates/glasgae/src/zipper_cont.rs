@@ -1,6 +1,6 @@
 use crate::{
     base::{
-        control::zipper::{travel::Travel, Zipper},
+        control::zipper::{Travel, Zipper},
         data::function::bifunction::BifunT,
     },
     prelude::*,
@@ -241,7 +241,7 @@ where
 
 #[cfg(test)]
 mod test {
-    use crate::base::{control::zipper::zip_travel::ZipTravel, data::functor::identity::Identity};
+    use crate::base::{control::zipper::ZipTravel, data::functor::identity::Identity};
 
     use super::*;
 

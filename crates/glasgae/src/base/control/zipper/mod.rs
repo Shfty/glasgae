@@ -1,9 +1,12 @@
-//! # Zipper
+//! Continuation-based zipper.
 //!
 //! Based on the zipper described in [Final Zipper](https://okmij.org/ftp/continuations/zipper.html) by Oleg Kiselyov.
 
-pub mod travel;
-pub mod zip_travel;
+mod travel;
+mod zip_travel;
+
+pub use travel::*;
+pub use zip_travel::*;
 
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 

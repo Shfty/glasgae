@@ -24,8 +24,9 @@ use crate::{
 /// using the [`ThenM::then_m`] and [`ChainM::chain_m`] operations
 /// from the [`monad`](crate::base::control::monad) module.
 ///
-/// In addition, a [`Termination`] implementation is derived from its `A` parameter,
-/// allowing it to be return from `main` to lift an entire program into a pure functional environment:
+/// In addition, [`IO<A>`] derives a [`Termination`] implementation from the `A`,
+/// allowing it to be returned from `main` in order to lift the whole program
+/// into a pure functional environment:
 /// ```
 /// use glasgae::prelude::{IO, print};
 ///

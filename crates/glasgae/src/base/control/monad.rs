@@ -1,5 +1,3 @@
-//! # Monad
-//!
 //! The Monad class defines the basic operations over a monad,
 //! a concept from a branch of mathematics known as category theory.
 //!
