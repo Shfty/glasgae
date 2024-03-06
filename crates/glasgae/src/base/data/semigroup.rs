@@ -1,3 +1,9 @@
+use std::convert::identity;
+
+use crate::prelude::{Compose, Function, FunctionT, Monoid};
+
+use super::Boxed;
+
 /// The class of types with an associative binary operation.
 ///
 /// Instances should satisfy the following:

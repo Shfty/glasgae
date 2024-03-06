@@ -56,7 +56,7 @@ impl<T, U, const NT: usize, const NU: usize> ChainM<[U; NU]> for [T; NT] {
     }
 }
 
-impl<T, const N: usize, U> Foldable<T, U> for [T; N] {
+impl<T, const N: usize, U> Foldr<T, U> for [T; N] {
     fn foldr(self, f: impl BifunT<T, U, U> + Clone, init: U) -> U {
         self.into_iter()
             .rfold(init, |acc, next| f.clone()(next, acc))

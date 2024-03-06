@@ -2,8 +2,8 @@
 
 pub mod class;
 pub mod cont;
+pub mod identity;
 pub mod maybe;
 pub mod reader;
 pub mod state;
 pub mod writer;
-pub mod identity;

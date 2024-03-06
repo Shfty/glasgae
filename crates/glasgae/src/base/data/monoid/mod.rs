@@ -10,7 +10,7 @@
 //! a.assoc_s(Monoid::mempty()) == Monoid::mempty().assoc_s(a) == a
 //! ```
 //!
-//! 
+//!
 //!
 //! ## Examples
 //!
@@ -85,11 +85,13 @@
 
 mod product;
 mod sum;
+mod endo;
 
 pub use product::*;
 pub use sum::*;
+pub use endo::*;
 
-use super::{foldable::Foldable, semigroup::Semigroup};
+use super::{foldable::Foldr, semigroup::Semigroup};
 
 /// The class of monoids (types with an associative binary operation that has an identity).
 ///

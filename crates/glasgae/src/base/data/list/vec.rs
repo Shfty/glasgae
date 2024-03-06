@@ -43,7 +43,7 @@ impl<T, U> ChainM<Vec<U>> for Vec<T> {
     }
 }
 
-impl<T, U> Foldable<T, U> for Vec<T> {
+impl<T, U> Foldr<T, U> for Vec<T> {
     fn foldr(self, f: impl BifunT<T, U, U> + Clone, init: U) -> U {
         self.into_iter()
             .rfold(init, |acc, next| f.clone()(next, acc))

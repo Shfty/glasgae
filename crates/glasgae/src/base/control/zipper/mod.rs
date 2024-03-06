@@ -120,7 +120,7 @@ impl<T, U, D> ChainM<Zipper<U, D>> for Zipper<T, D> {
 }
 
 // FIXME: Not useful with Default::default direction, useful semantic is Next
-impl<T, U, D> Foldable<T, U> for Zipper<T, D>
+impl<T, U, D> Foldr<T, U> for Zipper<T, D>
 where
     D: Default,
 {

@@ -41,7 +41,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for (T,) {
+impl<T, U> Foldr<T, U> for (T,) {
     fn foldr(self, f: impl BifunT<T, U, U> + Clone, init: U) -> U {
         f(self.0, init)
     }

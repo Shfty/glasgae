@@ -79,7 +79,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for Maybe<T> {
+impl<T, U> Foldr<T, U> for Maybe<T> {
     fn foldr(self, f: impl BifunT<T, U, U> + Clone, z: U) -> U {
         match self {
             Some(x) => f(x, z),

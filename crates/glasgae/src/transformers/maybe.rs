@@ -1,10 +1,13 @@
 //! The MaybeT monad transformer extends a monad with the ability to exit the computation without returning a value.
-//! 
+//!
 //! A sequence of actions produces a value only if all the actions in the sequence do. If one exits, the rest of the sequence is skipped and the composite action exits.
-//! 
+//!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
-use crate::prelude::{ChainM, Foldable, SequenceA, TraverseT};
+use std::convert::identity;
+
+use crate::base::data::FoldMap;
+use crate::prelude::{Boxed, ChainM, Foldr, Function, Monoid, SequenceA, TraverseT, WithPointedT};
 use crate::{
     base::data::maybe::Maybe,
     prelude::{AppA, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed},
@@ -13,9 +16,9 @@ use crate::{
 use super::class::MonadTrans;
 
 /// The parameterizable maybe monad, obtained by composing an arbitrary monad with the Maybe monad.
-/// 
+///
 /// Computations are actions that may produce a value or exit.
-/// 
+///
 /// The return function yields a computation that produces that value, while >>= sequences two subcomputations, exiting if either computation does.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MaybeT<MA>(MA);
@@ -126,31 +129,29 @@ where
     }
 }
 
-impl<MA, A, B> Foldable<A, B> for MaybeT<MA>
+impl<MA, A, B> FoldMap<A, B> for MaybeT<MA>
 where
-    MA: Foldable<A, B>,
+    MA: FoldMap<A, B>,
+    A: FoldMap<A, B>,
+    B: Monoid,
 {
-    fn foldr(
-        self,
-        f: impl crate::base::data::function::bifunction::BifunT<A, B, B> + Clone,
-        z: B,
-    ) -> B {
-        todo!()
+    fn fold_map(self, f: impl FunctionT<A, B> + Clone) -> B {
+        self.run().fold_map(|t| t.fold_map(f))
     }
 }
 
-impl<MA, A, A1, T, A2> TraverseT<A1, T, A2> for MaybeT<MA>
+impl<A, MA, A1, T, A2> TraverseT<A1, T, A2> for MaybeT<MA>
 where
-    MA: Pointed<Pointed = Maybe<A>> + TraverseT<A1, T, A2>,
+    MA: Pointed<Pointed = Maybe<A>>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A2 {
         todo!()
     }
 }
 
-impl<MA, A, A_, A2> SequenceA<A_, A2> for MaybeT<MA>
+impl<A1, A_, A2> SequenceA<A_, A2> for MaybeT<A1>
 where
-    MA: Pointed<Pointed = Maybe<A>> + SequenceA<A_, A2>,
+    Self: TraverseT<A1, A_, A2>,
 {
     fn sequence_a(self) -> A2 {
         todo!()
@@ -162,4 +163,3 @@ impl<MI, MA> MonadTrans<MI> for MaybeT<MA> {
         todo!()
     }
 }
-

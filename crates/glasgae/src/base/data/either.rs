@@ -182,7 +182,7 @@ impl<E, A, B> ChainM<Either<E, B>> for Either<E, A> {
     }
 }
 
-impl<E, A, B> Foldable<A, B> for Either<E, A> {
+impl<E, A, B> Foldr<A, B> for Either<E, A> {
     fn foldr(self, f: impl BifunT<A, B, B> + Clone, z: B) -> B {
         match self {
             Left(_) => z,

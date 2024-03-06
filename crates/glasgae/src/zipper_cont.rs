@@ -154,7 +154,7 @@ impl Term {
     }
 }
 
-impl Foldable<String, String> for Term {
+impl Foldr<String, String> for Term {
     fn foldr(self, f: impl BifunT<String, String, String> + Clone, init: String) -> String {
         match self {
             Term::Var(t) => f(t, init),
