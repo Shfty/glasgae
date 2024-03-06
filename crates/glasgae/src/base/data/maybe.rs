@@ -3,6 +3,9 @@
 //! A value of type [`Maybe<A>`] either contains a value of type a (represented as [`Some(A)`]),
 //! or it is empty (represented as [`None`]).
 //!
+//! In practical terms, this is equivalent to Rust's native [`Option`] type
+//! (implementations for which are provided in the [`option`] module.)
+//!
 //! Using `Maybe` is a good way to deal with errors or exceptional cases
 //! without resorting to drastic measures such as error.
 //!

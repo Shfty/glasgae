@@ -15,7 +15,7 @@ pub mod result;
 ///
 /// In practical terms, this is equivalent to Rust's native [`Result`] type
 /// (implementations for which are provided in the [`result`] module,)
-/// but is preserved here on account of its more general Left / Right semantic.
+/// but with a more general semantic.
 ///
 /// ## Examples
 ///
