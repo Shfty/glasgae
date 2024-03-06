@@ -40,7 +40,10 @@
 //!
 //! The instances of Monad for lists and Maybe defined in the Prelude satisfy these laws.
 
-use crate::{base::data::{list::vec::push, function::bifunction::BifunT}, prelude::*};
+use crate::{
+    base::data::{function::bifunction::BifunT, list::vec::push},
+    prelude::*,
+};
 
 /// Inject a value into the monadic type.
 pub trait ReturnM: PureA {
@@ -182,4 +185,22 @@ where
             push.lift_a2()(f.clone(), f.replicate_m(count - 1))
         }
     }
+}
+
+pub trait LiftM<MA, MB, A, B>: FunctionT<A, B> + Clone
+where
+    MA: ChainM<MB, Pointed = A>,
+    MB: ReturnM<Pointed = B>,
+{
+    fn lift_m(self) -> Function<MA, MB> {
+        (|m1: MA| m1.chain_m(|x1| ReturnM::return_m(self(x1)))).boxed()
+    }
+}
+
+impl<F, MA, MB, A, B> LiftM<MA, MB, A, B> for F
+where
+    F: FunctionT<A, B> + Clone,
+    MA: ChainM<MB, Pointed = A>,
+    MB: ReturnM<Pointed = B>,
+{
 }
