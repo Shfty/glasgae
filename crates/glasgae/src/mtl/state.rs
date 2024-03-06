@@ -1,4 +1,4 @@
-//! MonadState trait.
+//! [`MonadState`] trait generalizing [`StateT`] functionality.
 //!
 //! This module is inspired by the paper
 //! Functional Programming with Overloading and Higher-Order Polymorphism,

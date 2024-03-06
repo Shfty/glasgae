@@ -1,4 +1,4 @@
-//! MonadWriter trait.
+//! [`MonadWriter`] trait generalizing [`WriterT`] functionality.
 //!
 //! Inspired by the paper
 //! Functional Programming with Overloading and Higher-Order Polymorphism,

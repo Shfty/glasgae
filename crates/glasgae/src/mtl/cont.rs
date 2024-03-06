@@ -1,4 +1,4 @@
-//! MonadCont trait.
+//! [`MonadCont`] trait generalizing [`ContT`] functionality.
 //!
 //! Computation type:
 //! Computations which can be interrupted and resumed.

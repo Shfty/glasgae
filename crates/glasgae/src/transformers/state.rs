@@ -1,4 +1,6 @@
-//! Lazy state monads, passing an updatable state through a computation. See below for examples.
+//! State monads, passing an updatable state through a computation.
+//!
+//! See below for examples.
 //!
 //! Some computations may not require the full power of state transformers:
 //!

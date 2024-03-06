@@ -1,4 +1,4 @@
-//! MonadReader trait.
+//! [`MonadReader`] trait generalizing [`ReaderT`] functionality.
 //!
 //! Computation type:
 //! Computations which read values from a shared environment.
