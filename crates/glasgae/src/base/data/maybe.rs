@@ -10,11 +10,37 @@
 //! It is a simple kind of error monad, where all errors are represented by `Nothing`.
 //! A richer error monad can be built using the `Either` type.
 
+pub mod option;
+
 use crate::prelude::*;
 
 use super::function::bifunction::BifunT;
 
-pub type Maybe<T> = Option<T>;
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum Maybe<T> {
+    Just(T),
+    Nothing,
+}
+
+use Maybe::*;
+
+impl<T> From<Option<T>> for Maybe<T> {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(t) => Just(t),
+            None => Nothing,
+        }
+    }
+}
+
+impl<T> From<Maybe<T>> for Option<T> {
+    fn from(value: Maybe<T>) -> Self {
+        match value {
+            Just(t) => Some(t),
+            Nothing => None,
+        }
+    }
+}
 
 impl<T> Pointed for Maybe<T> {
     type Pointed = T;
@@ -29,22 +55,29 @@ where
     U: Clone,
 {
     fn fmap(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> Maybe<U> {
-        self.map(f)
+        match self {
+            Just(t) => Just(f(t)),
+            Nothing => Nothing,
+        }
     }
 }
 
 impl<T> PureA for Maybe<T> {
     fn pure_a(t: Self::Pointed) -> Self {
-        Some(t)
+        Just(t)
     }
 }
 
 impl<F, A, B> AppA<Maybe<A>, Maybe<B>> for Maybe<F>
 where
-    F: FnOnce(A) -> B,
+    F: FunctionT<A, B> + Clone,
+    B: Clone,
 {
     fn app_a(self, a: Maybe<A>) -> Maybe<B> {
-        self.and_then(|f| a.map(f))
+        match self {
+            Just(f) => a.fmap(f),
+            Nothing => Nothing,
+        }
     }
 }
 
@@ -52,7 +85,10 @@ impl<T> ReturnM for Maybe<T> {}
 
 impl<T, U> ChainM<Maybe<U>> for Maybe<T> {
     fn chain_m(self, f: impl FunctionT<T, Maybe<U>> + 'static) -> Maybe<U> {
-        self.and_then(f)
+        match self {
+            Just(t) => f(t),
+            Nothing => Nothing,
+        }
     }
 }
 
@@ -62,10 +98,10 @@ where
 {
     fn assoc_s(self, a: Self) -> Self {
         match (self, a) {
-            (None, None) => None,
-            (None, Some(r)) => Some(r),
-            (Some(l), None) => Some(l),
-            (Some(l), Some(r)) => Some(l.assoc_s(r)),
+            (Nothing, Nothing) => Nothing,
+            (Nothing, Just(r)) => Just(r),
+            (Just(l), Nothing) => Just(l),
+            (Just(l), Just(r)) => Just(l.assoc_s(r)),
         }
     }
 }
@@ -75,51 +111,51 @@ where
     T: 'static + Semigroup,
 {
     fn mempty() -> Self {
-        None
+        Nothing
     }
 }
 
 impl<T, U> Foldr<T, U> for Maybe<T> {
     fn foldr(self, f: impl BifunT<T, U, U> + Clone, z: U) -> U {
         match self {
-            Some(x) => f(x, z),
-            None => z,
+            Just(x) => f(x, z),
+            Nothing => z,
         }
     }
 }
 
 impl<T, A, U, B> TraverseT<A, U, B> for Maybe<T>
 where
-    A: Functor<Option<U>, Pointed = U, WithPointed = B>,
+    A: Functor<Maybe<U>, Pointed = U, WithPointed = B>,
     A::Pointed: 'static,
-    A::WithPointed: PureA<Pointed = Option<U>>,
+    A::WithPointed: PureA<Pointed = Maybe<U>>,
     U: Clone,
 {
     fn traverse_t(self, f: impl FunctionT<T, A> + Clone) -> A::WithPointed {
         match self {
-            Some(x) => f(x).fmap(Some.boxed()),
-            None => PureA::pure_a(None),
+            Just(x) => f(x).fmap(Just.boxed()),
+            Nothing => PureA::pure_a(Nothing),
         }
     }
 }
 
 impl<A1, A_, A2> SequenceA<A_, A2> for Maybe<A1>
 where
-    A1: Clone + Functor<Option<A_>, Pointed = A_, WithPointed = A2>,
+    A1: Clone + Functor<Maybe<A_>, Pointed = A_, WithPointed = A2>,
     A_: 'static + Clone,
-    A2: PureA<Pointed = Option<A_>>,
+    A2: PureA<Pointed = Maybe<A_>>,
 {
     fn sequence_a(self) -> A2 {
         match self {
-            Some(x) => x.fmap(Some.boxed()),
-            None => PureA::pure_a(None),
+            Just(x) => x.fmap(Just.boxed()),
+            Nothing => PureA::pure_a(Nothing),
         }
     }
 }
 
-pub fn maybe<A, B>(default: B, f: impl FunctionT<A, B>, t: Option<A>) -> B {
+pub fn maybe<A, B>(default: B, f: impl FunctionT<A, B>, t: Maybe<A>) -> B {
     match t {
-        Some(t) => f(t),
-        None => default,
+        Just(t) => f(t),
+        Nothing => default,
     }
 }

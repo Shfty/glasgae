@@ -4,7 +4,9 @@
 
 use crate::prelude::*;
 
-use super::function::bifunction::BifunT;
+use super::{fold_map_default, function::bifunction::BifunT, FoldMap};
+
+pub mod result;
 
 /// The `Either` type is sometimes used to represent a value which is either correct or an error;
 /// by convention, the `Left` constructor is used to hold an error value
@@ -12,7 +14,7 @@ use super::function::bifunction::BifunT;
 /// (mnemonic: "right" also means "correct").
 ///
 /// In practical terms, this is equivalent to Rust's native [`Result`] type
-/// (implementations for which are provided in [`base::data::result`],)
+/// (implementations for which are provided in the [`result`] module,)
 /// but is preserved here on account of its more general Left / Right semantic.
 ///
 /// ## Examples
@@ -114,6 +116,15 @@ pub enum Either<A, B = A> {
 
 use Either::*;
 
+impl<T, E> From<Result<T, E>> for Either<E, T> {
+    fn from(value: Result<T, E>) -> Self {
+        match value {
+            Ok(t) => Right(t),
+            Err(e) => Left(e),
+        }
+    }
+}
+
 impl<A, B> Either<A, B> {
     pub fn is_left(self) -> bool {
         matches!(self, Left(_))
@@ -179,6 +190,15 @@ impl<E, A, B> ChainM<Either<E, B>> for Either<E, A> {
             Left(l) => Left(l),
             Right(r) => f(r),
         }
+    }
+}
+
+impl<E, A, B> FoldMap<A, B> for Either<E, A>
+where
+    B: Monoid,
+{
+    fn fold_map(self, f: impl FunctionT<A, B> + Clone) -> B {
+        fold_map_default(self, f)
     }
 }
 

@@ -4,14 +4,9 @@
 //!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
-use std::convert::identity;
-
 use crate::base::data::FoldMap;
-use crate::prelude::{Boxed, ChainM, Foldr, Function, Monoid, SequenceA, TraverseT, WithPointedT};
-use crate::{
-    base::data::maybe::Maybe,
-    prelude::{AppA, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed},
-};
+use crate::prelude::{AppA, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed};
+use crate::prelude::{ChainM, Monoid, SequenceA, TraverseT};
 
 use super::class::MonadTrans;
 
@@ -48,21 +43,21 @@ impl<MA> MaybeT<MA> {
 
 impl<MA, T> Pointed for MaybeT<MA>
 where
-    MA: Pointed<Pointed = Maybe<T>>,
+    MA: Pointed<Pointed = Option<T>>,
 {
     type Pointed = T;
 }
 
 impl<MA, T, U> WithPointed<U> for MaybeT<MA>
 where
-    MA: WithPointed<Maybe<U>, Pointed = Maybe<T>>,
+    MA: WithPointed<Option<U>, Pointed = Option<T>>,
 {
     type WithPointed = MaybeT<MA::WithPointed>;
 }
 
 impl<MA, A, B> Functor<B> for MaybeT<MA>
 where
-    MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
+    MA: Functor<Option<B>, Pointed = Option<A>>,
     A: Clone,
     B: Clone,
 {
@@ -73,7 +68,7 @@ where
 
 impl<MA, A> PureA for MaybeT<MA>
 where
-    MA: ReturnM<Pointed = Maybe<A>>,
+    MA: ReturnM<Pointed = Option<A>>,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         MaybeT(ReturnM::return_m(Some(t)))
@@ -82,9 +77,9 @@ where
 
 impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
 where
-    MF: ChainM<MB, Pointed = Maybe<F>>,
-    MA: 'static + Clone + ChainM<MB, Pointed = Maybe<A>>,
-    MB: ReturnM<Pointed = Maybe<B>>,
+    MF: ChainM<MB, Pointed = Option<F>>,
+    MA: 'static + Clone + ChainM<MB, Pointed = Option<A>>,
+    MB: ReturnM<Pointed = Option<B>>,
     F: Clone + FunctionT<A, B>,
 {
     fn app_a(self, mx: MaybeT<MA>) -> MaybeT<MB> {
@@ -103,7 +98,7 @@ where
 
 impl<MA, A> ReturnM for MaybeT<MA>
 where
-    MA: ReturnM<Pointed = Maybe<A>>,
+    MA: ReturnM<Pointed = Option<A>>,
 {
     fn return_m(t: Self::Pointed) -> Self
     where
@@ -115,8 +110,8 @@ where
 
 impl<MA, MB, A, B> ChainM<MaybeT<MB>> for MaybeT<MA>
 where
-    MA: ChainM<MB, Pointed = Maybe<A>>,
-    MB: ReturnM<Pointed = Maybe<B>>,
+    MA: ChainM<MB, Pointed = Option<A>>,
+    MB: ReturnM<Pointed = Option<B>>,
 {
     fn chain_m(self, f: impl FunctionT<Self::Pointed, MaybeT<MB>> + Clone) -> MaybeT<MB> {
         let x = self;
@@ -142,7 +137,7 @@ where
 
 impl<A, MA, A1, T, A2> TraverseT<A1, T, A2> for MaybeT<MA>
 where
-    MA: Pointed<Pointed = Maybe<A>>,
+    MA: Pointed<Pointed = Option<A>>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A2 {
         todo!()

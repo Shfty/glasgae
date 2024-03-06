@@ -9,6 +9,7 @@ pub use crate::base::{
     },
     data::{
         either::Either,
+        maybe::Maybe,
         function::{r#const, App, Compose, Curry, Flip, Function, FunctionT, Until},
         functor::Functor,
         list::{Append, Filter},
@@ -19,8 +20,8 @@ pub use crate::base::{
     },
     grl::{
         io::{
-            append_file, get_char, get_contents, get_line, interact, put_char, put_str, put_str_ln, print,
-            read_file, write_file, IO,
+            append_file, get_char, get_contents, get_line, interact, print, put_char, put_str,
+            put_str_ln, read_file, write_file, IO,
         },
         Read, Show,
     },
