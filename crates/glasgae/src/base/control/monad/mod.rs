@@ -40,6 +40,8 @@
 //!
 //! The instances of Monad for lists and Maybe defined in the Prelude satisfy these laws.
 
+pub mod io;
+
 use crate::{
     base::data::{function::bifunction::BifunT, list::vec::push},
     prelude::*,

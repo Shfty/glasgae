@@ -6,7 +6,10 @@
 //! (<http://okmij.org/ftp/continuations/#tutorial>).
 
 use crate::{
-    base::data::{function::bifunction::BifunT, functor::identity::Identity},
+    base::{
+        control::monad::io::MonadIO,
+        data::{function::bifunction::BifunT, functor::identity::Identity},
+    },
     prelude::*,
 };
 
@@ -297,11 +300,22 @@ where
     }
 }
 
+impl<MR, MA, A> MonadIO<A> for ContT<MR, MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = A>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        Self::lift(MonadIO::lift_io(m))
+    }
+}
+
 #[cfg(test)]
 mod test {
     use crate::{
-        transformers::cont::Cont,
         prelude::{r#const, Boxed, ChainM, Function, ReturnM},
+        transformers::cont::Cont,
     };
 
     pub fn cont_add<R, T>(u: T) -> Function<T, Cont<R, T>>

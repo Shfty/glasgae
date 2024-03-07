@@ -6,14 +6,16 @@
 
 use crate::{
     base::{
-        control::monad::LiftM,
+        control::monad::{LiftM, io::MonadIO},
         data::{functor::identity::Identity, FoldMap},
     },
     prelude::{
         AppA, ChainM, Either, Either::*, Foldr, FunctionT, Functor, Monoid, Pointed, PureA,
-        ReturnM, SequenceA, ThenM, TraverseT, WithPointed,
+        ReturnM, SequenceA, ThenM, TraverseT, WithPointed, IO,
     },
 };
+
+use super::class::MonadTrans;
 
 /// The parameterizable exception monad.
 ///
@@ -313,5 +315,25 @@ where
 {
     fn sequence_a(self) -> A2 {
         todo!()
+    }
+}
+
+impl<MA, E, A> MonadTrans<MA> for ExceptT<MA>
+where
+    MA: Pointed<Pointed = Either<E, A>>,
+{
+    fn lift(m: MA) -> Self {
+        todo!()
+    }
+}
+
+impl<MA, E, A> MonadIO<A> for ExceptT<MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = Either<E, A>>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        Self::lift(MonadIO::lift_io(m))
     }
 }

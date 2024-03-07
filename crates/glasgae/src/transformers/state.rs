@@ -8,7 +8,10 @@
 //! To accumulate a value without using it on the way, see Control.Monad.Trans.Writer.
 
 use crate::{
-    base::data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+    base::{
+        control::monad::io::MonadIO,
+        data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+    },
     prelude::*,
 };
 
@@ -294,6 +297,17 @@ where
 {
     fn lift(m: MO::Lowered) -> Self {
         StateT::new_t(|s| m.chain_m(|a| ReturnM::return_m((a, s))))
+    }
+}
+
+impl<MA, S, A> MonadIO<A> for StateT<S, MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = (A, S)>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        StateT::lift(MonadIO::lift_io(m))
     }
 }
 

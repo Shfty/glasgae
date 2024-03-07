@@ -2,7 +2,10 @@
 //!
 //! If the computation is to modify the stored information, use Control.Monad.Trans.State instead.
 
-use crate::{base::data::functor::identity::Identity, prelude::*};
+use crate::{
+    base::{control::monad::io::MonadIO, data::functor::identity::Identity},
+    prelude::*,
+};
 
 use super::class::MonadTrans;
 
@@ -212,6 +215,17 @@ where
 {
     fn lift(m: MO) -> ReaderT<R, MO> {
         ReaderT::lift_t(m)
+    }
+}
+
+impl<MA, R, A> MonadIO<A> for ReaderT<R, MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = A>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        Self::lift(MonadIO::lift_io(m))
     }
 }
 

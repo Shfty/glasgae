@@ -7,7 +7,10 @@
 use std::marker::PhantomData;
 
 use crate::{
-    base::data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+    base::{
+        control::monad::io::MonadIO,
+        data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+    },
     prelude::*,
 };
 
@@ -239,6 +242,17 @@ where
 {
     fn lift(m: MO::Lowered) -> Self {
         WriterT::new_t(m.chain_m(|a| ReturnM::return_m((a, Monoid::mempty()))))
+    }
+}
+
+impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = (A, W)>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        WriterT::lift(MonadIO::lift_io(m))
     }
 }
 

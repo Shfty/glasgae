@@ -2,7 +2,10 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use crate::prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed};
+use crate::{
+    base::control::monad::io::MonadIO,
+    prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed, IO},
+};
 
 use super::class::MonadTrans;
 
@@ -104,3 +107,13 @@ impl<MA> MonadTrans<MA> for IdentityT<MA> {
     }
 }
 
+impl<MA, A> MonadIO<A> for IdentityT<MA>
+where
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = A>,
+    A: 'static,
+{
+    fn lift_io(m: IO<A>) -> Self {
+        Self::lift(MonadIO::lift_io(m))
+    }
+}
