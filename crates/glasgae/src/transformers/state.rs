@@ -167,10 +167,10 @@ impl<S, M> StateT<S, M> {
     }
 
     /// Fetch the current value of the state within the monad.
-    pub fn get<MS>() -> StateT<S, MS>
+    pub fn get() -> Self
     where
         S: Clone,
-        MS: ReturnM<Pointed = (S, S)>,
+        M: ReturnM<Pointed = (S, S)>,
     {
         StateT::new(|s: S| (s.clone(), s))
     }

@@ -6,3 +6,11 @@ edition = "2021"
 [[example]]
 name = "turnstile"
 crate-type = ["bin"]
+
+[features]
+default=["log"]
+log=["dep:log", "dep:env_logger"]
+
+[dependencies]
+log = { version = "0.4.21", optional = true }
+env_logger = { version = "0.11.3", optional = true }

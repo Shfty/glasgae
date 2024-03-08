@@ -1,5 +1,6 @@
 //! # Data
 
+pub mod map;
 pub mod either;
 pub mod function;
 pub mod functor;

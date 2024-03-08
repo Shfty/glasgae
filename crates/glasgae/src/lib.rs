@@ -41,6 +41,7 @@
 pub mod base;
 pub mod mtl;
 pub mod transformers;
+pub mod logger;
 
 pub mod prelude;
 

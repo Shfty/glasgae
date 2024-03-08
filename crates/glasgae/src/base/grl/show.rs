@@ -1,3 +1,5 @@
+use std::{path::Path, fmt::Arguments};
+
 /// By-value equivalent of [`ToString`].
 pub trait Show {
     fn show(self) -> String;
@@ -58,5 +60,17 @@ where
 {
     fn show(self) -> String {
         format!("({}, {})", self.0.show(), self.1.show())
+    }
+}
+
+impl Show for &Path {
+    fn show(self) -> String {
+        format!("{}", self.display())
+    }
+}
+
+impl<'a> Show for Arguments<'a> {
+    fn show(self) -> String {
+        self.to_string()
     }
 }

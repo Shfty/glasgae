@@ -28,3 +28,12 @@ impl<A, B, C> App3<A, B, C> for (A, B, C) {
         f(self.0, self.1, self.2)
     }
 }
+
+// Reverse infix function applicator
+pub trait AppTo<A, B>: Sized + FnOnce(A) -> B {
+    fn app_to(self, a: A) -> B {
+        self(a)
+    }
+}
+
+impl<F, A, B> AppTo<A, B> for F where F: FnOnce(A) -> B {}
