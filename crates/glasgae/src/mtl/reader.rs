@@ -24,6 +24,8 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 //!
 //! See examples in Control.Monad.Reader. Note, the partially applied function type (->) r is a simple reader monad. See the instance declaration below.
+use std::panic::UnwindSafe;
+
 use crate::prelude::*;
 
 use crate::transformers::{
@@ -81,7 +83,7 @@ where
 // ReaderT impl
 impl<MR, R> MonadAsk<MR, R, R> for ReaderT<R, MR>
 where
-    MR: ReturnM<Pointed = R>,
+    MR: UnwindSafe + ReturnM<Pointed = R>,
 {
     fn ask() -> Self {
         ReaderT::ask()
@@ -100,7 +102,7 @@ where
 
 impl<MA, R, A> MonadReader<R, A> for ReaderT<R, MA>
 where
-    MA: ReturnM<Pointed = A>,
+    MA: UnwindSafe + ReturnM<Pointed = A>,
 {
     fn reader(f: impl FunctionT<R, A> + Clone) -> Self {
         ReaderT::<R, MA>::new(f)
@@ -153,7 +155,7 @@ where
 impl<MA, MR, S, R> MonadLocal<MR, R> for StateT<S, MA>
 where
     Self: MonadTrans<MA>,
-    S: Clone,
+    S: UnwindSafe + Clone,
     MA: Clone + MonadLocal<MR, R>,
 {
     fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
@@ -186,10 +188,15 @@ where
 
 impl<MR, MR_, MA, R> MonadLocal<MR_, R> for ContT<MR, MA>
 where
-    MR: Clone + Pointed<Pointed = R> + MonadAsk<MR_, R, R> + MonadLocal<MR_, R> + ChainM<MR>,
+    MR: Clone
+        + UnwindSafe
+        + Pointed<Pointed = R>
+        + MonadAsk<MR_, R, R>
+        + MonadLocal<MR_, R>
+        + ChainM<MR>,
     MR::Pointed: Clone,
     MR_: 'static,
-    R: 'static,
+    R: 'static + UnwindSafe,
     MA: Clone + Pointed,
     MA::Pointed: Clone,
 {

@@ -1,5 +1,10 @@
+use std::panic::UnwindSafe;
+
 use crate::{
-    base::data::{function::bifunction::BifunT, tuple::pair::Pair},
+    base::{
+        control::monad::io::MonadIO,
+        data::{function::bifunction::BifunT, tuple::pair::Pair},
+    },
     prelude::*,
     transformers::{class::MonadTrans, state::StateT},
 };
@@ -10,14 +15,22 @@ pub type StateLogging<LVL, MSG, S, T> = StateLoggingT<LVL, MSG, S, IO<(T, S)>>;
 
 pub type StateLoggingT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
-impl<LVL, MSG> MonadLogger<LVL, MSG> for StateLoggingT<LVL, MSG, usize, IO<((), usize)>>
+impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateLoggingT<LVL, MSG, S, MA>
 where
-    LVL: Clone,
-    MSG: Clone,
+    LVL: Clone + UnwindSafe,
+    MSG: Clone + UnwindSafe,
+    S: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + ReturnM<Pointed = ((), S)> + WithPointed<(S, S)> + WithPointed<()>,
+    WithPointedT<MA, (S, S)>: Clone + UnwindSafe + ReturnM<Pointed = (S, S)> + ChainM<MA>,
+    WithPointedT<MA, ()>: Clone + UnwindSafe + MonadIO<()> + ChainM<MA>,
 {
     fn log(level: LVL, message: MSG) -> Self {
-        StateLoggingT::<LVL, MSG, usize, IO<(usize, usize)>>::get()
-            .chain_m(move |s| MonadTrans::lift(LoggingT::log(level, (message, s))))
+        StateLoggingT::<LVL, MSG, S, WithPointedT<MA, (S, S)>>::get().chain_m(move |s| {
+            MonadTrans::lift(LoggingT::<LVL, (MSG, S), WithPointedT<MA, ()>>::log(
+                level,
+                (message, s),
+            ))
+        })
     }
 }
 
@@ -27,10 +40,12 @@ pub trait RunStateLogging<LVL, MSG, MA> {
 
 impl<LVL, MSG, MA, MB, S, T> RunStateLogging<LVL, (MSG, S), MB> for StateLoggingT<LVL, MSG, S, MA>
 where
-    MA: Pointed<Pointed = (T, S)> + ChainM<MB>,
+    LVL: UnwindSafe,
+    MSG: UnwindSafe,
+    MA: UnwindSafe + Pointed<Pointed = (T, S)> + ChainM<MB>,
     MB: 'static + ReturnM<Pointed = T>,
-    S: Clone + Default,
-    T: 'static + Clone,
+    S: Clone + UnwindSafe + Default,
+    T: 'static + Clone + UnwindSafe,
 {
     fn run(self, f: impl BifunT<LVL, (MSG, S), IO<()>> + Clone) -> MB {
         self.run_t(Default::default())
@@ -41,10 +56,10 @@ where
 
 pub fn indent<LVL, MSG, MA>() -> StateLoggingT<LVL, MSG, usize, MA>
 where
-    LVL: Clone,
-    MSG: Clone,
-    MA: Clone + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: Clone + ReturnM<Pointed = usize> + ChainM<MA>,
+    LVL: Clone + UnwindSafe,
+    MSG: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
+    MA::WithPointed: Clone + UnwindSafe + ReturnM<Pointed = usize> + ChainM<MA>,
 {
     StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
         LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s + 1)
@@ -53,25 +68,29 @@ where
 
 pub fn unindent<LVL, MSG, MA>() -> StateLoggingT<LVL, MSG, usize, MA>
 where
-    LVL: Clone,
-    MSG: Clone,
-    MA: Clone + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: Clone + ReturnM<Pointed = usize> + ChainM<MA>,
+    LVL: Clone + UnwindSafe,
+    MSG: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
+    MA::WithPointed: Clone + UnwindSafe + ReturnM<Pointed = usize> + ChainM<MA>,
 {
     StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
         LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s - 1)
     })
 }
 
-pub fn log_scope<LVL, MSG, MA>(
-    m: StateLoggingT<LVL, MSG, usize, MA>,
-) -> StateLoggingT<LVL, MSG, usize, MA>
+pub trait LogScope {
+    fn log_scope(m: Self) -> Self;
+}
+
+impl<LVL, MSG, MA> LogScope for StateLoggingT<LVL, MSG, usize, MA>
 where
-    LVL: Clone,
-    MSG: Clone,
-    MA: Clone + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: Clone + ReturnM<Pointed = usize> + ChainM<MA>,
+    LVL: Clone + UnwindSafe,
+    MSG: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
+    MA::WithPointed: Clone + UnwindSafe + ReturnM<Pointed = usize> + ChainM<MA>,
     StateLoggingT<LVL, MSG, usize, MA>: ThenM<StateLoggingT<LVL, MSG, usize, MA>>,
 {
-    indent().then_m(m).then_m(unindent())
+    fn log_scope(m: Self) -> Self {
+        indent().then_m(m).then_m(unindent())
+    }
 }

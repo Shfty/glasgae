@@ -1,5 +1,7 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::data::{foldr_default, function::bifunction::BifunT, monoid::Endo, FoldMap},
     prelude::{
@@ -69,8 +71,8 @@ where
 
 impl<FA, A, B> Functor<B> for Lift<FA>
 where
-    B: Clone,
     FA: Functor<B, Pointed = A>,
+    B: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<A, B> + Clone) -> Self::WithPointed {
         match self {
@@ -103,7 +105,7 @@ where
     FB: Pointed<Pointed = B>,
     FF: Pointed<Pointed = F> + AppA<FA, FB>,
     F: Clone + FunctionT<A, B>,
-    B: Clone,
+    B: Clone + UnwindSafe,
 {
     fn app_a(self, a: Lift<FA>) -> Lift<FB> {
         match self {
@@ -131,7 +133,7 @@ where
     Self: FoldMap<A, Endo<Function<B, B>>>,
     FA: Pointed,
     Endo<B>: Monoid,
-    A: 'static + Clone,
+    A: 'static + Clone + UnwindSafe,
 {
     fn foldr(self, f: impl BifunT<A, B, B> + Clone, z: B) -> B {
         foldr_default::<Self, A, B>(self, f, z)

@@ -2,6 +2,8 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::control::monad::io::MonadIO,
     prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed, IO},
@@ -48,7 +50,7 @@ where
 impl<MA, T> Functor<T> for IdentityT<MA>
 where
     MA: Functor<T>,
-    T: Clone,
+    T: Clone + UnwindSafe,
 {
     fn fmap(
         self,

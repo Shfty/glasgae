@@ -72,6 +72,8 @@
 //! ```
 //! (which implies that pure and <*> satisfy the applicative functor laws).
 
+use std::panic::UnwindSafe;
+
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 /// Lift a value.
@@ -149,7 +151,8 @@ pub trait AppA<A1, A2> {
 pub trait LiftA2<A1, A2, A3>:
     FnOnce(A1::Pointed, A2::Pointed) -> A3::Pointed + Clone + 'static
 where
-    A1::Pointed: 'static + Clone,
+    Self: UnwindSafe,
+    A1::Pointed: 'static + Clone + UnwindSafe,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
     A1::WithPointed: AppA<A2, A3>,
     A2: Pointed,
@@ -166,7 +169,7 @@ impl<F, A1, A2, A3> LiftA2<A1, A2, A3> for F
 where
     F: BifunT<A1::Pointed, A2::Pointed, A3::Pointed> + Clone,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::Pointed: 'static + Clone,
+    A1::Pointed: 'static + Clone + UnwindSafe,
     A1::WithPointed: AppA<A2, A3>,
     A2: Pointed,
     A2::Pointed: 'static,

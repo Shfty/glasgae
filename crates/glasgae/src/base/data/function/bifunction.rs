@@ -1,13 +1,15 @@
+use std::panic::UnwindSafe;
+
 use crate::prelude::Boxed;
 
 /// Binary function
-pub trait BifunT<A, B, C>: FnOnce(A, B) -> C + 'static {
+pub trait BifunT<A, B, C>: FnOnce(A, B) -> C + UnwindSafe + 'static {
     fn clone_bifun(&self) -> Bifun<A, B, C>;
 }
 
 impl<F, A, B, C> BifunT<A, B, C> for F
 where
-    F: FnOnce(A, B) -> C + Clone + 'static,
+    F: FnOnce(A, B) -> C + Clone + UnwindSafe + 'static,
 {
     fn clone_bifun(&self) -> Bifun<A, B, C> {
         self.clone().boxed()

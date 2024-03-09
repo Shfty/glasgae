@@ -7,6 +7,8 @@
 //! For a read-only state, see Control.Monad.Trans.Reader.
 //! To accumulate a value without using it on the way, see Control.Monad.Trans.Writer.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{
         control::monad::io::MonadIO,
@@ -28,7 +30,10 @@ where
     S: 'static,
     M: 'static;
 
-impl<S, A> State<S, A> {
+impl<S, A> State<S, A>
+where
+    S: UnwindSafe,
+{
     /// Unwrap a state monad computation as a function. (The inverse of new.)
     ///
     /// Self: State-passing computation to execute
@@ -95,7 +100,10 @@ impl<S, A> State<S, A> {
 /// m - The inner monad.
 ///
 /// The return function leaves the state unchanged, while >>= uses the final state of the first computation as the initial state of the second.
-impl<S, M> StateT<S, M> {
+impl<S, M> StateT<S, M>
+where
+    S: UnwindSafe,
+{
     pub fn new_t(f: impl FunctionT<S, M> + Clone) -> Self {
         StateT(f.boxed())
     }
@@ -232,8 +240,8 @@ impl<A, S, M, T> Functor<T> for StateT<S, M>
 where
     M: Clone + Functor<(T, S), Pointed = (A, S)>,
     M::WithPointed: Pointed<Pointed = (T, S)>,
-    T: 'static + Clone,
-    S: Clone,
+    T: 'static + Clone + UnwindSafe,
+    S: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<A, T> + Clone) -> Self::WithPointed {
         let m = self;
@@ -244,7 +252,8 @@ where
 impl<S, M, A> PureA for StateT<S, M>
 where
     M: ReturnM<Pointed = (A, S)>,
-    A: 'static + Clone,
+    S: UnwindSafe,
+    A: 'static + Clone + UnwindSafe,
 {
     fn pure_a(a: Self::Pointed) -> Self {
         StateT::new_t(|s| ReturnM::return_m((a, s)))
@@ -256,7 +265,8 @@ where
     MF: ChainM<MB, Pointed = (F, S)>,
     MA: ChainM<MB, Pointed = (A, S)>,
     MB: ReturnM<Pointed = (B, S)> + Clone,
-    F: FunctionT<A, B> + Clone,
+    S: UnwindSafe,
+    F: FunctionT<A, B> + Clone + UnwindSafe,
 {
     fn app_a(self, mx: StateT<S, MA>) -> StateT<S, MB> {
         let StateT(mf) = self;
@@ -270,13 +280,14 @@ where
 impl<S, M, A> ReturnM for StateT<S, M>
 where
     M: ReturnM<Pointed = (A, S)>,
-    A: 'static + Clone,
+    S: UnwindSafe,
+    A: 'static + Clone + UnwindSafe,
 {
 }
 
 impl<S, M, N, A, B> ChainM<StateT<S, N>> for StateT<S, M>
 where
-    S: Clone,
+    S: Clone + UnwindSafe,
     M: Clone + ChainM<N, Pointed = (A, S)>,
     N: Clone + Pointed<Pointed = (B, S)>,
 {
@@ -292,8 +303,8 @@ where
 impl<MO, S, A> MonadTrans<MO::Lowered> for StateT<S, MO>
 where
     MO: Lower<S, A> + ReturnM<Pointed = (A, S)>,
-    MO::Lowered: 'static + Clone + ChainM<MO>,
-    S: Clone,
+    MO::Lowered: 'static + Clone + UnwindSafe + ChainM<MO>,
+    S: Clone + UnwindSafe,
 {
     fn lift(m: MO::Lowered) -> Self {
         StateT::new_t(|s| m.chain_m(|a| ReturnM::return_m((a, s))))

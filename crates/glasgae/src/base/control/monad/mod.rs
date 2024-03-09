@@ -42,6 +42,8 @@
 
 pub mod io;
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::data::{function::bifunction::BifunT, list::vec::push},
     prelude::*,
@@ -77,7 +79,10 @@ pub trait ChainM<T>: Pointed {
 /// as();
 /// bs();
 /// ```
-pub trait ThenM<T>: ChainM<T> {
+pub trait ThenM<T>: ChainM<T>
+where
+    T: UnwindSafe,
+{
     fn then_m(self, t: T) -> T
     where
         Self: Sized,
@@ -87,7 +92,12 @@ pub trait ThenM<T>: ChainM<T> {
     }
 }
 
-impl<T, U> ThenM<U> for T where T: ChainM<U> {}
+impl<T, U> ThenM<U> for T
+where
+    T: ChainM<U>,
+    U: UnwindSafe,
+{
+}
 
 /// This generalizes the list-based filter function.
 pub trait FilterM<M1, A, M3> {
@@ -99,7 +109,7 @@ where
     M1: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool>,
     M1::WithPointed: Clone + AppA<M3, M3>,
     M3: Pointed<Pointed = Vec<A>> + PureA,
-    A: 'static + Clone,
+    A: 'static + Clone + UnwindSafe,
 {
     fn filter_m(self, f: impl FunctionT<A, M1> + Clone) -> M3 {
         self.foldr(
@@ -144,7 +154,7 @@ pub trait FoldM<M1, A, B> {
 impl<MB, A, B> FoldM<MB, A, B> for Vec<B>
 where
     MB: ReturnM<Pointed = A> + ChainM<MB> + Clone,
-    B: 'static + Clone,
+    B: 'static + Clone + UnwindSafe,
 {
     fn fold_m(self, f: impl BifunT<A, B, MB> + Clone, a: A) -> MB {
         let mut xs = self;
@@ -177,7 +187,7 @@ where
     MA: Clone + Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
     MA::WithPointed: AppA<MB, MB>,
     MB: PureA<Pointed = Vec<T>>,
-    T: 'static + Clone,
+    T: 'static + Clone + UnwindSafe,
 {
     fn replicate_m(self, count: usize) -> MB {
         let f = self;

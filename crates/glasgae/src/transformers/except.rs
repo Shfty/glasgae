@@ -4,9 +4,11 @@
 //!
 //! If the value of the exception is not required, the variant in Control.Monad.Trans.Maybe may be used instead.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{
-        control::monad::{LiftM, io::MonadIO},
+        control::monad::{io::MonadIO, LiftM},
         data::{functor::identity::Identity, FoldMap},
     },
     prelude::{
@@ -28,7 +30,11 @@ use super::class::MonadTrans;
 /// [`Errors`](crate::base::control::applicative::errors::Errors).
 pub type Except<E, A> = ExceptT<Identity<Either<E, A>>>;
 
-impl<E, A> Except<E, A> {
+impl<E, A> Except<E, A>
+where
+    E: UnwindSafe,
+    A: UnwindSafe,
+{
     /// Extractor for computations in the exception monad. (The inverse of [`ExceptT::new`]).
     pub fn run(self) -> Either<E, A> {
         self.run_t().run()
@@ -41,7 +47,7 @@ impl<E, A> Except<E, A> {
     pub fn map<B>(self, f: impl FunctionT<A, B> + Clone) -> Except<E, B>
     where
         E: Clone,
-        B: Clone,
+        B: Clone + UnwindSafe,
     {
         self.map_t(|t| {
             t.fmap(|t| match t {
@@ -55,7 +61,7 @@ impl<E, A> Except<E, A> {
     /// (a specialization of [`ExceptT::with_t`]).
     pub fn with<E_>(self, f: impl FunctionT<E, E_> + Clone) -> Except<E_, A>
     where
-        E_: Clone,
+        E_: Clone + UnwindSafe,
         E: Clone,
         A: Clone,
     {
@@ -71,7 +77,10 @@ impl<E, A> Except<E, A> {
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ExceptT<MA>(MA);
 
-impl<MA> ExceptT<MA> {
+impl<MA> ExceptT<MA>
+where
+    MA: UnwindSafe,
+{
     pub fn new_t(ma: MA) -> Self {
         ExceptT(ma)
     }
@@ -90,7 +99,7 @@ impl<MA> ExceptT<MA> {
     }
 
     /// Map the unwrapped computation using the given function.
-    /// ```
+    /// ```text
     /// m.map(f).run() == f(m.run())
     /// ```
     pub fn map_t<MB>(self, f: impl FunctionT<MA, MB>) -> ExceptT<MB> {
@@ -102,8 +111,8 @@ impl<MA> ExceptT<MA> {
     where
         MA: Functor<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
         MB: Clone + Pointed<Pointed = Either<E_, A>>,
-        E_: Clone,
-        A: Clone,
+        E_: Clone + UnwindSafe,
+        A: Clone + UnwindSafe,
     {
         self.map_t(|t| {
             t.fmap(|t| match t {
@@ -137,7 +146,7 @@ impl<MA> ExceptT<MA> {
     pub fn catch<MB, E, E_, A>(self, h: impl FunctionT<E, ExceptT<MB>> + Clone) -> ExceptT<MB>
     where
         MA: ChainM<MB, Pointed = Either<E, A>>,
-        MB: ReturnM<Pointed = Either<E_, A>>,
+        MB: UnwindSafe + ReturnM<Pointed = Either<E_, A>>,
     {
         let m = self;
         ExceptT(m.run_t().chain_m(|a| match a {
@@ -154,7 +163,7 @@ impl<MA> ExceptT<MA> {
     ) -> ExceptT<MB>
     where
         MA: ChainM<MB, Pointed = Either<E, A>>,
-        MB: ReturnM<Pointed = Either<E_, A>>,
+        MB: UnwindSafe + ReturnM<Pointed = Either<E_, A>>,
     {
         this.catch(h)
     }
@@ -165,8 +174,8 @@ impl<MA> ExceptT<MA> {
     pub fn r#try<MB, MC, E, A>(self) -> ExceptT<MC>
     where
         MA: ChainM<MB, Pointed = Either<E, A>>,
-        MB: ReturnM<Pointed = Either<E, Either<E, A>>> + ChainM<MC>,
-        MC: ReturnM<Pointed = Either<E, Either<E, A>>>,
+        MB: UnwindSafe + ReturnM<Pointed = Either<E, Either<E, A>>> + ChainM<MC>,
+        MC: UnwindSafe + ReturnM<Pointed = Either<E, Either<E, A>>>,
         E: 'static,
         A: 'static,
     {
@@ -180,8 +189,12 @@ impl<MA> ExceptT<MA> {
     pub fn finally<MB, MC, E, A>(self, closer: ExceptT<MC>) -> Self
     where
         MA: 'static + Clone + ChainM<MB, Pointed = Either<E, A>> + ReturnM,
-        MB: Clone + ReturnM<Pointed = Either<E, Either<E, A>>> + ChainM<MB> + ChainM<MA>,
-        MC: 'static + Clone + ChainM<MA, Pointed = Either<E, ()>>,
+        MB: Clone
+            + UnwindSafe
+            + ReturnM<Pointed = Either<E, Either<E, A>>>
+            + ChainM<MB>
+            + ChainM<MA>,
+        MC: 'static + Clone + UnwindSafe + ChainM<MA, Pointed = Either<E, ()>>,
         E: 'static,
         A: 'static,
     {
@@ -213,10 +226,10 @@ where
 
 impl<MA, E, A, B> Functor<B> for ExceptT<MA>
 where
-    MA: Functor<Either<E, B>, Pointed = Either<E, A>>,
-    E: Clone,
+    MA: UnwindSafe + Functor<Either<E, B>, Pointed = Either<E, A>>,
+    E: Clone + UnwindSafe,
     A: Clone,
-    B: Clone,
+    B: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl crate::prelude::FunctionT<A, B> + Clone) -> Self::WithPointed {
         ExceptT(self.run_t().fmap(|t| t.fmap(f)))
@@ -235,7 +248,7 @@ where
 impl<MF, MA, MB, E, F, A, B> AppA<ExceptT<MA>, ExceptT<MB>> for ExceptT<MF>
 where
     MF: ChainM<MB, Pointed = Either<E, F>>,
-    MA: 'static + Clone + ChainM<MB, Pointed = Either<E, A>>,
+    MA: 'static + Clone + UnwindSafe + ChainM<MB, Pointed = Either<E, A>>,
     MB: ReturnM<Pointed = Either<E, B>>,
     F: FunctionT<A, B> + Clone,
 {
@@ -265,8 +278,8 @@ where
 
 impl<MA, MB, E, A, B> ChainM<ExceptT<MB>> for ExceptT<MA>
 where
-    MA: ChainM<MB, Pointed = Either<E, A>>,
-    MB: ReturnM<Pointed = Either<E, B>>,
+    MA: UnwindSafe + ChainM<MB, Pointed = Either<E, A>>,
+    MB: UnwindSafe + ReturnM<Pointed = Either<E, B>>,
 {
     fn chain_m(self, k: impl FunctionT<A, ExceptT<MB>> + Clone) -> ExceptT<MB> {
         let m = self;
@@ -318,22 +331,35 @@ where
     }
 }
 
-impl<MA, E, A> MonadTrans<MA> for ExceptT<MA>
+impl<MA, MB, E, A> MonadTrans<MB> for ExceptT<MA>
 where
-    MA: Pointed<Pointed = Either<E, A>>,
+    MA: UnwindSafe + ReturnM<Pointed = Either<E, A>>,
+    MB: Pointed<Pointed = A> + ChainM<MA>,
 {
-    fn lift(m: MA) -> Self {
-        todo!()
+    fn lift(m: MB) -> Self {
+        ExceptT::new_t(m.chain_m(|t| ReturnM::return_m(Right(t))))
     }
+}
+
+trait LowerEither<E, A>: Pointed<Pointed = Either<E, A>> + WithPointed<A> {
+    type Lowered: Pointed<Pointed = A>;
+}
+
+impl<T, E, A> LowerEither<E, A> for T
+where
+    T: Pointed<Pointed = Either<E, A>> + WithPointed<A>,
+{
+    type Lowered = T::WithPointed;
 }
 
 impl<MA, E, A> MonadIO<A> for ExceptT<MA>
 where
-    Self: MonadTrans<IO<A>>,
-    MA: Pointed<Pointed = Either<E, A>>,
+    Self: MonadTrans<MA::Lowered>,
+    MA: LowerEither<E, A> + Pointed<Pointed = Either<E, A>>,
+    MA::Lowered: MonadIO<A>,
     A: 'static,
 {
     fn lift_io(m: IO<A>) -> Self {
-        Self::lift(MonadIO::lift_io(m))
+        Self::lift(<MA as LowerEither<E, A>>::Lowered::lift_io(m))
     }
 }

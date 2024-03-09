@@ -9,6 +9,8 @@
 //!
 //! For the class laws see the Laws section of Data.Foldable.
 
+use std::panic::UnwindSafe;
+
 use crate::prelude::{Compose, Function, FunctionT, Monoid};
 
 use super::{
@@ -57,7 +59,7 @@ pub fn foldr_default<This, T, U>(this: This, f: impl BifunT<T, U, U> + Clone, z:
 where
     This: FoldMap<T, Endo<Function<U, U>>>,
     Endo<U>: Monoid,
-    T: 'static + Clone,
+    T: 'static + Clone + UnwindSafe,
 {
     this.fold_map(f.curried_clone().compose_clone(Endo::new))
         .app()(z)

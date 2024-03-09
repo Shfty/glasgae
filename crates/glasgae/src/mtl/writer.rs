@@ -5,6 +5,8 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/pubs/springschool.html>)
 //! Advanced School of Functional Programming, 1995.
 
+use std::panic::UnwindSafe;
+
 use crate::prelude::*;
 
 use crate::transformers::{class::MonadTrans, reader::ReaderT, state::StateT, writer::WriterT};
@@ -73,7 +75,7 @@ where
 // ReaderT impl
 impl<MA, R, W, A> MonadWriter<W, A> for ReaderT<R, MA>
 where
-    MA: Clone + MonadWriter<W, A>,
+    MA: Clone + UnwindSafe + MonadWriter<W, A>,
 {
     fn writer(a: A, w: W) -> Self {
         Self::lift(MA::writer(a, w))
@@ -82,7 +84,7 @@ where
 
 impl<MA, R, W, A> MonadTell<W, A> for ReaderT<R, MA>
 where
-    MA: Clone + MonadTell<W, A>,
+    MA: Clone + UnwindSafe + MonadTell<W, A>,
 {
     fn tell(w: W) -> Self {
         Self::lift(MA::tell(w))
@@ -91,8 +93,9 @@ where
 
 impl<MA, MB, R> MonadListen<ReaderT<R, MB>> for ReaderT<R, MA>
 where
-    MA: Clone + MonadListen<MB>,
     R: Clone,
+    MA: Clone + UnwindSafe + MonadListen<MB>,
+    MB: UnwindSafe,
 {
     fn listen(self) -> ReaderT<R, MB> {
         self.map_t(MA::listen)
@@ -101,8 +104,9 @@ where
 
 impl<MA, MB, R> MonadPass<ReaderT<R, MB>> for ReaderT<R, MA>
 where
-    MA: Clone + MonadPass<MB>,
     R: Clone,
+    MA: Clone + UnwindSafe + MonadPass<MB>,
+    MB: UnwindSafe,
 {
     fn pass(self) -> ReaderT<R, MB> {
         self.map_t(MA::pass)
@@ -132,8 +136,8 @@ where
 
 impl<MA, MB, R> MonadListen<StateT<R, MB>> for StateT<R, MA>
 where
-    MA: Clone + MonadListen<MB>,
-    R: Clone,
+    R: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + MonadListen<MB>,
 {
     fn listen(self) -> StateT<R, MB> {
         self.map_t(MA::listen)
@@ -142,8 +146,8 @@ where
 
 impl<MA, MB, R> MonadPass<StateT<R, MB>> for StateT<R, MA>
 where
-    MA: Clone + MonadPass<MB>,
-    R: Clone,
+    R: Clone + UnwindSafe,
+    MA: Clone + UnwindSafe + MonadPass<MB>,
 {
     fn pass(self) -> StateT<R, MB> {
         self.map_t(MA::pass)

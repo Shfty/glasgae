@@ -5,6 +5,8 @@
 mod travel;
 mod zip_travel;
 
+use std::panic::UnwindSafe;
+
 pub use travel::*;
 pub use zip_travel::*;
 
@@ -81,7 +83,7 @@ where
 
 impl<T, D> Functor<T> for Zipper<T, D>
 where
-    T: Clone,
+    T: Clone + UnwindSafe,
     D: Default,
 {
     fn fmap(self, f: impl FunctionT<T, T> + Clone) -> Zipper<T, D> {
@@ -101,8 +103,8 @@ impl<T, D> PureA for Zipper<T, D> {
 impl<F, T, D> AppA<Zipper<T, D>, Zipper<T, D>> for Zipper<F, D>
 where
     Zipper<T, D>: Pointed<Pointed = T> + Functor<T, WithPointed = Zipper<T, D>>,
-    F: FnOnce(T) -> T + Clone,
-    T: Clone,
+    F: FunctionT<T, T> + Clone,
+    T: Clone + UnwindSafe,
     D: Default,
 {
     fn app_a(self, a: Zipper<T, D>) -> Zipper<T, D> {
@@ -145,7 +147,7 @@ pub trait MakeZipper<D>: Sized {
 
 impl<T, D> MakeZipper<D> for T
 where
-    T: Clone,
+    T: Clone + UnwindSafe,
     D: Clone,
 {
     fn make_zipper(

@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{base::grl::num::Zero, prelude::*};
 
 /// Monoid under addition.
@@ -20,7 +22,7 @@ impl<T, U> WithPointed<U> for Sum<T> {
 
 impl<T, U> Functor<U> for Sum<T>
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(
         self,

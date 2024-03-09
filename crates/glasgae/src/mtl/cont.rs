@@ -30,6 +30,8 @@
 //! and that continuations represent the best solution to your particular design problem.
 //! Many algorithms which require continuations in other languages do not require them in Haskell,
 //! due to Haskell's lazy semantics. Abuse of the Continuation monad can produce code that is impossible to understand and maintain.
+use std::panic::UnwindSafe;
+
 use crate::prelude::*;
 
 use crate::transformers::cont::ContT;
@@ -56,7 +58,7 @@ where
 impl<MR, MA, MB> MonadCont<MR, MA, MB> for ContT<MR, MA>
 where
     MA: Clone + Pointed,
-    MA::Pointed: Clone,
+    MA::Pointed: Clone + UnwindSafe,
     MB: 'static + Clone + Pointed,
 {
     fn call_cc(f: impl FunctionT<Function<MA::Pointed, ContT<MR, MB>>, Self> + Clone) -> Self {

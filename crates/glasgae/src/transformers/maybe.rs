@@ -4,6 +4,8 @@
 //!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{control::monad::io::MonadIO, data::FoldMap},
     prelude::{
@@ -63,7 +65,7 @@ impl<MA, A, B> Functor<B> for MaybeT<MA>
 where
     MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
     A: Clone,
-    B: Clone,
+    B: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl crate::prelude::FunctionT<A, B> + Clone) -> Self::WithPointed {
         self.map(|t| t.fmap(|t| t.fmap(f)))
@@ -82,7 +84,7 @@ where
 impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
 where
     MF: ChainM<MB, Pointed = Maybe<F>>,
-    MA: 'static + Clone + ChainM<MB, Pointed = Maybe<A>>,
+    MA: 'static + UnwindSafe + Clone + ChainM<MB, Pointed = Maybe<A>>,
     MB: ReturnM<Pointed = Maybe<B>>,
     F: Clone + FunctionT<A, B>,
 {

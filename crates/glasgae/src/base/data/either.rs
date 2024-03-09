@@ -2,6 +2,8 @@
 //! a value of type [`Either<A, B>`] is either [`Left(A)`](Either::Left) or
 //! [`Right(B)`](Either::Right).
 
+use std::panic::UnwindSafe;
+
 use crate::prelude::*;
 
 use super::{fold_map_default, function::bifunction::BifunT, FoldMap};
@@ -153,7 +155,7 @@ impl<E, A, B> WithPointed<B> for Either<E, A> {
 
 impl<E, A, B> Functor<B> for Either<E, A>
 where
-    B: Clone,
+    B: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<A, B> + Clone) -> Either<E, B> {
         match self {
@@ -172,7 +174,7 @@ impl<E, A> PureA for Either<E, A> {
 impl<E, F, A, B> AppA<Either<E, A>, Either<E, B>> for Either<E, F>
 where
     F: FunctionT<A, B> + Clone,
-    B: Clone,
+    B: Clone + UnwindSafe,
 {
     fn app_a(self, r: Either<E, A>) -> Either<E, B> {
         match self {
@@ -215,8 +217,8 @@ impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Either<E, A>
 where
     A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
-    E: 'static + Clone,
-    A_: 'static + Clone,
+    E: 'static + Clone + UnwindSafe,
+    A_: 'static + Clone + UnwindSafe,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A1::WithPointed {
         match self {
@@ -230,8 +232,8 @@ impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Either<E, A1>
 where
     A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
-    E: 'static + Clone,
-    A_: 'static + Clone,
+    E: 'static + Clone + UnwindSafe,
+    A_: 'static + Clone + UnwindSafe,
 {
     fn sequence_a(self) -> A1::WithPointed {
         match self {

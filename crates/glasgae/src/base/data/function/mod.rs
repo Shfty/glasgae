@@ -29,6 +29,8 @@ mod until;
 
 pub mod bifunction;
 
+use std::panic::UnwindSafe;
+
 pub use app::*;
 pub use compose::*;
 pub use curried::*;
@@ -40,13 +42,13 @@ pub use until::*;
 
 use crate::prelude::*;
 
-pub trait FunctionT<A, B>: FnOnce(A) -> B + 'static {
+pub trait FunctionT<A, B>: FnOnce(A) -> B + UnwindSafe + 'static {
     fn clone_fun(&self) -> Function<A, B>;
 }
 
 impl<F, A, B> FunctionT<A, B> for F
 where
-    F: FnOnce(A) -> B + Clone + 'static,
+    F: FnOnce(A) -> B + Clone + UnwindSafe + 'static,
 {
     fn clone_fun(&self) -> Function<A, B> {
         self.clone().boxed()
@@ -77,7 +79,7 @@ impl<A, B, C> Functor<C> for Function<A, B>
 where
     A: 'static,
     B: 'static,
-    C: 'static + Clone,
+    C: 'static + Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<Self::Pointed, C> + Clone) -> Function<A, C> {
         self.compose_clone(f).boxed()
@@ -86,7 +88,7 @@ where
 
 impl<A, B> PureA for Function<A, B>
 where
-    B: 'static + Clone,
+    B: 'static + Clone + UnwindSafe,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         r#const(t).boxed()
@@ -105,7 +107,7 @@ where
     }
 }
 
-impl<A, B> ReturnM for Function<A, B> where B: 'static + Clone {}
+impl<A, B> ReturnM for Function<A, B> where B: 'static + Clone + UnwindSafe {}
 
 impl<A, B, C> ChainM<Function<A, C>> for Function<A, B>
 where
@@ -120,7 +122,7 @@ where
 
 pub fn r#const<T, U>(t: U) -> impl FunctionT<T, U> + Clone
 where
-    U: 'static + Clone,
+    U: 'static + Clone + UnwindSafe,
 {
     move |_| t
 }

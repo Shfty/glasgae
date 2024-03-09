@@ -5,7 +5,9 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::{prelude::*, base::data::function::bifunction::BifunT};
+use std::panic::UnwindSafe;
+
+use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 use super::Functor;
 
@@ -29,7 +31,7 @@ impl<T, U> WithPointed<U> for Identity<T> {
 
 impl<T, U> Functor<U> for Identity<T>
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<T, U> + Clone) -> Identity<U> {
         Identity(f(self.0))
@@ -44,8 +46,8 @@ impl<T> PureA for Identity<T> {
 
 impl<F, A, B> AppA<Identity<A>, Identity<B>> for Identity<F>
 where
-    F: FnOnce(A) -> B + Clone + 'static,
-    B: Clone,
+    F: FnOnce(A) -> B + Clone + UnwindSafe + 'static,
+    B: Clone + UnwindSafe,
 {
     fn app_a(self, a: Identity<A>) -> Identity<B> {
         a.fmap(self.0)
@@ -95,9 +97,10 @@ impl<T, U> Foldr<T, U> for Identity<T> {
 
 impl<T, A_, A1, A3> TraverseT<A1, A_, A3> for Identity<T>
 where
-    A1: Clone + PureA + Pointed<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
+    A1: Clone + UnwindSafe + PureA + Pointed<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: 'static + Clone + Monoid,
     A1::WithPointed: AppA<A3, A3>,
+    A_: UnwindSafe,
     A3: PureA<Pointed = Identity<A1::Pointed>>,
 {
     fn traverse_t(self, f: impl FunctionT<T, A1> + Clone) -> A3 {
@@ -110,6 +113,7 @@ where
     A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: 'static + Clone + Monoid,
     A1::WithPointed: AppA<A3, A3>,
+    A_: UnwindSafe,
     A3: PureA<Pointed = Identity<A1::Pointed>>,
 {
     fn sequence_a(self) -> A3 {

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, panic::UnwindSafe};
 
 use crate::{
     base::data::FoldMap,
@@ -19,7 +19,7 @@ impl<K, V, V_> WithPointed<V_> for BTreeMap<K, V> {
 impl<K, V, V_> Functor<V_> for BTreeMap<K, V>
 where
     K: Ord,
-    V_: Clone,
+    V_: Clone + UnwindSafe,
 {
     fn fmap(
         self,

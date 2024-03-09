@@ -1,14 +1,18 @@
 //! Monadic I/O operations.
 
 use std::{
-    io::{Read, Write},
+    io::{ErrorKind, Read, Write},
+    panic::UnwindSafe,
     path::Path,
     process::Termination,
 };
 
 use crate::{
-    base::data::function::{Nullary, NullaryT},
-    prelude::*,
+    base::{
+        control::exception::{throw, Exception},
+        data::function::{Nullary, NullaryT},
+    },
+    prelude::{FunctionT, *},
 };
 
 /// A value of type [`IO<A>`] is a computation which, when performed,
@@ -52,7 +56,10 @@ pub struct IO<A>(Nullary<A>)
 where
     A: 'static;
 
-impl<T> IO<T> {
+impl<T> IO<T>
+where
+    T: UnwindSafe,
+{
     /// Construct a new I/O action from a nullary function.
     pub fn new(f: impl NullaryT<T> + Clone) -> Self {
         IO(f.boxed())
@@ -74,7 +81,7 @@ impl<T> IO<T> {
     /// ```
     /// # use glasgae::prelude::{IO, print};
     /// // This function - being a regular Rust function - is considered
-    /// // semantically impure, by virtue of access to 
+    /// // semantically impure, by virtue of access to
     /// // the language's full range of imperative power.
     /// //
     /// // Indeed, it takes no input and returns no output,
@@ -99,7 +106,7 @@ impl<T> IO<T> {
     /// // or other methods that may result in impure side-effects.
     /// fn pure() -> IO<()> {
     ///     // Return an IO action which,
-    ///     // when run outside of the pure environment, 
+    ///     // when run outside of the pure environment,
     ///     // will print some text to standard output.
     ///     print("Hello, Pure Functional World!")
     /// }
@@ -111,7 +118,7 @@ impl<T> IO<T> {
 
 impl<T> Termination for IO<T>
 where
-    T: Termination,
+    T: UnwindSafe + Termination,
 {
     fn report(self) -> std::process::ExitCode {
         let out = unsafe { self.run() };
@@ -132,20 +139,17 @@ where
 
 impl<T, U> Functor<U> for IO<T>
 where
-    T: Clone,
-    U: 'static + Clone,
+    T: Clone + UnwindSafe,
+    U: 'static + Clone + UnwindSafe,
 {
-    fn fmap(
-        self,
-        f: impl crate::prelude::FunctionT<Self::Pointed, U> + Clone,
-    ) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> Self::WithPointed {
         IO::new(|| f(unsafe { self.run() }))
     }
 }
 
 impl<T> PureA for IO<T>
 where
-    T: Clone,
+    T: Clone + UnwindSafe,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         IO::new(|| t)
@@ -154,20 +158,21 @@ where
 
 impl<F, A, B> AppA<IO<A>, IO<B>> for IO<F>
 where
-    F: Clone + FunctionT<A, B>,
-    A: Clone,
-    B: Clone,
+    F: Clone + UnwindSafe + FunctionT<A, B>,
+    A: Clone + UnwindSafe,
+    B: Clone + UnwindSafe,
 {
     fn app_a(self, a: IO<A>) -> IO<B> {
         IO::new(|| unsafe { self.run()(a.run()) })
     }
 }
 
-impl<T> ReturnM for IO<T> where T: Clone {}
+impl<T> ReturnM for IO<T> where T: UnwindSafe + Clone {}
 
 impl<T, U> ChainM<IO<U>> for IO<T>
 where
-    T: Clone,
+    T: Clone + UnwindSafe,
+    U: UnwindSafe,
 {
     fn chain_m(self, f: impl FunctionT<Self::Pointed, IO<U>> + Clone) -> IO<U> {
         IO::new(|| unsafe { f(self.run()).run() })
@@ -176,7 +181,7 @@ where
 
 impl<T> Semigroup for IO<T>
 where
-    T: Clone + Semigroup,
+    T: Clone + UnwindSafe + Semigroup,
 {
     fn assoc_s(self, a: Self) -> Self {
         IO::new(|| unsafe { self.run().assoc_s(a.run()) })
@@ -185,7 +190,7 @@ where
 
 impl<T> Monoid for IO<T>
 where
-    T: Clone + Monoid,
+    T: Clone + UnwindSafe + Monoid,
 {
     fn mempty() -> Self {
         IO::new(|| T::mempty())
@@ -193,6 +198,19 @@ where
 
     fn mconcat(list: Vec<Self>) -> Self {
         list.foldr(Semigroup::assoc_s, Monoid::mempty())
+    }
+}
+
+/// Within the [`IO`] monad, Unwrap the [`Right`] variant of [`Either<E, T>`],
+/// or [`throw`] its [`Left`] variant as an exception.
+pub fn unwrap_either<E, T>(t: Either<E, T>) -> IO<T>
+where
+    E: Clone + UnwindSafe + Exception,
+    T: Clone + UnwindSafe,
+{
+    match t {
+        Left(e) => throw(e),
+        Right(t) => ReturnM::return_m(t),
     }
 }
 
@@ -208,59 +226,99 @@ pub fn put_str_ln(t: String) -> IO<()> {
     IO::new(move || println!("{t}"))
 }
 
-pub fn print(t: impl Show + Clone + 'static) -> IO<()> {
+pub fn print(t: impl Show + Clone + UnwindSafe + 'static) -> IO<()> {
     IO::new(move || println!("{}", t.show()))
 }
 
-pub fn get_char() -> IO<char> {
+pub fn try_get_char() -> IO<Either<ErrorKind, char>> {
     IO::new(|| {
         let mut buf = [0; 1];
-        std::io::stdin().read_exact(&mut buf).expect("Read Failed");
-        buf[0] as char
+        match std::io::stdin().read_exact(&mut buf) {
+            Ok(_) => Right(buf[0] as char),
+            Err(e) => Left(e.kind()),
+        }
+    })
+}
+
+pub fn get_char() -> IO<char> {
+    try_get_char().chain_m(unwrap_either)
+}
+
+pub fn try_get_line() -> IO<Either<ErrorKind, String>> {
+    IO::new(|| {
+        let mut buf = String::new();
+        match std::io::stdin().read_line(&mut buf) {
+            Ok(_) => Right(buf),
+            Err(e) => Left(e.kind()),
+        }
     })
 }
 
 pub fn get_line() -> IO<String> {
+    try_get_line().chain_m(unwrap_either)
+}
+
+pub fn try_get_contents() -> IO<Either<ErrorKind, String>> {
     IO::new(|| {
         let mut buf = String::new();
-        std::io::stdin().read_line(&mut buf).expect("Read Failed");
-        buf
+        match std::io::stdin().read_to_string(&mut buf) {
+            Ok(_) => Right(buf),
+            Err(e) => Left(e.kind()),
+        }
     })
 }
 
 pub fn get_contents() -> IO<String> {
-    IO::new(|| {
-        let mut buf = String::new();
-        std::io::stdin()
-            .read_to_string(&mut buf)
-            .expect("Read Failed");
-        buf
+    try_get_contents().chain_m(unwrap_either)
+}
+
+pub fn try_read_file(
+    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
+) -> IO<Either<ErrorKind, String>> {
+    IO::new(move || match std::fs::read_to_string(path) {
+        Ok(t) => Right(t),
+        Err(e) => Left(e.kind()),
     })
 }
 
-pub fn read_file(path: impl AsRef<Path> + Clone + 'static) -> IO<String> {
-    IO::new(move || std::fs::read_to_string(path).expect("Read Failed"))
+pub fn read_file(path: impl AsRef<Path> + Clone + UnwindSafe + 'static) -> IO<String> {
+    try_read_file(path).chain_m(unwrap_either)
+}
+
+pub fn try_write_file(
+    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
+    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
+) -> IO<Either<ErrorKind, ()>> {
+    IO::new(move || std::fs::write(path, string).map_err(|e| e.kind()).into())
 }
 
 pub fn write_file(
-    path: impl AsRef<Path> + Clone + 'static,
-    string: impl AsRef<[u8]> + Clone + 'static,
+    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
+    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
 ) -> IO<()> {
-    IO::new(move || std::fs::write(path, string).expect("Write Failed"))
+    try_write_file(path, string).chain_m(unwrap_either)
 }
 
-pub fn append_file(
-    path: impl AsRef<Path> + Clone + 'static,
-    string: impl AsRef<[u8]> + Clone + 'static,
-) -> IO<()> {
+pub fn try_append_file(
+    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
+    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
+) -> IO<Either<ErrorKind, ()>> {
     IO::new(move || {
-        let mut file = std::fs::OpenOptions::new()
+        std::fs::OpenOptions::new()
             .write(true)
             .append(true)
             .open(path)
-            .expect("Failed to open file for appending");
-        file.write_all(string.as_ref()).expect("Write Failed");
+            .and_then(|mut file| file.write_all(string.as_ref()))
+            .map_err(|e| e.kind())
+            .into()
     })
+}
+
+pub fn append_file(
+    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
+    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
+) -> IO<()> {
+    try_append_file(path, string).chain_m(unwrap_either)
 }
 
 pub fn interact(f: impl FunctionT<String, String> + Clone) -> IO<String> {

@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{prelude::*, base::data::function::bifunction::BifunT};
 
 impl<T, const N: usize> Pointed for [T; N] {
@@ -10,7 +12,7 @@ impl<T, U, const N: usize> WithPointed<U> for [T; N] {
 
 impl<T, const N: usize, U> Functor<U> for [T; N]
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<T, U> + Clone) -> [U; N] {
         self.into_iter()

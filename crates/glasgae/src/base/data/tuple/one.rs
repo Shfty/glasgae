@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 impl<A> PureA for (A,) {
@@ -49,9 +51,10 @@ impl<T, U> Foldr<T, U> for (T,) {
 
 impl<T, A1, A_, A3> TraverseT<A1, A_, A3> for (T,)
 where
-    A1: Clone + PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
+    A1: Clone + UnwindSafe + PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: 'static + Clone + Monoid,
     A1::WithPointed: AppA<A3, A3>,
+    A_: UnwindSafe,
     A3: PureA<Pointed = (A1::Pointed,)>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A3 {
@@ -64,6 +67,7 @@ where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: 'static + Clone + Monoid,
     A1::WithPointed: AppA<A3, A3>,
+    A_: UnwindSafe,
     A3: PureA<Pointed = (A1::Pointed,)>,
 {
     fn sequence_a(self) -> A3 {

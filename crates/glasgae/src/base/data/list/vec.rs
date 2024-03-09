@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 impl<T> Pointed for Vec<T> {
@@ -10,7 +12,7 @@ impl<T, U> WithPointed<U> for Vec<T> {
 
 impl<T, U> Functor<U> for Vec<T>
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(
         self,
@@ -54,7 +56,7 @@ impl<T, A_, A1, A2> TraverseT<A1, A_, A2> for Vec<T>
 where
     Self: Functor<A1>,
     <Self as WithPointed<A1>>::WithPointed: SequenceA<A_, A2>,
-    A1: Clone,
+    A1: Clone + UnwindSafe,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A2 {
         self.fmap(f).sequence_a()
@@ -64,7 +66,7 @@ where
 impl<A1, A_, A2> SequenceA<A_, A2> for Vec<A1>
 where
     A1: Functor<Function<Vec<A_>, Vec<A_>>, Pointed = A_>,
-    A_: 'static + Clone,
+    A_: 'static + Clone + UnwindSafe,
     A2: PureA<Pointed = Vec<A_>>,
     A1::WithPointed: AppA<A2, A2>,
 {

@@ -42,7 +42,7 @@ macro_rules ! impl_tuple {
 
         impl<$a, R_> Functor<R_> for ($a,)
         where
-            R_: Clone,
+            R_: Clone + std::panic::UnwindSafe,
         {
             fn fmap(
                 self,
@@ -64,7 +64,7 @@ macro_rules ! impl_tuple {
 
         impl<$($tuple,)* $a, R_> Functor<R_> for ($($tuple,)* $a)
         where
-            R_: Clone,
+            R_: Clone + std::panic::UnwindSafe,
         {
             fn fmap(
                 self,

@@ -1,4 +1,6 @@
-use crate::{prelude::*, base::grl::num::One};
+use std::panic::UnwindSafe;
+
+use crate::{base::grl::num::One, prelude::*};
 
 /// Monoid under multiplication.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -20,7 +22,7 @@ impl<T, U> WithPointed<U> for Product<T> {
 
 impl<T, U> Functor<U> for Product<T>
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(
         self,

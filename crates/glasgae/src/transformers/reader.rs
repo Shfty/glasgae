@@ -2,6 +2,8 @@
 //!
 //! If the computation is to modify the stored information, use Control.Monad.Trans.State instead.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{control::monad::io::MonadIO, data::functor::identity::Identity},
     prelude::*,
@@ -16,7 +18,11 @@ use super::class::MonadTrans;
 /// The return function ignores the environment, while >>= passes the inherited environment to both subcomputations.
 pub type Reader<R, A> = ReaderT<R, Identity<A>>;
 
-impl<R, A> Reader<R, A> {
+impl<R, A> Reader<R, A>
+where
+    R: UnwindSafe,
+    A: UnwindSafe,
+{
     /// Runs a Reader and extracts the final value from it. (The inverse of new.)
     ///
     /// Self: A Reader to run
@@ -32,6 +38,7 @@ impl<R, A> Reader<R, A> {
     where
         R: Clone,
         A: Clone,
+        B: UnwindSafe,
     {
         self.map_t(|t| Identity(f(t.run())))
     }
@@ -60,7 +67,10 @@ where
     R: 'static,
     M: 'static;
 
-impl<R, MA> ReaderT<R, MA> {
+impl<R, MA> ReaderT<R, MA>
+where
+    MA: UnwindSafe,
+{
     /// Constructor for computations in the reader monad (equivalent to asks).
     pub fn new(f: impl FunctionT<R, MA::Pointed> + Clone) -> Self
     where
@@ -84,6 +94,7 @@ impl<R, MA> ReaderT<R, MA> {
     where
         R: Clone,
         MA: Clone,
+        M2: UnwindSafe,
     {
         ReaderT::new_t(|t| f(self.run_t(t)))
     }
@@ -161,9 +172,9 @@ where
 
 impl<R, M, T> Functor<T> for ReaderT<R, M>
 where
-    T: Clone,
-    M: Functor<T> + Clone,
-    M::WithPointed: 'static,
+    T: Clone + UnwindSafe,
+    M: Functor<T> + Clone + UnwindSafe,
+    M::WithPointed: 'static + UnwindSafe,
     R: 'static + Clone,
 {
     fn fmap(self, f: impl FunctionT<M::Pointed, T> + Clone) -> ReaderT<R, M::WithPointed> {
@@ -173,7 +184,7 @@ where
 
 impl<R, M> PureA for ReaderT<R, M>
 where
-    M: Clone + PureA,
+    M: Clone + PureA + UnwindSafe,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         Self::lift_t(PureA::pure_a(t))
@@ -182,9 +193,10 @@ where
 
 impl<R, F, A, B> AppA<ReaderT<R, A>, ReaderT<R, B>> for ReaderT<R, F>
 where
-    F: Clone + AppA<A, B>,
     R: Clone,
-    A: Clone,
+    F: Clone + UnwindSafe + AppA<A, B>,
+    A: Clone + UnwindSafe,
+    B: UnwindSafe,
 {
     fn app_a(self, v: ReaderT<R, A>) -> ReaderT<R, B> {
         let f = self;
@@ -192,13 +204,13 @@ where
     }
 }
 
-impl<R, M> ReturnM for ReaderT<R, M> where M: Clone + PureA {}
+impl<R, M> ReturnM for ReaderT<R, M> where M: Clone + PureA + UnwindSafe {}
 
 impl<R, M, N> ChainM<ReaderT<R, N>> for ReaderT<R, M>
 where
-    R: Clone,
-    M: Clone + ChainM<N>,
-    N: Clone,
+    R: Clone + UnwindSafe,
+    M: Clone + ChainM<N> + UnwindSafe,
+    N: Clone + UnwindSafe,
 {
     fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, N>> + Clone) -> ReaderT<R, N>
     where
@@ -211,7 +223,7 @@ where
 
 impl<MO, R> MonadTrans<MO> for ReaderT<R, MO>
 where
-    MO: 'static + Clone,
+    MO: 'static + Clone + UnwindSafe,
 {
     fn lift(m: MO) -> ReaderT<R, MO> {
         ReaderT::lift_t(m)

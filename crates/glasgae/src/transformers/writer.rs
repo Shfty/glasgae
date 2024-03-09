@@ -4,12 +4,16 @@
 /// This monad transformer provides only limited access to the output
 /// during the computation.
 /// For more general access, use Control.Monad.Trans.State instead.
-use std::marker::PhantomData;
+use std::{marker::PhantomData, panic::UnwindSafe};
 
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+        data::{
+            functor::identity::Identity,
+            pointed::{Lower, LoweredT},
+            tuple::pair::Pair,
+        },
     },
     prelude::*,
 };
@@ -169,10 +173,10 @@ where
 
 impl<W, M, A, B> Functor<B> for WriterT<W, M>
 where
-    B: Clone,
     M: Functor<(B, W), Pointed = (A, W)>,
     M::WithPointed: Pointed<Pointed = (B, W)>,
-    W: Clone,
+    B: Clone + UnwindSafe,
+    W: Clone + UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<Self::Pointed, B> + Clone) -> Self::WithPointed {
         self.map_t(|t| t.fmap(|(a, w)| (f(a), w)))
@@ -195,7 +199,7 @@ where
     MF::WithPointed: AppA<MA, MB>,
     MA: Pointed<Pointed = (A, W)>,
     MB: ReturnM<Pointed = (B, W)>,
-    W: Clone + Monoid,
+    W: Clone + Monoid + UnwindSafe,
     F: Clone + FunctionT<A, B>,
     A: 'static,
     B: 'static,
@@ -218,7 +222,7 @@ where
 
 impl<W, M, N, A, B> ChainM<WriterT<W, N>> for WriterT<W, M>
 where
-    W: Clone + Monoid,
+    W: Clone + Monoid + UnwindSafe,
     M: ReturnM<Pointed = (A, W)> + ChainM<N>,
     N: Clone + ReturnM<Pointed = (B, W)> + ChainM<N>,
 {
@@ -247,12 +251,13 @@ where
 
 impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
 where
-    Self: MonadTrans<IO<A>>,
-    MA: Pointed<Pointed = (A, W)>,
+    Self: MonadTrans<MA::Lowered>,
+    MA: Lower<W, A>,
+    MA::Lowered: MonadIO<A>,
     A: 'static,
 {
     fn lift_io(m: IO<A>) -> Self {
-        WriterT::lift(MonadIO::lift_io(m))
+        Self::lift(LoweredT::<MA, W, A>::lift_io(m))
     }
 }
 

@@ -1,13 +1,15 @@
+use std::panic::UnwindSafe;
+
 use crate::prelude::Boxed;
 
 /// Nullary function which produces an output from no input.
-pub trait NullaryT<A>: FnOnce() -> A + 'static {
+pub trait NullaryT<A>: FnOnce() -> A + UnwindSafe + 'static {
     fn clone_io(&self) -> Box<dyn NullaryT<A>>;
 }
 
 impl<F, A> NullaryT<A> for F
 where
-    F: FnOnce() -> A + Clone + 'static,
+    F: FnOnce() -> A + Clone + UnwindSafe + 'static,
 {
     fn clone_io(&self) -> Box<dyn NullaryT<A>> {
         self.clone().boxed()

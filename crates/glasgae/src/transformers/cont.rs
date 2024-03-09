@@ -5,6 +5,8 @@
 //! "Introduction to programming with shift and reset"
 //! (<http://okmij.org/ftp/continuations/#tutorial>).
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{
         control::monad::io::MonadIO,
@@ -79,7 +81,7 @@ impl<R> Cont<R, R> {
     /// reset m delimits the continuation of any shift inside m.
     pub fn reset(self) -> Cont<R, R>
     where
-        R: Clone,
+        R: Clone + UnwindSafe,
     {
         self.reset_t()
     }
@@ -160,7 +162,7 @@ where
     ) -> Self
     where
         MA: Clone + Pointed,
-        MA::Pointed: Clone,
+        MA::Pointed: Clone + UnwindSafe,
         MB: 'static + Clone + Pointed,
     {
         ContT::new_t(|c| {
@@ -189,7 +191,7 @@ where
     /// resetT (lift m) = lift m
     pub fn reset_t<MR_>(self) -> ContT<MR_, MA>
     where
-        MR: Clone + ChainM<MR_> + ReturnM,
+        MR: Clone + UnwindSafe + ChainM<MR_> + ReturnM,
         MA: Pointed<Pointed = MR::Pointed>,
     {
         ContT::lift(self.eval_t())
@@ -206,8 +208,8 @@ where
         MR: Clone,
         MA: Clone,
         MA::Pointed: Clone,
-        MR_: 'static + Clone + ChainM<MR>,
-        MR_::Pointed: 'static + Clone,
+        MR_: 'static + Clone + UnwindSafe + ChainM<MR>,
+        MR_::Pointed: 'static + Clone + UnwindSafe,
     {
         ContT::new_t(|c| {
             ask.chain_m(|r| {
@@ -236,7 +238,8 @@ impl<MR, MA, A> Functor<A> for ContT<MR, MA>
 where
     MA: Clone + Pointed<Pointed = A> + WithPointed<A>,
     MA::Pointed: 'static + Clone,
-    MR: Clone,
+    MR: Clone + UnwindSafe,
+    A: UnwindSafe,
 {
     fn fmap(self, f: impl FunctionT<Self::Pointed, A> + Clone) -> Self::WithPointed {
         let m = self;
@@ -247,7 +250,7 @@ where
 impl<MR, MA> PureA for ContT<MR, MA>
 where
     MA: Pointed,
-    MA::Pointed: Clone,
+    MA::Pointed: Clone + UnwindSafe,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         ContT::new_t(|f| f(t))
@@ -272,7 +275,7 @@ where
 impl<MR, MA> ReturnM for ContT<MR, MA>
 where
     MA: Pointed,
-    MA::Pointed: Clone,
+    MA::Pointed: Clone + UnwindSafe,
 {
 }
 
@@ -293,7 +296,7 @@ where
 impl<MI, MO, MR> MonadTrans<MI> for ContT<MR, MO>
 where
     MO: 'static + Pointed<Pointed = MI::Pointed>,
-    MI: 'static + Clone + ChainM<MR>,
+    MI: 'static + Clone + UnwindSafe + ChainM<MR>,
 {
     fn lift(m: MI) -> ContT<MR, MO> {
         ContT::new_t(|n| m.chain_m(n))
@@ -313,6 +316,8 @@ where
 
 #[cfg(test)]
 mod test {
+    use std::panic::UnwindSafe;
+
     use crate::{
         prelude::{r#const, Boxed, ChainM, Function, ReturnM},
         transformers::cont::Cont,
@@ -320,14 +325,14 @@ mod test {
 
     pub fn cont_add<R, T>(u: T) -> Function<T, Cont<R, T>>
     where
-        T: Clone + std::ops::Add<T, Output = T> + 'static,
+        T: 'static + Clone + UnwindSafe + std::ops::Add<T, Output = T>,
     {
         (|t| ReturnM::return_m(t + u)).boxed()
     }
 
     pub fn cont_mul<R, T>(u: T) -> Function<T, Cont<R, T>>
     where
-        T: Clone + std::ops::Mul<T, Output = T> + 'static,
+        T: 'static + Clone + UnwindSafe + std::ops::Mul<T, Output = T>,
     {
         (|t| ReturnM::return_m(t * u)).boxed()
     }

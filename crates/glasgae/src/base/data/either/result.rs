@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{
     base::data::{fold_map_default, function::bifunction::BifunT, FoldMap},
     prelude::{
@@ -27,7 +29,7 @@ impl<T, E, U> WithPointed<U> for Result<T, E> {
 
 impl<T, E, U> Functor<U> for Result<T, E>
 where
-    U: Clone,
+    U: Clone + UnwindSafe,
 {
     fn fmap(
         self,
@@ -85,8 +87,8 @@ impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Result<A, E>
 where
     A1: Functor<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,
-    E: 'static + Clone,
-    A_: 'static + Clone,
+    E: 'static + Clone + UnwindSafe,
+    A_: 'static + Clone + UnwindSafe,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A1::WithPointed {
         match self {
@@ -100,8 +102,8 @@ impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Result<A1, E>
 where
     A1: Functor<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,
-    E: 'static + Clone,
-    A_: 'static + Clone,
+    E: 'static + Clone + UnwindSafe,
+    A_: 'static + Clone + UnwindSafe,
 {
     fn sequence_a(self) -> A1::WithPointed {
         match self {

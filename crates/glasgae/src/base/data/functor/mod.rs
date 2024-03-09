@@ -24,11 +24,13 @@
 pub mod r#const;
 pub mod identity;
 
+use std::panic::UnwindSafe;
+
 use crate::prelude::*;
 
 pub trait Functor<T>: Sized + WithPointed<T>
 where
-    T: Clone,
+    T: Clone + UnwindSafe,
 {
     /// fmap is used to apply a function of type (a -> b) to a value of type f a, where f is a functor, to produce a value of type f b. Note that for any type constructor with more than one parameter (e.g., Either), only the last type parameter can be modified with fmap (e.g., b in `Either a b`).
     ///

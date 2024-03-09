@@ -45,5 +45,11 @@ pub mod logger;
 
 pub mod prelude;
 
+#[cfg(feature = "log")]
+pub use log;
+
+#[cfg(feature = "log")]
+pub use env_logger;
+
 // Prototyping
 pub mod zipper_cont;

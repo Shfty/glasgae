@@ -1,3 +1,5 @@
+use std::panic::UnwindSafe;
+
 use crate::{
     base::{
         control::zipper::{Travel, Zipper},
@@ -33,7 +35,7 @@ where
     Self: ChainM<M, Pointed = T>,
     M: Clone + ReturnM<Pointed = T>,
     T: ZipMove<D, M>,
-    D: 'static + Clone,
+    D: 'static + Clone + UnwindSafe,
 {
     fn zip_move(self, dir: D) -> M {
         self.chain_m(|t| t.zip_move(dir))
@@ -62,7 +64,7 @@ where
     Self: ChainM<M, Pointed = T>,
     M: Clone + ReturnM<Pointed = T>,
     T: Pointed + ZipAllTheWay<M, T::Pointed, D>,
-    D: 'static + Clone,
+    D: 'static + Clone + UnwindSafe,
 {
     fn zip_all_the_way(
         self,

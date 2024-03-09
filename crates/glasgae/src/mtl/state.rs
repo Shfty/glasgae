@@ -4,6 +4,8 @@
 //! Functional Programming with Overloading and Higher-Order Polymorphism,
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 
+use std::panic::UnwindSafe;
+
 use crate::{
     base::data::pointed::{Lower, LoweredT},
     prelude::*,
@@ -63,7 +65,8 @@ where
 
 impl<MA, S, A> MonadState for StateT<S, MA>
 where
-    MA: ReturnM<Pointed = (A, S)>,
+    S: UnwindSafe,
+    MA: UnwindSafe + ReturnM<Pointed = (A, S)>,
     A: 'static,
 {
     fn state(f: impl FunctionT<S, (A, S)> + Clone) -> Self {
@@ -74,7 +77,8 @@ where
 // ReaderT impl
 impl<ME, R> MonadGet for ReaderT<R, ME>
 where
-    ME: Clone + MonadGet,
+    R: UnwindSafe,
+    ME: Clone + UnwindSafe + MonadGet,
 {
     fn get() -> Self {
         Self::lift(ME::get())
@@ -90,7 +94,7 @@ where
 
 impl<R, MA> MonadPut for ReaderT<R, MA>
 where
-    MA: Clone + MonadPut,
+    MA: Clone + UnwindSafe + MonadPut,
 {
     fn put(s: Self::State) -> Self {
         Self::lift(MA::put(s))
@@ -99,7 +103,7 @@ where
 
 impl<ME, R> MonadState for ReaderT<R, ME>
 where
-    ME: Clone + MonadState,
+    ME: Clone + UnwindSafe + MonadState,
 {
     fn state(f: impl FunctionT<ME::State, (ME::Pointed, ME::State)> + Clone) -> Self {
         Self::lift(ME::state(f))
@@ -212,6 +216,7 @@ impl<T, S, MA> Modify<S, MA> for T
 where
     MA: WithPointed<((), S)>,
     MA::WithPointed: ReturnM,
+    S: UnwindSafe,
 {
     fn modify(f: impl FunctionT<S, S> + Clone) -> StateT<S, MA::WithPointed> {
         StateT::new(|s| ((), f(s)))
