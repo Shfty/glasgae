@@ -1,12 +1,20 @@
 /// Basic implementation of Haskell `do` sugar.
 #[macro_export]
 macro_rules ! r#do {
+    (let $ident:ident = $expr:expr; $($next:tt)*) => {
+        {
+            let $ident = $expr;
+            $crate::r#do!{
+                $($next)*
+            }
+        }
+    };
     ($ident:ident <- $expr:expr; $($next:tt)*) => {
         $crate::prelude::ChainM::chain_m($expr, |$ident| $crate::r#do!{
             $($next)*
         })
     };
-    ($expr:expr;) => {
+    ($expr:expr $(;)?) => {
         $expr
     };
     ($expr:expr; $($next:tt)*) => {
@@ -16,7 +24,7 @@ macro_rules ! r#do {
     };
 }
 
-/// Manual impl of common Haskell infix operators
+/// Manual impl of common Haskell infix operators.
 #[macro_export]
 macro_rules ! infix {
     ($expr:expr ;. $($next:tt)*) => {
@@ -74,7 +82,7 @@ macro_rules ! infix {
             $($next)*
         })
     };
-    ($expr:expr;) => {
+    ($expr:expr $(;)?) => {
         $expr
     };
 }
