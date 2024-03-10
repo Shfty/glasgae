@@ -11,24 +11,24 @@ pub fn rust_logger(level: Level, message: impl Term + Display) -> IO<()> {
 }
 
 pub trait RustLogger<MSG>: MonadLogger<Level, MSG> {
-    fn trace(message: MSG) -> Self {
-        Self::log(Level::Trace, message)
+    fn trace(message: impl Into<MSG>) -> Self {
+        Self::log(Level::Trace, message.into())
     }
 
-    fn debug(message: MSG) -> Self {
-        Self::log(Level::Debug, message)
+    fn debug(message: impl Into<MSG>) -> Self {
+        Self::log(Level::Debug, message.into())
     }
 
-    fn info(message: MSG) -> Self {
-        Self::log(Level::Info, message)
+    fn info(message: impl Into<MSG>) -> Self {
+        Self::log(Level::Info, message.into())
     }
 
-    fn warn(message: MSG) -> Self {
-        Self::log(Level::Warn, message)
+    fn warn(message: impl Into<MSG>) -> Self {
+        Self::log(Level::Warn, message.into())
     }
 
-    fn error(message: MSG) -> Self {
-        Self::log(Level::Error, message)
+    fn error(message: impl Into<MSG>) -> Self {
+        Self::log(Level::Error, message.into())
     }
 }
 
