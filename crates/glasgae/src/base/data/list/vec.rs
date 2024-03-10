@@ -1,7 +1,4 @@
-use crate::{
-    base::data::function::{bifunction::BifunT, Term},
-    prelude::*,
-};
+use crate::{base::data::{function::bifunction::BifunT, term::Term}, prelude::*};
 
 impl<T> Pointed for Vec<T>
 where
@@ -60,7 +57,10 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for Vec<T> {
+impl<T, U> Foldr<T, U> for Vec<T>
+where
+    T: Term,
+{
     fn foldr(mut self, f: impl BifunT<T, U, U>, init: U) -> U {
         let mut acc = init;
         while let Some(next) = self.pop() {

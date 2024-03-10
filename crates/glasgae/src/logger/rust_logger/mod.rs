@@ -1,4 +1,4 @@
-use crate::{base::data::function::Term, logger::MonadLogger, prelude::IO};
+use crate::{base::data::term::Term, logger::MonadLogger, prelude::IO};
 use log::Level;
 use std::fmt::Display;
 
@@ -10,7 +10,7 @@ pub fn rust_logger(level: Level, message: impl Term + Display) -> IO<()> {
     IO::new(move || log::log!(level, "{}", message))
 }
 
-pub trait RustLogger<MSG>: Sized + MonadLogger<Level, MSG> {
+pub trait RustLogger<MSG>: MonadLogger<Level, MSG> {
     fn trace(message: MSG) -> Self {
         Self::log(Level::Trace, message)
     }

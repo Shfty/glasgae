@@ -3,7 +3,7 @@
 //! This is useful for functions parameterized by a monad transformer.
 
 use crate::{
-    base::{control::monad::io::MonadIO, data::function::Term},
+    base::{control::monad::io::MonadIO, data::term::Term},
     prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed, IO},
 };
 

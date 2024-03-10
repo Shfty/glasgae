@@ -1,7 +1,7 @@
 use std::convert::identity;
 
 use crate::{
-    base::data::function::Term,
+    base::data::term::Term,
     prelude::{Boxed, Compose, Function, FunctionT, Semigroup},
 };
 

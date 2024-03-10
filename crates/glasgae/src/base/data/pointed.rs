@@ -1,6 +1,6 @@
 //! Traits generalizing over parametrized types.
 
-use super::function::Term;
+use super::term::Term;
 
 /// A [`Pointed`] type addresses a single free type parameter.
 pub trait Pointed: Term {

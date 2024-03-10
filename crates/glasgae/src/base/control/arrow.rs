@@ -41,18 +41,18 @@
 ///
 /// The other combinators have sensible default definitions, which may be overridden for efficiency.
 use crate::{
-    base::data::function::Term,
+    base::data::term::Term,
     prelude::{Boxed, Function, FunctionT},
 };
 
 /// Lift a function to an arrow.
-pub trait Arrow<A, B> {
+pub trait Arrow<A, B>: Term {
     fn arrow(self) -> Self;
 }
 
 impl<F, A, B> Arrow<A, B> for F
 where
-    F: FunctionT<A, B>,
+    F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
@@ -64,7 +64,7 @@ where
 /// Split the input between the two argument arrows and combine their output. Note that this is in general not a functor.
 ///
 /// The default definition may be overridden with a more efficient version if desired.
-pub trait Split<F, LA, LB, RA, RB> {
+pub trait Split<F, LA, LB, RA, RB>: Term {
     type Split;
     fn split(self, other: F) -> Self::Split;
 }
@@ -89,7 +89,7 @@ where
 /// Send the input to both argument arrows and combine their output.
 ///
 /// The default definition may be overridden with a more efficient version if desired.
-pub trait Fanout<F, LA, LB, RA, RB> {
+pub trait Fanout<F, LA, LB, RA, RB>: Term {
     type Fanout;
     fn fanout(self, other: F) -> Self::Fanout;
 }

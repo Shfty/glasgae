@@ -5,13 +5,13 @@
 mod travel;
 mod zip_travel;
 
-use std::panic::UnwindSafe;
-
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::base::data::function::Term;
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::{function::bifunction::BifunT, term::Term},
+    prelude::*,
+};
 
 use crate::transformers::cont::Cont;
 

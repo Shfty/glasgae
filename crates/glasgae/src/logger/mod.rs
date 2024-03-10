@@ -1,13 +1,13 @@
-use std::{fmt::Display, panic::UnwindSafe};
+use std::fmt::Display;
 
 use log::Level;
 
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::function::{
-            bifunction::{Bifun, BifunT},
-            Term,
+        data::{
+            function::bifunction::{Bifun, BifunT},
+            term::Term,
         },
     },
     prelude::{
@@ -175,7 +175,7 @@ where
     }
 }
 
-pub trait MonadLogger<LVL, MSG> {
+pub trait MonadLogger<LVL, MSG>: Term {
     fn log(level: LVL, message: MSG) -> Self;
 }
 
@@ -190,7 +190,7 @@ where
     }
 }
 
-pub trait MonadLoggerIO {
+pub trait MonadLoggerIO: Term {
     fn ask() -> Self;
 }
 

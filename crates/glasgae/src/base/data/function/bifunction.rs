@@ -1,6 +1,7 @@
-use crate::prelude::Boxed;
-
-use super::{Term, TermBase};
+use crate::{
+    base::data::term::{Term, TermBase},
+    prelude::Boxed,
+};
 
 /// Binary function
 pub trait BifunT<A, B, C>: TermBase + FnOnce(A, B) -> C {

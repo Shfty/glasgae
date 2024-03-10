@@ -30,7 +30,7 @@
 //! and that continuations represent the best solution to your particular design problem.
 //! Many algorithms which require continuations in other languages do not require them in Haskell,
 //! due to Haskell's lazy semantics. Abuse of the Continuation monad can produce code that is impossible to understand and maintain.
-use crate::base::data::function::Term;
+use crate::base::data::term::Term;
 use crate::prelude::*;
 
 use crate::transformers::cont::ContT;

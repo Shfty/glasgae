@@ -7,7 +7,7 @@
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{function::Term, FoldMap},
+        data::{term::Term, FoldMap},
     },
     prelude::{
         AppA, ChainM, FunctionT, Functor, Maybe, Maybe::*, Monoid, Pointed, PureA, ReturnM,
@@ -121,8 +121,7 @@ where
     MA: ReturnM<Pointed = Maybe<A>>,
     A: Term,
 {
-    fn return_m(t: Self::Pointed) -> Self
-    {
+    fn return_m(t: Self::Pointed) -> Self {
         MaybeT(ReturnM::return_m(Just(t)))
     }
 }

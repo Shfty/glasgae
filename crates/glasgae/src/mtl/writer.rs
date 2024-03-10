@@ -5,27 +5,26 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/pubs/springschool.html>)
 //! Advanced School of Functional Programming, 1995.
 
-use crate::base::data::function::Term;
-use crate::prelude::*;
+use crate::{base::data::term::Term, prelude::*};
 
 use crate::transformers::{class::MonadTrans, reader::ReaderT, state::StateT, writer::WriterT};
 
-pub trait MonadWriter<W, A> {
+pub trait MonadWriter<W, A>: Term {
     /// writer (a,w) embeds a simple writer action.
     fn writer(a: A, w: W) -> Self;
 }
 
-pub trait MonadTell<W, A> {
+pub trait MonadTell<W, A>: Term {
     /// tell w is an action that produces the output w.
     fn tell(w: W) -> Self;
 }
 
-pub trait MonadListen<MO> {
+pub trait MonadListen<MO>: Term {
     /// listen m is an action that executes the action m and adds its output to the value of the computation.
     fn listen(self) -> MO;
 }
 
-pub trait MonadPass<MF> {
+pub trait MonadPass<MF>: Term {
     /// pass m is an action that executes the action m, which returns a value and a function, and returns the value, applying the function to the output.
     fn pass(self) -> MF;
 }
@@ -192,7 +191,7 @@ where
     }
 }
 
-pub trait Censor<W, B, MA, MF>
+pub trait Censor<W, B, MA, MF>: Term
 where
     W: Term,
 {

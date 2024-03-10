@@ -10,9 +10,9 @@ use crate::{
     base::{
         control::monad::io::MonadIO,
         data::{
-            function::Term,
             functor::identity::Identity,
             pointed::{Lower, LoweredT},
+            term::Term,
             tuple::pair::Pair,
         },
     },

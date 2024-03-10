@@ -6,8 +6,8 @@
 
 use crate::{
     base::data::{
-        function::Term,
         pointed::{Lower, LoweredT},
+        term::Term,
     },
     prelude::*,
     transformers::{
@@ -31,8 +31,7 @@ pub trait MonadPut: StateTypes {
     fn put(s: Self::State) -> Self;
 }
 
-pub trait MonadState: StateTypes
-{
+pub trait MonadState: StateTypes {
     /// Embed a simple state action into the monad.
     fn state(f: impl FunctionT<Self::State, (Self::Pointed, Self::State)>) -> Self;
 }
@@ -206,7 +205,7 @@ where
 }
 
 // Support functions
-pub trait Modify<S, MA>
+pub trait Modify<S, MA>: Term
 where
     MA: WithPointed<((), S)>,
     S: Term,
@@ -227,6 +226,7 @@ where
     MA: WithPointed<((), S)>,
     MA::WithPointed: ReturnM,
     S: Term,
+    T: Term,
 {
     fn modify(f: impl FunctionT<S, S>) -> StateT<S, MA::WithPointed> {
         let f = f.to_function();
@@ -234,7 +234,7 @@ where
     }
 }
 
-pub trait Gets<S, A>
+pub trait Gets<S, A>: Term
 where
     S: Term,
     A: Term,

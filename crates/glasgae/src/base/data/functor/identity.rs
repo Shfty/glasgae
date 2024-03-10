@@ -6,7 +6,7 @@
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
 use crate::{
-    base::data::function::{bifunction::BifunT, Term},
+    base::data::{function::bifunction::BifunT, term::Term},
     prelude::*,
 };
 
@@ -103,7 +103,10 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for Identity<T> {
+impl<T, U> Foldr<T, U> for Identity<T>
+where
+    T: Term,
+{
     fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         f(self.run(), init)
     }

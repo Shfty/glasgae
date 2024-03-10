@@ -1,6 +1,8 @@
 //! Generalized numeric operations.
 
-pub trait Zero {
+use crate::base::data::term::Term;
+
+pub trait Zero: Term {
     fn zero() -> Self;
 }
 
@@ -31,7 +33,7 @@ impl_zero!(isize, 0);
 impl_zero!(f32, 0.0);
 impl_zero!(f64, 0.0);
 
-pub trait One {
+pub trait One: Term {
     fn one() -> Self;
 }
 
@@ -62,7 +64,7 @@ impl_one!(isize, 1);
 impl_one!(f32, 1.0);
 impl_one!(f64, 1.0);
 
-pub trait Even {
+pub trait Even: Term {
     fn even(self) -> bool;
 }
 
@@ -76,7 +78,7 @@ where
     }
 }
 
-pub trait Odd {
+pub trait Odd: Term {
     fn odd(self) -> bool;
 }
 

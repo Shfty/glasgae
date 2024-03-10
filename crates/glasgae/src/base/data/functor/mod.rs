@@ -26,7 +26,7 @@ pub mod identity;
 
 use crate::prelude::*;
 
-use super::function::Term;
+use super::term::Term;
 
 pub trait Functor<T>: WithPointed<T>
 where

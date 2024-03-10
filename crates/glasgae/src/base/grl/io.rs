@@ -9,7 +9,10 @@ use std::{
 use crate::{
     base::{
         control::exception::{throw, Exception},
-        data::function::{Nullary, NullaryT, Term},
+        data::{
+            function::{Nullary, NullaryT},
+            term::Term,
+        },
     },
     prelude::{FunctionT, *},
 };

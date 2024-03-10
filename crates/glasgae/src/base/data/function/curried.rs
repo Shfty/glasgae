@@ -1,6 +1,9 @@
-use crate::prelude::{Boxed, Function};
+use crate::{
+    base::data::term::Term,
+    prelude::{Boxed, Function},
+};
 
-use super::{bifunction::BifunT, FunctionT, Term};
+use super::{bifunction::BifunT, FunctionT};
 
 /// Unfold a binary function into a series of unary functions
 pub trait Curried<A, B, C>: Term + BifunT<A, B, C>

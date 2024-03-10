@@ -1,6 +1,6 @@
-use crate::{base::data::function::Term, prelude::FunctionT};
+use crate::{base::data::term::Term, prelude::FunctionT};
 
-pub trait Filter<T>
+pub trait Filter<T>: Term
 where
     T: Term,
 {

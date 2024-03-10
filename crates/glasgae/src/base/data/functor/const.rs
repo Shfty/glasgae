@@ -1,4 +1,4 @@
-use crate::{prelude::*, base::data::function::Term};
+use crate::{prelude::*, base::data::term::Term};
 
 use super::Functor;
 

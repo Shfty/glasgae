@@ -72,10 +72,7 @@
 //! ```
 //! (which implies that pure and <*> satisfy the applicative functor laws).
 
-use crate::{
-    base::data::function::{bifunction::BifunT, Term},
-    prelude::*,
-};
+use crate::{base::data::{function::bifunction::BifunT, term::Term}, prelude::*};
 
 /// Lift a value.
 pub trait PureA: Pointed {

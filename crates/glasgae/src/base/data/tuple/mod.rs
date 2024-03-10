@@ -32,22 +32,22 @@ impl<A, B, C> Apply<2, A, B, C> for (A, B) {
 
 macro_rules ! impl_tuple {
     ($a:tt) => {
-        impl<$a> Pointed for ($a,) where $a: crate::base::data::function::Term {
+        impl<$a> Pointed for ($a,) where $a: crate::base::data::term::Term {
             type Pointed = $a;
         }
 
         impl<$a, R_> WithPointed<R_> for ($a,)
         where
-            $a: crate::base::data::function::Term,
-            R_: crate::base::data::function::Term
+            $a: crate::base::data::term::Term,
+            R_: crate::base::data::term::Term
         {
             type WithPointed = (R_,);
         }
 
         impl<$a, R_> Functor<R_> for ($a,)
         where
-            $a: crate::base::data::function::Term,
-            R_: crate::base::data::function::Term,
+            $a: crate::base::data::term::Term,
+            R_: crate::base::data::term::Term,
         {
             fn fmap(
                 self,
@@ -62,9 +62,9 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::function::Term,
+                $tuple: crate::base::data::term::Term,
             )*
-            $a: crate::base::data::function::Term,
+            $a: crate::base::data::term::Term,
         {
             type Pointed = $a;
         }
@@ -72,10 +72,10 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a, R_> WithPointed<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::function::Term,
+                $tuple: crate::base::data::term::Term,
             )*
-            $a: crate::base::data::function::Term,
-            R_: crate::base::data::function::Term,
+            $a: crate::base::data::term::Term,
+            R_: crate::base::data::term::Term,
         {
             type WithPointed = ($($tuple,)* R_,);
         }
@@ -83,10 +83,10 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a, R_> Functor<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::function::Term,
+                $tuple: crate::base::data::term::Term,
             )*
-            $a: crate::base::data::function::Term,
-            R_: crate::base::data::function::Term,
+            $a: crate::base::data::term::Term,
+            R_: crate::base::data::term::Term,
         {
             fn fmap(
                 self,

@@ -1,5 +1,5 @@
 use crate::{
-    base::data::{function::Term, functor::r#const::Const},
+    base::data::{functor::r#const::Const, term::Term},
     prelude::{Either, Pointed, PureA},
 };
 

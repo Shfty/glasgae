@@ -10,7 +10,7 @@
 
 use crate::prelude::*;
 
-use super::function::Term;
+use super::term::Term;
 
 /// Map each element of a structure to an action, evaluate these actions from left to right,
 /// and collect the results.

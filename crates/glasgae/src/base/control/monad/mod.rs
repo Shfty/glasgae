@@ -43,10 +43,7 @@
 pub mod io;
 
 use crate::{
-    base::data::{
-        function::{bifunction::BifunT, Term},
-        list::vec::push,
-    },
+    base::data::{function::bifunction::BifunT, list::vec::push, term::Term},
     prelude::*,
 };
 
@@ -68,8 +65,7 @@ pub trait ReturnM: PureA {
 /// let a = as();
 /// bs(a);
 /// ```
-pub trait ChainM<T: Term>: Pointed
-{
+pub trait ChainM<T: Term>: Pointed {
     fn chain_m(self, f: impl FunctionT<Self::Pointed, T>) -> T;
 }
 
@@ -81,8 +77,7 @@ pub trait ChainM<T: Term>: Pointed
 /// as();
 /// bs();
 /// ```
-pub trait ThenM<T: Term>: Sized + ChainM<T>
-{
+pub trait ThenM<T: Term>: ChainM<T> {
     fn then_m(self, t: T) -> T {
         self.chain_m(|_| t)
     }
@@ -96,7 +91,7 @@ where
 }
 
 /// This generalizes the list-based filter function.
-pub trait FilterM<M1: Term, A: Term, M3> {
+pub trait FilterM<M1: Term, A: Term, M3>: Term {
     fn filter_m(self, f: impl FunctionT<A, M1>) -> M3;
 }
 
@@ -144,7 +139,7 @@ where
 /// If right-to-left evaluation is required, the input list should be reversed.
 ///
 /// Note: foldM is the same as foldlM
-pub trait FoldM<M1, A, B> {
+pub trait FoldM<M1, A, B>: ReturnM {
     fn fold_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
 }
 
@@ -178,7 +173,7 @@ where
 /// # use glasgae::{base::control::monad::ReplicateM, transformers::{state::State}};
 /// assert_eq!(State::new(|s| (s, s + 1)).replicate_m(3).run(1), (vec![1,2,3],4));
 /// ```
-pub trait ReplicateM<MB, T>: Term {
+pub trait ReplicateM<MB, T>: Pointed {
     fn replicate_m(self, count: usize) -> MB;
 }
 

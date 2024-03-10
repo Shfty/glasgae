@@ -1,5 +1,5 @@
 use crate::{
-    base::data::function::Term,
+    base::data::term::Term,
     prelude::{Pointed, IO},
 };
 

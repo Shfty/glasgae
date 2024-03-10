@@ -1,10 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    base::data::{
-        function::{bifunction::BifunT, Term},
-        FoldMap,
-    },
+    base::data::{function::bifunction::BifunT, term::Term, FoldMap},
     prelude::{
         Foldr, FunctionT, Functor, Monoid, Pointed, Semigroup, SequenceA, TraverseT, WithPointed,
     },
@@ -57,7 +54,8 @@ where
 
 impl<K, V, V_> Foldr<V, V_> for BTreeMap<K, V>
 where
-    K: Ord,
+    K: Term + Ord,
+    V: Term,
 {
     fn foldr(mut self, f: impl BifunT<V, V_, V_>, z: V_) -> V_ {
         let mut acc = z;

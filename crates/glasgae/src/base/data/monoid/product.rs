@@ -1,5 +1,5 @@
 use crate::{
-    base::{data::function::Term, grl::num::One},
+    base::{data::term::Term, grl::num::One},
     prelude::*,
 };
 

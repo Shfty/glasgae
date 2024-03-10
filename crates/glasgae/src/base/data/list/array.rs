@@ -1,5 +1,5 @@
 use crate::{
-    base::data::function::{bifunction::BifunT, Term},
+    base::data::{function::bifunction::BifunT, term::Term},
     prelude::*,
 };
 

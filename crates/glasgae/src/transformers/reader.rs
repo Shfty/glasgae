@@ -7,7 +7,7 @@ use std::panic::UnwindSafe;
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{function::Term, functor::identity::Identity},
+        data::{functor::identity::Identity, term::Term},
     },
     prelude::*,
 };

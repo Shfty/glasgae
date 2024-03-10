@@ -4,11 +4,7 @@
 
 use crate::prelude::*;
 
-use super::{
-    fold_map_default,
-    function::{bifunction::BifunT, Term},
-    FoldMap,
-};
+use super::{fold_map_default, function::bifunction::BifunT, term::Term, FoldMap};
 
 pub mod result;
 
@@ -235,7 +231,11 @@ where
     }
 }
 
-impl<E, A, B> Foldr<A, B> for Either<E, A> {
+impl<E, A, B> Foldr<A, B> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
     fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         match self {
             Left(_) => z,

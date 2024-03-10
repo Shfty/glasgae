@@ -7,7 +7,7 @@
 use crate::{
     base::{
         control::monad::{io::MonadIO, LiftM},
-        data::{function::Term, functor::identity::Identity, FoldMap},
+        data::{functor::identity::Identity, term::Term, FoldMap},
     },
     prelude::{
         AppA, ChainM, Either, Either::*, Foldr, FunctionT, Functor, Monoid, Pointed, PureA,

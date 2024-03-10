@@ -1,5 +1,5 @@
 use crate::{
-    base::data::function::{bifunction::BifunT, Term},
+    base::data::{function::bifunction::BifunT, term::Term},
     prelude::*,
 };
 
@@ -53,7 +53,10 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for (T,) {
+impl<T, U> Foldr<T, U> for (T,)
+where
+    T: Term,
+{
     fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         f(self.0, init)
     }

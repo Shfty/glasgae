@@ -1,4 +1,4 @@
-use super::function::Term;
+use super::term::Term;
 
 /// The class of types with an associative binary operation.
 ///

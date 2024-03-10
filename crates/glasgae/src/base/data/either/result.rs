@@ -1,9 +1,5 @@
 use crate::{
-    base::data::{
-        fold_map_default,
-        function::{bifunction::BifunT, Term},
-        FoldMap,
-    },
+    base::data::{fold_map_default, function::bifunction::BifunT, term::Term, FoldMap},
     prelude::{
         AppA, Boxed, ChainM, Foldr, FunctionT, Functor, Monoid, Pointed, PureA, ReturnM, Semigroup,
         SequenceA, TraverseT, WithPointed,
@@ -103,7 +99,11 @@ where
     }
 }
 
-impl<E, A, B> Foldr<A, B> for Result<A, E> {
+impl<E, A, B> Foldr<A, B> for Result<A, E>
+where
+    A: Term,
+    E: Term,
+{
     fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         match self {
             Ok(y) => f(y, z),

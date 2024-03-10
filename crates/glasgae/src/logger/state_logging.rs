@@ -1,12 +1,7 @@
-use std::panic::UnwindSafe;
-
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{
-            function::{bifunction::BifunT, Term},
-            tuple::pair::Pair,
-        },
+        data::{function::bifunction::BifunT, term::Term, tuple::pair::Pair},
     },
     prelude::*,
     transformers::{class::MonadTrans, state::StateT},
@@ -37,7 +32,7 @@ where
     }
 }
 
-pub trait RunStateLogging<LVL, MSG, MA> {
+pub trait RunStateLogging<LVL, MSG, MA>: Term {
     fn run(self, f: impl BifunT<LVL, MSG, IO<()>>) -> MA;
 }
 
@@ -81,7 +76,7 @@ where
     })
 }
 
-pub trait LogScope {
+pub trait LogScope: Term {
     fn log_scope(m: Self) -> Self;
 }
 

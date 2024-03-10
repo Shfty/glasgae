@@ -24,12 +24,12 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 //!
 //! See examples in Control.Monad.Reader. Note, the partially applied function type (->) r is a simple reader monad. See the instance declaration below.
-use crate::base::data::function::Term;
-use crate::base::data::pointed::Lower;
-use crate::prelude::*;
-
-use crate::transformers::{
-    class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,
+use crate::{
+    base::data::{pointed::Lower, term::Term},
+    prelude::*,
+    transformers::{
+        class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,
+    },
 };
 
 pub trait MonadAsk<MR, R, A>: Term {

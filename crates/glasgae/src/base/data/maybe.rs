@@ -17,7 +17,7 @@ pub mod option;
 
 use crate::prelude::*;
 
-use super::function::{bifunction::BifunT, Term};
+use super::{function::bifunction::BifunT, term::Term};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
@@ -134,7 +134,10 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for Maybe<T> {
+impl<T, U> Foldr<T, U> for Maybe<T>
+where
+    T: Term,
+{
     fn foldr(self, f: impl BifunT<T, U, U>, z: U) -> U {
         match self {
             Just(x) => f(x, z),

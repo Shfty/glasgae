@@ -20,19 +20,19 @@
 use std::convert::identity;
 
 use crate::{
-    base::data::function::Term,
+    base::data::term::Term,
     prelude::{Boxed, Function, FunctionT},
 };
 
 /// The identity morphism.
-pub trait Id<A, B> {
+pub trait Id<A, B>: Term {
     type Identity;
     fn id() -> Self::Identity;
 }
 
 impl<F, A, B> Id<A, B> for F
 where
-    F: FunctionT<A, B>,
+    F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
@@ -47,7 +47,7 @@ where
 pub type IdentityT<T, A, B> = <T as Id<A, B>>::Identity;
 
 /// Morphism composition.
-pub trait Compose<FB, A, B, C> {
+pub trait Compose<FB, A, B, C>: Term {
     type Composed;
     fn compose(self, m: FB) -> Self::Composed;
 }

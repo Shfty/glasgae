@@ -10,10 +10,7 @@ use std::panic::UnwindSafe;
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{
-            function::{bifunction::BifunT, Term},
-            functor::identity::Identity,
-        },
+        data::{function::bifunction::BifunT, functor::identity::Identity, term::Term},
     },
     prelude::*,
 };
@@ -133,8 +130,7 @@ where
     /// because ContT does not define a functor in the category of monads.
     ///
     /// runContT (mapContT f m) = f . runContT m
-    pub fn map_t(self, f: impl FunctionT<MR, MR>) -> Self
-    {
+    pub fn map_t(self, f: impl FunctionT<MR, MR>) -> Self {
         let f = f.to_function();
         ContT::new_t(|t| f(self.run_t(t)))
     }
@@ -322,7 +318,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{
-        base::data::function::Term,
+        base::data::term::Term,
         prelude::{r#const, Boxed, ChainM, Function, ReturnM},
         transformers::cont::Cont,
     };

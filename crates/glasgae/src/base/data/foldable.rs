@@ -12,11 +12,11 @@
 use crate::prelude::{Compose, Function, FunctionT, Monoid};
 
 use super::{
-    function::{bifunction::BifunT, Curried, Term},
-    monoid::Endo,
+    function::{bifunction::BifunT, Curried},
+    monoid::Endo, term::Term,
 };
 
-pub trait Foldr<T, U>: Sized {
+pub trait Foldr<T, U>: Term {
     /// Right-associative fold of a structure, lazy in the accumulator.
     ///
     /// In the case of lists, foldr, when applied to a binary operator, a starting value (typically the right-identity of the operator), and a list, reduces the list using the binary operator, from right to left:

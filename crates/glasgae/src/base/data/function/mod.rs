@@ -29,8 +29,6 @@ mod until;
 
 pub mod bifunction;
 
-use std::panic::{RefUnwindSafe, UnwindSafe};
-
 pub use app::*;
 pub use compose::*;
 pub use curried::*;
@@ -42,13 +40,7 @@ pub use until::*;
 
 use crate::prelude::*;
 
-/// [`Term`] without its [`Sized`] and [`Clone`] constraints, for object-safety.
-pub trait TermBase: 'static + Send + Sync + UnwindSafe + RefUnwindSafe {}
-impl<T> TermBase for T where T: 'static + Send + Sync + UnwindSafe + RefUnwindSafe {}
-
-/// A type suitable for use within a functional expression.
-pub trait Term: TermBase + Sized + Clone {}
-impl<T> Term for T where T: TermBase + Clone {}
+use super::term::{Term, TermBase};
 
 pub trait FunctionT<A, B>: TermBase + FnOnce(A) -> B
 where
