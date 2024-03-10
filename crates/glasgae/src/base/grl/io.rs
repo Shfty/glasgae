@@ -9,12 +9,9 @@ use std::{
 use crate::{
     base::{
         control::exception::{throw, Exception},
-        data::{
-            function::{Nullary, NullaryT},
-            term::Term,
-        },
+        data::function::{Nullary, NullaryT},
     },
-    prelude::{FunctionT, *},
+    prelude::*,
 };
 
 /// A value of type [`IO<A>`] is a computation which, when performed,

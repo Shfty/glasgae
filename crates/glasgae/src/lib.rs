@@ -4,8 +4,21 @@
 //!
 //! Aims to fill the gaps that exist between the Rust and Haskell standard libraries.
 //!
-//! * Functionality only reimplemented if semantically necessary.
+//! ## Features
 //!
+//! * Typeclasses
+//!   * Functor
+//!   * Applicative
+//!   * Monad
+//!   * Arrow
+//!   * Semigroup
+//!   * Monoid
+//!   * Foldable
+//!   * Traversable
+//! * Monad Transformers
+//! * Monad Morphisms
+//!
+//! ## Notes
 //! Documentation has been derived from the respective Haskell libraries,
 //! with Rust-specific amendments where necessary.
 //!
@@ -16,8 +29,8 @@
 //! Functionality specific to lazy evaluation has been omitted out of necessity,
 //! but may be reintroduced in the future if an appropriate implementation
 //! (i.e. infinite lists via iterators) presents itself.
-//! 
-//! # Quick Start
+//!
+//! ## Quick Start
 //!
 //! First, consult [`base::data::function`] to learn about `glasgae`'s function type conventions.
 //!
@@ -39,9 +52,9 @@
 //! smoothing over the process of composing large monad stacks.
 
 pub mod base;
+pub mod logger;
 pub mod mtl;
 pub mod transformers;
-pub mod logger;
 
 pub mod prelude;
 

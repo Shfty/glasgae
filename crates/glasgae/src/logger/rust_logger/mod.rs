@@ -1,4 +1,4 @@
-use crate::{base::data::term::Term, logger::MonadLogger, prelude::IO};
+use crate::{logger::MonadLogger, prelude::Term, prelude::IO};
 use log::Level;
 use std::fmt::Display;
 

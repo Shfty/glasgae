@@ -1,6 +1,6 @@
 //! Traits generalizing over parametrized types.
 
-use super::term::Term;
+use crate::prelude::Term;
 
 /// A [`Pointed`] type addresses a single free type parameter.
 pub trait Pointed: Term {
@@ -11,6 +11,18 @@ pub trait Pointed: Term {
 /// Convenience alias to [`Pointed::Pointed`]
 pub type PointedT<T> = <T as Pointed>::Pointed;
 
+#[macro_export]
+macro_rules! derive_pointed_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free> $crate::prelude::Pointed for $ty<$free>
+        where
+            $free: $crate::prelude::Term,
+        {
+            type Pointed = $free;
+        }
+    };
+}
+
 /// A [`WithPointed`] type is a [`Pointed`] with the means to modify its free type parameter.
 pub trait WithPointed<T>: Pointed {
     /// [`Self`], with [`Self::Pointed`](Pointed::Pointed) replaced by `T`.
@@ -20,33 +32,15 @@ pub trait WithPointed<T>: Pointed {
 /// Convenience alias to [`WithPointed::WithPointed`]
 pub type WithPointedT<T, U> = <T as WithPointed<U>>::WithPointed;
 
-/// Given a pointed type, extend it with some extra data.
-pub trait Lift<T, A>: Pointed<Pointed = A> + WithPointed<(A, T)> {
-    type Lifted: Pointed<Pointed = (A, T)>;
-}
-
-/// Convenience alias to [`Lift::Lifted`].
-pub type LiftedT<T, U, A> = <T as Lift<U, A>>::Lifted;
-
-impl<MA, T, A> Lift<T, A> for MA
-where
-    MA: Pointed<Pointed = A> + WithPointed<(A, T)>,
-{
-    type Lifted = MA::WithPointed;
-}
-
-/// Given a pointed type that stores some extra data,
-/// return the type minus that data.
-pub trait Lower<T, A>: Pointed<Pointed = (A, T)> + WithPointed<A> {
-    type Lowered: Pointed<Pointed = A>;
-}
-
-/// Convenience alias to [`Lower::Lowered`].
-pub type LoweredT<T, U, A> = <T as Lower<U, A>>::Lowered;
-
-impl<MA, T, A> Lower<T, A> for MA
-where
-    MA: Pointed<Pointed = (A, T)> + WithPointed<A>,
-{
-    type Lowered = MA::WithPointed;
+#[macro_export]
+macro_rules! derive_with_pointed_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free, U> $crate::prelude::WithPointed<U> for $ty<$free>
+        where
+            $free: $crate::prelude::Term,
+            U: $crate::prelude::Term,
+        {
+            type WithPointed = $ty<U>;
+        }
+    };
 }

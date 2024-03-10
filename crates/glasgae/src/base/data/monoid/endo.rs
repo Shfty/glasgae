@@ -1,9 +1,6 @@
 use std::convert::identity;
 
-use crate::{
-    base::data::term::Term,
-    prelude::{Boxed, Compose, Function, FunctionT, Semigroup},
-};
+use crate::prelude::{Boxed, Compose, Function, FunctionT, Semigroup, Term};
 
 use super::Monoid;
 

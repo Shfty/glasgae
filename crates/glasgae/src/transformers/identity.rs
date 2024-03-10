@@ -2,10 +2,7 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use crate::{
-    base::{control::monad::io::MonadIO, data::term::Term},
-    prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed, IO},
-};
+use crate::{base::control::monad::io::MonadIO, prelude::*};
 
 use super::class::MonadTrans;
 

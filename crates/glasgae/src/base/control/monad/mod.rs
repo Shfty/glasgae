@@ -41,9 +41,10 @@
 //! The instances of Monad for lists and Maybe defined in the Prelude satisfy these laws.
 
 pub mod io;
+pub mod morph;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, list::vec::push, term::Term},
+    base::data::{function::bifunction::BifunT, list::vec::push},
     prelude::*,
 };
 
@@ -57,6 +58,23 @@ pub trait ReturnM: PureA {
     }
 }
 
+#[macro_export]
+macro_rules! derive_return_m_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free> $crate::prelude::ReturnM for $ty<$free>
+        where
+            $free: $crate::prelude::Term,
+        {
+            fn return_m(t: Self::Pointed) -> Self
+            where
+                Self: Sized,
+            {
+                $ty($crate::prelude::ReturnM::return_m(t))
+            }
+        }
+    };
+}
+
 /// Sequentially compose two actions,
 /// passing any value produced by the first as an argument to the second.
 ///
@@ -67,6 +85,22 @@ pub trait ReturnM: PureA {
 /// ```
 pub trait ChainM<T: Term>: Pointed {
     fn chain_m(self, f: impl FunctionT<Self::Pointed, T>) -> T;
+}
+
+#[macro_export]
+macro_rules! derive_chain_m_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free, U> $crate::prelude::ChainM<$ty<U>> for $ty<$free>
+        where
+            $free: $crate::prelude::Term,
+            U: $crate::prelude::Term,
+        {
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<Self::Pointed, $ty<U>>) -> $ty<U> {
+                let f = f.to_function();
+                $ty($crate::prelude::ChainM::chain_m(self.0, |t| f(t).0))
+            }
+        }
+    };
 }
 
 /// Sequentially compose two actions, discarding any value produced by the first,

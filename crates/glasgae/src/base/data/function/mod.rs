@@ -40,7 +40,7 @@ pub use until::*;
 
 use crate::prelude::*;
 
-use super::term::{Term, TermBase};
+use super::term::TermBase;
 
 pub trait FunctionT<A, B>: TermBase + FnOnce(A) -> B
 where

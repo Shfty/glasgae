@@ -1,4 +1,4 @@
-use crate::base::data::term::Term;
+use crate::prelude::Term;
 
 pub trait Append: Term {
     fn append(self, t: Self) -> Self;

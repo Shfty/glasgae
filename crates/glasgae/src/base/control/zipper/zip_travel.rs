@@ -1,4 +1,4 @@
-use crate::{base::data::term::Term, transformers::cont::Cont};
+use crate::{prelude::Term, transformers::cont::Cont};
 
 use super::{travel::Travel, MakeZipper, Zipper};
 

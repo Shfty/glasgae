@@ -9,8 +9,11 @@
 
 use crate::{
     base::{
-        control::monad::io::MonadIO,
-        data::{term::Term, functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+        control::monad::{
+            io::MonadIO,
+            morph::{HoistTupleT, MonadLower},
+        },
+        data::{functor::identity::Identity, tuple::pair::Pair},
     },
     prelude::*,
 };
@@ -21,12 +24,6 @@ use super::class::MonadTrans;
 ///
 /// The return function leaves the state unchanged, while >>= uses the final state of the first computation as the initial state of the second.
 pub type State<S, A> = StateT<S, Identity<(A, S)>>;
-
-#[derive(Clone)]
-pub struct StateT<S, M>(Function<S, M>)
-where
-    S: Term,
-    M: Term;
 
 impl<S, A> State<S, A>
 where
@@ -99,6 +96,15 @@ where
 /// m - The inner monad.
 ///
 /// The return function leaves the state unchanged, while >>= uses the final state of the first computation as the initial state of the second.
+#[derive(Clone)]
+pub struct StateT<S, M>(Function<S, M>)
+where
+    S: Term,
+    M: Term;
+
+/// Utility alias for automatically hoisting `T` into the [`StateT`] transformer.
+pub type HoistStateT<S, T> = StateT<S, HoistTupleT<T, S>>;
+
 impl<S, M> StateT<S, M>
 where
     S: Term,
@@ -313,22 +319,22 @@ where
     }
 }
 
-impl<MO, S, A> MonadTrans<MO::Lowered> for StateT<S, MO>
+impl<MA, S, A> MonadTrans<MA::Lowered> for StateT<S, MA>
 where
-    MO: Lower<S, A> + ReturnM<Pointed = (A, S)>,
-    MO::Lowered: ChainM<MO>,
+    MA: MonadLower<A, S> + ReturnM<Pointed = (A, S)>,
+    MA::Lowered: ChainM<MA, Pointed = A>,
     S: Term,
     A: Term,
 {
-    fn lift(m: MO::Lowered) -> Self {
+    fn lift(m: MA::Lowered) -> Self {
         StateT::new_t(|s| m.chain_m(|a| ReturnM::return_m((a, s))))
     }
 }
 
 impl<MA, S, A> MonadIO<A> for StateT<S, MA>
 where
-    MA: ReturnM<Pointed = (A, S)> + WithPointed<A>,
-    MA::WithPointed: ChainM<MA> + MonadIO<A>,
+    MA: ReturnM<Pointed = (A, S)> + MonadLower<A, S>,
+    MA::Lowered: ChainM<MA, Pointed = A> + MonadIO<A>,
     S: Term,
     A: Term,
 {

@@ -8,10 +8,7 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::{
-    base::data::{function::bifunction::BifunT, term::Term},
-    prelude::*,
-};
+use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 use crate::transformers::cont::Cont;
 

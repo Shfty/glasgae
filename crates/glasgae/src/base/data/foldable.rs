@@ -9,11 +9,11 @@
 //!
 //! For the class laws see the Laws section of Data.Foldable.
 
-use crate::prelude::{Compose, Function, FunctionT, Monoid};
+use crate::prelude::{Compose, Function, FunctionT, Monoid, Term};
 
 use super::{
     function::{bifunction::BifunT, Curried},
-    monoid::Endo, term::Term,
+    monoid::Endo,
 };
 
 pub trait Foldr<T, U>: Term {
@@ -60,7 +60,8 @@ where
     T: Term,
     U: Term,
 {
-    this.fold_map(f.to_bifun().curried().compose_clone(Endo::new)).app()(z)
+    this.fold_map(f.to_bifun().curried().compose_clone(Endo::new))
+        .app()(z)
 }
 
 pub trait FoldMap<T, U>: Term

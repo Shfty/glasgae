@@ -4,7 +4,7 @@
 
 use crate::prelude::*;
 
-use super::{fold_map_default, function::bifunction::BifunT, term::Term, FoldMap};
+use super::{fold_map_default, function::bifunction::BifunT, FoldMap};
 
 pub mod result;
 

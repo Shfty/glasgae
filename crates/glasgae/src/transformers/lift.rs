@@ -1,11 +1,8 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
 use crate::{
-    base::data::{foldr_default, function::bifunction::BifunT, monoid::Endo, term::Term, FoldMap},
-    prelude::{
-        AppA, Foldr, Function, FunctionT, Functor, Monoid, Pointed, PureA, SequenceA, TraverseT,
-        WithPointed,
-    },
+    base::data::{foldr_default, function::bifunction::BifunT, monoid::Endo, FoldMap},
+    prelude::*,
 };
 
 /// Applicative functor formed by adding pure computations to a given applicative functor.

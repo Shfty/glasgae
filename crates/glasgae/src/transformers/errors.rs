@@ -1,6 +1,6 @@
 use crate::{
-    base::data::{functor::r#const::Const, term::Term},
-    prelude::{Either, Pointed, PureA},
+    base::data::functor::r#const::Const,
+    prelude::{Either, Pointed, PureA, Term},
 };
 
 use super::Lift;

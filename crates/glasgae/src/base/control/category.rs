@@ -19,10 +19,7 @@
 
 use std::convert::identity;
 
-use crate::{
-    base::data::term::Term,
-    prelude::{Boxed, Function, FunctionT},
-};
+use crate::prelude::{Boxed, Function, FunctionT, Term};
 
 /// The identity morphism.
 pub trait Id<A, B>: Term {

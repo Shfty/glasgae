@@ -1,7 +1,4 @@
-use crate::{
-    base::data::{function::bifunction::BifunT, term::Term},
-    prelude::*,
-};
+use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 impl<A> PureA for (A,)
 where

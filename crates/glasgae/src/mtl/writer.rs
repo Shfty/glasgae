@@ -5,7 +5,7 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/pubs/springschool.html>)
 //! Advanced School of Functional Programming, 1995.
 
-use crate::{base::data::term::Term, prelude::*};
+use crate::prelude::*;
 
 use crate::transformers::{class::MonadTrans, reader::ReaderT, state::StateT, writer::WriterT};
 

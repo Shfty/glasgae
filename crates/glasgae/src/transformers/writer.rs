@@ -8,13 +8,11 @@ use std::marker::PhantomData;
 
 use crate::{
     base::{
-        control::monad::io::MonadIO,
-        data::{
-            functor::identity::Identity,
-            pointed::{Lower, LoweredT},
-            term::Term,
-            tuple::pair::Pair,
+        control::monad::{
+            io::MonadIO,
+            morph::{HoistTupleT, MonadLower, MonadLoweredT},
         },
+        data::{functor::identity::Identity, tuple::pair::Pair},
     },
     prelude::*,
 };
@@ -64,6 +62,9 @@ where
 /// The return function produces the output mempty, while >>= combines the outputs of the subcomputations using mappend.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WriterT<W, MA>(MA, PhantomData<W>);
+
+/// Utility alias for automatically hoisting `T` into the [`StateT`] transformer.
+pub type HoistWriterT<W, T> = WriterT<W, HoistTupleT<T, W>>;
 
 impl<W, M> WriterT<W, M>
 where
@@ -275,27 +276,27 @@ where
     }
 }
 
-impl<MO, W, A> MonadTrans<MO::Lowered> for WriterT<W, MO>
+impl<MA, W, A> MonadTrans<MA::Lowered> for WriterT<W, MA>
 where
-    MO: Lower<W, A> + ReturnM<Pointed = (A, W)>,
-    MO::Lowered: ChainM<MO>,
+    MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
+    MA::Lowered: ChainM<MA, Pointed = A>,
     W: Monoid,
     A: Term,
 {
-    fn lift(m: MO::Lowered) -> Self {
+    fn lift(m: MA::Lowered) -> Self {
         WriterT::new_t(m.chain_m(|a| ReturnM::return_m((a, Monoid::mempty()))))
     }
 }
 
 impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
 where
-    MA: Lower<W, A> + ReturnM<Pointed = (A, W)>,
+    MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
     MA::Lowered: MonadIO<A> + ChainM<MA>,
     W: Monoid,
     A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
-        Self::lift(LoweredT::<MA, W, A>::lift_io(m))
+        Self::lift(MonadLoweredT::<MA, A, W>::lift_io(m))
     }
 }
 

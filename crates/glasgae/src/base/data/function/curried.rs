@@ -1,7 +1,4 @@
-use crate::{
-    base::data::term::Term,
-    prelude::{Boxed, Function},
-};
+use crate::prelude::{Boxed, Function, Term};
 
 use super::{bifunction::BifunT, FunctionT};
 

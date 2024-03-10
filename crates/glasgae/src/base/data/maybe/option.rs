@@ -1,10 +1,4 @@
-use crate::{
-    base::data::{function::bifunction::BifunT, term::Term},
-    prelude::{
-        AppA, Boxed, ChainM, Foldr, FunctionT, Functor, Monoid, Pointed, PureA, ReturnM, Semigroup,
-        SequenceA, TraverseT, WithPointed,
-    },
-};
+use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 impl<T> Pointed for Option<T>
 where

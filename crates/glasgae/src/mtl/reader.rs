@@ -25,7 +25,7 @@
 //!
 //! See examples in Control.Monad.Reader. Note, the partially applied function type (->) r is a simple reader monad. See the instance declaration below.
 use crate::{
-    base::data::{pointed::Lower, term::Term},
+    base::control::monad::morph::MonadLower,
     prelude::*,
     transformers::{
         class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,
@@ -122,13 +122,13 @@ where
 // WriterT impl
 impl<MR, MA, W, R, A> MonadAsk<MR, R, A> for WriterT<W, MA>
 where
-    Self: MonadTrans<MA>,
-    MA: MonadAsk<MR, R, A> + ReturnM<Pointed = (A, W)> + ChainM<MA>,
+    MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
+    MA::Lowered: ChainM<MA, Pointed = A> + MonadAsk<MR, R, A>,
     W: Monoid,
     A: Term,
 {
     fn ask() -> Self {
-        Self::lift(MA::ask())
+        WriterT::lift(<MA::Lowered>::ask())
     }
 }
 
@@ -146,8 +146,8 @@ where
 
 impl<MA, W, R, A> MonadReader<R, A> for WriterT<W, MA>
 where
-    MA: Lower<W, A> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: MonadReader<R, A> + ChainM<MA>,
+    MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
+    MA::Lowered: MonadReader<R, A> + ChainM<MA, Pointed = A>,
     W: Monoid,
     R: Term,
     A: Term,

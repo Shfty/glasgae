@@ -1,7 +1,4 @@
-use crate::{
-    base::{data::term::Term, grl::num::Zero},
-    prelude::*,
-};
+use crate::{base::grl::num::Zero, prelude::*};
 
 /// Monoid under addition.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]

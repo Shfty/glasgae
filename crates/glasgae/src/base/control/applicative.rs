@@ -72,11 +72,25 @@
 //! ```
 //! (which implies that pure and <*> satisfy the applicative functor laws).
 
-use crate::{base::data::{function::bifunction::BifunT, term::Term}, prelude::*};
+use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 /// Lift a value.
 pub trait PureA: Pointed {
     fn pure_a(t: Self::Pointed) -> Self;
+}
+
+#[macro_export]
+macro_rules! derive_pure_a_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free> $crate::prelude::PureA for $ty<$free>
+        where
+            $free: $crate::prelude::Term,
+        {
+            fn pure_a(t: Self::Pointed) -> Self {
+                $ty($crate::prelude::PureA::pure_a(t))
+            }
+        }
+    };
 }
 
 /// Sequential application.
@@ -127,6 +141,22 @@ pub trait PureA: Pointed {
 /// ```
 pub trait AppA<A1, A2>: Pointed {
     fn app_a(self, a: A1) -> A2;
+}
+
+#[macro_export]
+macro_rules! derive_app_a_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free, A, B> $crate::prelude::AppA<$ty<A>, $ty<B>> for $ty<$free>
+        where
+            $free: $crate::prelude::Term + $crate::prelude::FunctionT<A, B>,
+            A: $crate::prelude::Term,
+            B: $crate::prelude::Term,
+        {
+            fn app_a(self, a: $ty<A>) -> $ty<B> {
+                $ty($crate::prelude::AppA::app_a(self.0, a.0))
+            }
+        }
+    };
 }
 
 /// Lift a binary function to actions.

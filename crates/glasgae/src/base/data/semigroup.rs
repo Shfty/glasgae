@@ -1,4 +1,4 @@
-use super::term::Term;
+use crate::prelude::Term;
 
 /// The class of types with an associative binary operation.
 ///

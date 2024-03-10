@@ -1,7 +1,7 @@
 use crate::{
     base::{
         control::zipper::{Travel, Zipper},
-        data::{function::bifunction::BifunT, term::Term},
+        data::function::bifunction::BifunT,
     },
     prelude::*,
     transformers::cont::Cont,

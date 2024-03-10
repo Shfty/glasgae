@@ -1,9 +1,6 @@
 use crate::{
-    base::data::{fold_map_default, function::bifunction::BifunT, term::Term, FoldMap},
-    prelude::{
-        AppA, Boxed, ChainM, Foldr, FunctionT, Functor, Monoid, Pointed, PureA, ReturnM, Semigroup,
-        SequenceA, TraverseT, WithPointed,
-    },
+    base::data::{fold_map_default, function::bifunction::BifunT, FoldMap},
+    prelude::*,
 };
 
 use super::{Either, Either::*};

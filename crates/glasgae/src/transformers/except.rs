@@ -6,13 +6,10 @@
 
 use crate::{
     base::{
-        control::monad::{io::MonadIO, LiftM},
-        data::{functor::identity::Identity, term::Term, FoldMap},
+        control::monad::{io::MonadIO, morph::HoistEitherT, LiftM},
+        data::{functor::identity::Identity, FoldMap},
     },
-    prelude::{
-        AppA, ChainM, Either, Either::*, Foldr, FunctionT, Functor, Monoid, Pointed, PureA,
-        ReturnM, SequenceA, ThenM, TraverseT, WithPointed, IO,
-    },
+    prelude::*,
 };
 
 use super::class::MonadTrans;
@@ -75,6 +72,9 @@ where
 /// The return function returns a normal value, while >>= exits on the first exception. For a variant that continues after an error and collects all the errors, see Errors.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct ExceptT<MA>(MA);
+
+/// Utility alias for automatically hoisting `T` into the [`ExceptT`] transformer.
+pub type HoistExceptT<E, T> = ExceptT<HoistEitherT<T, E>>;
 
 impl<MA> ExceptT<MA>
 where

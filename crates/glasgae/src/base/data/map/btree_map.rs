@@ -1,10 +1,8 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, term::Term, FoldMap},
-    prelude::{
-        Foldr, FunctionT, Functor, Monoid, Pointed, Semigroup, SequenceA, TraverseT, WithPointed,
-    },
+    base::data::{function::bifunction::BifunT, FoldMap},
+    prelude::*,
 };
 
 impl<K, V> Pointed for BTreeMap<K, V>

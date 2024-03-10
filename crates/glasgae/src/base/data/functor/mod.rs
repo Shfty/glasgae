@@ -26,8 +26,6 @@ pub mod identity;
 
 use crate::prelude::*;
 
-use super::term::Term;
-
 pub trait Functor<T>: WithPointed<T>
 where
     T: Term,
@@ -99,4 +97,19 @@ where
     {
         self.fmap(|_| t)
     }
+}
+
+#[macro_export]
+macro_rules! derive_functor_unary {
+    ($ty:ident<$free:ident>) => {
+        impl<$free, U> $crate::prelude::Functor<U> for $ty<$free>
+        where
+            $free: $crate::prelude::Functor<U>,
+            U: $crate::prelude::Term,
+        {
+            fn fmap(self, f: impl $crate::prelude::FunctionT<Self::Pointed, U>) -> Self::WithPointed {
+                $ty(self.0.fmap(f.to_function()))
+            }
+        }
+    };
 }

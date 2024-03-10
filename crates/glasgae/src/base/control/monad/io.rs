@@ -1,7 +1,4 @@
-use crate::{
-    base::data::term::Term,
-    prelude::{Pointed, IO},
-};
+use crate::prelude::{Pointed, Term, IO};
 
 pub trait MonadIO<T>: Pointed<Pointed = T>
 where

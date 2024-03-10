@@ -5,10 +5,7 @@
 use std::panic::UnwindSafe;
 
 use crate::{
-    base::{
-        control::monad::io::MonadIO,
-        data::{functor::identity::Identity, term::Term},
-    },
+    base::{control::monad::io::MonadIO, data::functor::identity::Identity},
     prelude::*,
 };
 

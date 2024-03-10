@@ -1,4 +1,4 @@
-use super::{FunctionT, Term};
+use crate::prelude::{FunctionT, Term};
 
 pub trait Until<T>: Term + FunctionT<T, T>
 where

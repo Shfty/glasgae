@@ -1,6 +1,6 @@
 //! Generalized numeric operations.
 
-use crate::base::data::term::Term;
+use crate::prelude::Term;
 
 pub trait Zero: Term {
     fn zero() -> Self;

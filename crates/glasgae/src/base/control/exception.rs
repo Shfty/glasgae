@@ -3,7 +3,7 @@ use std::{
     panic::{catch_unwind, resume_unwind},
 };
 
-use crate::{base::data::term::Term, prelude::*};
+use crate::prelude::*;
 
 pub trait Exception: Sized + Any + Send + Show {
     fn to_exception(self) -> SomeException {

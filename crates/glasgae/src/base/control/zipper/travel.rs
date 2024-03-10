@@ -1,4 +1,4 @@
-use crate::{base::data::term::Term, prelude::FunctionT};
+use crate::prelude::{FunctionT, Term};
 
 pub trait Travel<D, M, N>: Term
 where

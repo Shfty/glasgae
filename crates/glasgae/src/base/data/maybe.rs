@@ -17,7 +17,7 @@ pub mod option;
 
 use crate::prelude::*;
 
-use super::{function::bifunction::BifunT, term::Term};
+use super::function::bifunction::BifunT;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {

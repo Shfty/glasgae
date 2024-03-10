@@ -1,6 +1,6 @@
 use crate::{
-    base::data::term::{Term, TermBase},
-    prelude::Boxed,
+    base::data::term::TermBase,
+    prelude::{Boxed, Term},
 };
 
 /// Binary function

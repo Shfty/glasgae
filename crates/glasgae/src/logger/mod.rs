@@ -5,15 +5,9 @@ use log::Level;
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{
-            function::bifunction::{Bifun, BifunT},
-            term::Term,
-        },
+        data::function::bifunction::{Bifun, BifunT},
     },
-    prelude::{
-        print, r#const, AppA, Boxed, ChainM, Function, FunctionT, Functor, Pointed, PureA, ReturnM,
-        WithPointed, IO,
-    },
+    prelude::*,
     transformers::class::MonadTrans,
 };
 

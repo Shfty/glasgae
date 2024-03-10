@@ -1,4 +1,4 @@
-use crate::base::data::term::Term;
+use crate::prelude::Term;
 
 pub trait Pair<L, R>: Term {
     fn pair(l: L, r: R) -> Self;

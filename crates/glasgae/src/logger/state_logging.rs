@@ -1,10 +1,13 @@
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{function::bifunction::BifunT, term::Term, tuple::pair::Pair},
+        data::{function::bifunction::BifunT, tuple::pair::Pair},
     },
     prelude::*,
-    transformers::{class::MonadTrans, state::StateT},
+    transformers::{
+        class::MonadTrans,
+        state::{HoistStateT, StateT},
+    },
 };
 
 use super::{LoggingT, MonadLogger};
@@ -12,6 +15,8 @@ use super::{LoggingT, MonadLogger};
 pub type StateLogging<LVL, MSG, S, T> = StateLoggingT<LVL, MSG, S, IO<(T, S)>>;
 
 pub type StateLoggingT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>;
+
+pub type HoistStateLoggingT<LVL, MSG, S, MA> = HoistStateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
 impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateLoggingT<LVL, MSG, S, MA>
 where

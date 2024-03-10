@@ -1,6 +1,6 @@
-use crate::prelude::Boxed;
+use crate::prelude::{Boxed, Term};
 
-use super::{Term, TermBase};
+use super::TermBase;
 
 /// Nullary function which produces an output from no input.
 pub trait NullaryT<A: Term>: TermBase + FnOnce() -> A {

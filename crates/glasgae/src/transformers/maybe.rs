@@ -5,14 +5,8 @@
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
 use crate::{
-    base::{
-        control::monad::io::MonadIO,
-        data::{term::Term, FoldMap},
-    },
-    prelude::{
-        AppA, ChainM, FunctionT, Functor, Maybe, Maybe::*, Monoid, Pointed, PureA, ReturnM,
-        SequenceA, TraverseT, WithPointed, IO,
-    },
+    base::{control::monad::io::MonadIO, data::FoldMap},
+    prelude::*,
 };
 
 use super::class::MonadTrans;

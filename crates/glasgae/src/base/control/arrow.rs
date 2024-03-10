@@ -40,10 +40,7 @@
 /// ```
 ///
 /// The other combinators have sensible default definitions, which may be overridden for efficiency.
-use crate::{
-    base::data::term::Term,
-    prelude::{Boxed, Function, FunctionT},
-};
+use crate::prelude::{Boxed, Function, FunctionT, Term};
 
 /// Lift a function to an arrow.
 pub trait Arrow<A, B>: Term {

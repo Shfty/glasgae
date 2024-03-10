@@ -5,10 +5,7 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 
 use crate::{
-    base::data::{
-        pointed::{Lower, LoweredT},
-        term::Term,
-    },
+    base::control::monad::morph::{Lower, LoweredT},
     prelude::*,
     transformers::{
         class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,

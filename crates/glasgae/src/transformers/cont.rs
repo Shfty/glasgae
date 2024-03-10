@@ -10,7 +10,7 @@ use std::panic::UnwindSafe;
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{function::bifunction::BifunT, functor::identity::Identity, term::Term},
+        data::{function::bifunction::BifunT, functor::identity::Identity},
     },
     prelude::*,
 };
@@ -318,8 +318,7 @@ where
 #[cfg(test)]
 mod test {
     use crate::{
-        base::data::term::Term,
-        prelude::{r#const, Boxed, ChainM, Function, ReturnM},
+        prelude::{r#const, Boxed, ChainM, Function, ReturnM, Term},
         transformers::cont::Cont,
     };
 
