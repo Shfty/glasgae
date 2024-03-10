@@ -1,12 +1,12 @@
-use crate::{logger::MonadLogger, prelude::IO};
+use crate::{base::data::function::Term, logger::MonadLogger, prelude::IO};
 use log::Level;
-use std::{fmt::Display, panic::UnwindSafe};
+use std::fmt::Display;
 
 pub fn init_env_logger() -> IO<()> {
     IO::<()>::new(env_logger::init)
 }
 
-pub fn rust_logger(level: Level, message: impl Display + Clone + UnwindSafe + 'static) -> IO<()> {
+pub fn rust_logger(level: Level, message: impl Term + Display) -> IO<()> {
     IO::new(move || log::log!(level, "{}", message))
 }
 

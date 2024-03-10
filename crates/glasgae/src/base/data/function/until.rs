@@ -1,10 +1,11 @@
-use super::FunctionT;
+use super::{FunctionT, Term};
 
-pub trait Until<T>: Sized + Clone + FunctionT<T, T>
+pub trait Until<T>: Term + FunctionT<T, T>
 where
-    T: Clone,
+    T: Term,
 {
-    fn until(self, p: impl FunctionT<T, bool> + Clone, t: T) -> T {
+    fn until(self, p: impl FunctionT<T, bool>, t: T) -> T {
+        let p = p.to_function();
         if p.clone()(t.clone()) {
             t
         } else {
@@ -15,8 +16,7 @@ where
 
 impl<T, U> Until<U> for T
 where
-    T: Clone + FunctionT<U, U>,
-    U: Clone,
+    T: Term + FunctionT<U, U>,
+    U: Term,
 {
 }
-

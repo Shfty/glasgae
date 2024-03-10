@@ -2,11 +2,13 @@
 //! a value of type [`Either<A, B>`] is either [`Left(A)`](Either::Left) or
 //! [`Right(B)`](Either::Right).
 
-use std::panic::UnwindSafe;
-
 use crate::prelude::*;
 
-use super::{fold_map_default, function::bifunction::BifunT, FoldMap};
+use super::{
+    fold_map_default,
+    function::{bifunction::BifunT, Term},
+    FoldMap,
+};
 
 pub mod result;
 
@@ -145,19 +147,30 @@ impl<A, B> Either<A, B> {
     }
 }
 
-impl<E, A> Pointed for Either<E, A> {
+impl<E, A> Pointed for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
     type Pointed = A;
 }
 
-impl<E, A, B> WithPointed<B> for Either<E, A> {
+impl<E, A, B> WithPointed<B> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+    B: Term,
+{
     type WithPointed = Either<E, B>;
 }
 
 impl<E, A, B> Functor<B> for Either<E, A>
 where
-    B: Clone + UnwindSafe,
+    E: Term,
+    A: Term,
+    B: Term,
 {
-    fn fmap(self, f: impl FunctionT<A, B> + Clone) -> Either<E, B> {
+    fn fmap(self, f: impl FunctionT<A, B>) -> Either<E, B> {
         match self {
             Left(l) => Left(l),
             Right(r) => Right(f(r)),
@@ -165,7 +178,11 @@ where
     }
 }
 
-impl<E, A> PureA for Either<E, A> {
+impl<E, A> PureA for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
     fn pure_a(t: Self::Pointed) -> Self {
         Right(t)
     }
@@ -173,8 +190,10 @@ impl<E, A> PureA for Either<E, A> {
 
 impl<E, F, A, B> AppA<Either<E, A>, Either<E, B>> for Either<E, F>
 where
-    F: FunctionT<A, B> + Clone,
-    B: Clone + UnwindSafe,
+    E: Term,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, r: Either<E, A>) -> Either<E, B> {
         match self {
@@ -184,10 +203,20 @@ where
     }
 }
 
-impl<E, A> ReturnM for Either<E, A> {}
+impl<E, A> ReturnM for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
+}
 
-impl<E, A, B> ChainM<Either<E, B>> for Either<E, A> {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Either<E, B>> + Clone) -> Either<E, B> {
+impl<E, A, B> ChainM<Either<E, B>> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+    B: Term,
+{
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, Either<E, B>>) -> Either<E, B> {
         match self {
             Left(l) => Left(l),
             Right(r) => f(r),
@@ -197,15 +226,17 @@ impl<E, A, B> ChainM<Either<E, B>> for Either<E, A> {
 
 impl<E, A, B> FoldMap<A, B> for Either<E, A>
 where
+    E: Term,
+    A: Term,
     B: Monoid,
 {
-    fn fold_map(self, f: impl FunctionT<A, B> + Clone) -> B {
-        fold_map_default(self, f)
+    fn fold_map(self, f: impl FunctionT<A, B>) -> B {
+        fold_map_default(self, f.to_function())
     }
 }
 
 impl<E, A, B> Foldr<A, B> for Either<E, A> {
-    fn foldr(self, f: impl BifunT<A, B, B> + Clone, z: B) -> B {
+    fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         match self {
             Left(_) => z,
             Right(y) => f(y, z),
@@ -215,12 +246,13 @@ impl<E, A, B> Foldr<A, B> for Either<E, A> {
 
 impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Either<E, A>
 where
+    E: Term,
+    A: Term,
+    A_: Term,
     A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
-    E: 'static + Clone + UnwindSafe,
-    A_: 'static + Clone + UnwindSafe,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A1::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::WithPointed {
         match self {
             Left(x) => PureA::pure_a(Left(x)),
             Right(y) => f(y).fmap(Right.boxed()),
@@ -232,8 +264,8 @@ impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Either<E, A1>
 where
     A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
-    E: 'static + Clone + UnwindSafe,
-    A_: 'static + Clone + UnwindSafe,
+    E: Term,
+    A_: Term,
 {
     fn sequence_a(self) -> A1::WithPointed {
         match self {
@@ -243,7 +275,11 @@ where
     }
 }
 
-impl<E, A> Semigroup for Either<E, A> {
+impl<E, A> Semigroup for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
     fn assoc_s(self, b: Self) -> Self {
         match self {
             Left(_) => b,
@@ -256,7 +292,12 @@ pub fn either<A, B, C>(
     fl: impl FunctionT<A, C>,
     fr: impl FunctionT<B, C>,
     either: Either<A, B>,
-) -> C {
+) -> C
+where
+    A: Term,
+    B: Term,
+    C: Term,
+{
     match either {
         Left(l) => fl(l),
         Right(r) => fr(r),

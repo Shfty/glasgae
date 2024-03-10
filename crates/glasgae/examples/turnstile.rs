@@ -1,7 +1,7 @@
 use glasgae::{
     base::{
         control::monad::{FilterM, FoldM, ReplicateM},
-        data::{functor::identity::Identity, pointed::Lower},
+        data::{function::Term, functor::identity::Identity, pointed::Lower},
     },
     mtl::state::{MonadPut, MonadState},
     prelude::{
@@ -87,7 +87,13 @@ pub trait RunMyComplexMonad<R> {
     fn run_t(self, input: Self::Input) -> Self::OutputT;
 }
 
-impl<R, W, S, T> RunMyComplexMonad<R> for MyComplexMonad<R, W, S, T> {
+impl<R, W, S, T> RunMyComplexMonad<R> for MyComplexMonad<R, W, S, T>
+where
+    R: Term,
+    W: Term,
+    S: Term,
+    T: Term,
+{
     type Input = (R, S);
     type Output = ((T, W), S);
     type OutputT = Identity<Self::Output>;
@@ -104,7 +110,7 @@ impl<R, W, S, T> RunMyComplexMonad<R> for MyComplexMonad<R, W, S, T> {
 fn log_w<MA, MB>(t: MA) -> WriterT<Vec<String>, MB>
 where
     MA: ChainM<WriterT<Vec<String>, MB>>,
-    MA::Pointed: Clone + Debug,
+    MA::Pointed: Debug,
     MB: ReturnM<Pointed = (MA::Pointed, Vec<String>)>,
 {
     t.chain_m(|t| WriterT::new((t.clone(), vec![format!("{t:?}")])))

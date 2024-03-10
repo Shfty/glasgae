@@ -5,7 +5,10 @@
 use std::panic::UnwindSafe;
 
 use crate::{
-    base::{control::monad::io::MonadIO, data::functor::identity::Identity},
+    base::{
+        control::monad::io::MonadIO,
+        data::{function::Term, functor::identity::Identity},
+    },
     prelude::*,
 };
 
@@ -20,8 +23,8 @@ pub type Reader<R, A> = ReaderT<R, Identity<A>>;
 
 impl<R, A> Reader<R, A>
 where
-    R: UnwindSafe,
-    A: UnwindSafe,
+    R: Term,
+    A: Term,
 {
     /// Runs a Reader and extracts the final value from it. (The inverse of new.)
     ///
@@ -34,12 +37,11 @@ where
     /// Transform the value returned by a Reader.
     ///
     /// runReader (mapReader f m) = f . runReader m
-    pub fn map<B>(self, f: impl FunctionT<A, B> + Clone) -> Reader<R, B>
+    pub fn map<B>(self, f: impl FunctionT<A, B>) -> Reader<R, B>
     where
-        R: Clone,
-        A: Clone,
-        B: UnwindSafe,
+        B: Term,
     {
+        let f = f.to_function();
         self.map_t(|t| Identity(f(t.run())))
     }
 
@@ -49,11 +51,11 @@ where
     ///
     /// Self: Computation to run in the modified environment
     /// f: The function to modify the environment
-    pub fn with<B>(self, f: impl FunctionT<B, R> + Clone) -> Reader<B, A>
+    pub fn with<B>(self, f: impl FunctionT<B, R>) -> Reader<B, A>
     where
-        R: Clone,
-        A: Clone,
+        B: Term,
     {
+        let f = f.to_function();
         self.with_t(f)
     }
 }
@@ -64,22 +66,24 @@ where
 #[derive(Clone)]
 pub struct ReaderT<R, M>(Function<R, M>)
 where
-    R: 'static,
-    M: 'static;
+    R: Term,
+    M: Term;
 
 impl<R, MA> ReaderT<R, MA>
 where
-    MA: UnwindSafe,
+    R: Term,
+    MA: Pointed,
 {
     /// Constructor for computations in the reader monad (equivalent to asks).
-    pub fn new(f: impl FunctionT<R, MA::Pointed> + Clone) -> Self
+    pub fn new(f: impl FunctionT<R, MA::Pointed>) -> Self
     where
         MA: ReturnM,
     {
+        let f = f.to_function();
         ReaderT::new_t(|t| ReturnM::return_m(f(t)))
     }
 
-    pub fn new_t(f: impl FunctionT<R, MA> + Clone) -> Self {
+    pub fn new_t(f: impl FunctionT<R, MA>) -> Self {
         ReaderT(f.boxed())
     }
 
@@ -90,12 +94,11 @@ where
     /// Transform the computation inside a ReaderT.
     ///
     /// runReaderT (mapReaderT f m) = f . runReaderT m
-    pub fn map_t<M2>(self, f: impl FunctionT<MA, M2> + Clone) -> ReaderT<R, M2>
+    pub fn map_t<M2>(self, f: impl FunctionT<MA, M2>) -> ReaderT<R, M2>
     where
-        R: Clone,
-        MA: Clone,
-        M2: UnwindSafe,
+        M2: Pointed,
     {
+        let f = f.to_function();
         ReaderT::new_t(|t| f(self.run_t(t)))
     }
 
@@ -105,18 +108,15 @@ where
     ///
     /// Self: Computation to run in the modified environment.
     /// f: The function to modify the environment.
-    pub fn with_t<B>(self, f: impl FunctionT<B, R> + Clone) -> ReaderT<B, MA>
+    pub fn with_t<B>(self, f: impl FunctionT<B, R>) -> ReaderT<B, MA>
     where
-        MA: Clone,
-        R: Clone,
+        B: Term,
     {
+        let f = f.to_function();
         ReaderT::new_t(move |t| self.run_t(f(t)))
     }
 
-    pub fn lift_t(m: MA) -> Self
-    where
-        MA: Clone,
-    {
+    pub fn lift_t(m: MA) -> Self {
         ReaderT::new_t(r#const(m))
     }
 
@@ -133,10 +133,12 @@ where
     /// asks f = liftM f ask
     ///
     /// f: The selector function to apply to the environment.
-    pub fn asks<A>(f: impl FunctionT<R, A> + Clone) -> Self
+    pub fn asks<A>(f: impl FunctionT<R, A>) -> Self
     where
         MA: ReturnM<Pointed = A>,
+        A: Term,
     {
+        let f = f.to_function();
         ReaderT::new_t(|t| ReturnM::return_m(f(t)))
     }
 
@@ -146,7 +148,7 @@ where
     ///
     /// Self: Computation to run in the modified environment.
     /// f: The function to modify the environment.
-    pub fn local(self, f: impl FunctionT<R, R> + Clone) -> Self
+    pub fn local(self, f: impl FunctionT<R, R>) -> Self
     where
         R: Clone,
         MA: Clone,
@@ -157,6 +159,7 @@ where
 
 impl<R, M> Pointed for ReaderT<R, M>
 where
+    R: Term,
     M: Pointed,
 {
     type Pointed = M::Pointed;
@@ -164,27 +167,28 @@ where
 
 impl<R, M, T> WithPointed<T> for ReaderT<R, M>
 where
+    R: Term,
     M: WithPointed<T>,
-    M::WithPointed: 'static,
 {
     type WithPointed = ReaderT<R, M::WithPointed>;
 }
 
 impl<R, M, T> Functor<T> for ReaderT<R, M>
 where
-    T: Clone + UnwindSafe,
-    M: Functor<T> + Clone + UnwindSafe,
-    M::WithPointed: 'static + UnwindSafe,
-    R: 'static + Clone,
+    T: Term,
+    M: Functor<T>,
+    R: Term,
 {
-    fn fmap(self, f: impl FunctionT<M::Pointed, T> + Clone) -> ReaderT<R, M::WithPointed> {
+    fn fmap(self, f: impl FunctionT<M::Pointed, T>) -> ReaderT<R, M::WithPointed> {
+        let f = f.to_function();
         self.map_t(|y| y.fmap(f))
     }
 }
 
 impl<R, M> PureA for ReaderT<R, M>
 where
-    M: Clone + PureA + UnwindSafe,
+    R: Term,
+    M: PureA,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         Self::lift_t(PureA::pure_a(t))
@@ -193,10 +197,10 @@ where
 
 impl<R, F, A, B> AppA<ReaderT<R, A>, ReaderT<R, B>> for ReaderT<R, F>
 where
-    R: Clone,
-    F: Clone + UnwindSafe + AppA<A, B>,
-    A: Clone + UnwindSafe,
-    B: UnwindSafe,
+    R: Term,
+    F: Pointed + AppA<A, B>,
+    A: Pointed,
+    B: Pointed,
 {
     fn app_a(self, v: ReaderT<R, A>) -> ReaderT<R, B> {
         let f = self;
@@ -204,26 +208,30 @@ where
     }
 }
 
-impl<R, M> ReturnM for ReaderT<R, M> where M: Clone + PureA + UnwindSafe {}
+impl<R, M> ReturnM for ReaderT<R, M>
+where
+    R: Term,
+    M: PureA,
+{
+}
 
 impl<R, M, N> ChainM<ReaderT<R, N>> for ReaderT<R, M>
 where
-    R: Clone + UnwindSafe,
-    M: Clone + ChainM<N> + UnwindSafe,
-    N: Clone + UnwindSafe,
+    R: Term,
+    M: ChainM<N> + UnwindSafe,
+    N: Pointed,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, N>> + Clone) -> ReaderT<R, N>
-    where
-        ReaderT<R, N>: Clone,
-    {
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, N>>) -> ReaderT<R, N> {
         let m = self;
+        let k = k.to_function();
         ReaderT::new_t(|r: R| m.run_t(r.clone()).chain_m(|a| k(a).run_t(r)))
     }
 }
 
 impl<MO, R> MonadTrans<MO> for ReaderT<R, MO>
 where
-    MO: 'static + Clone + UnwindSafe,
+    R: Term,
+    MO: Pointed,
 {
     fn lift(m: MO) -> ReaderT<R, MO> {
         ReaderT::lift_t(m)
@@ -232,9 +240,9 @@ where
 
 impl<MA, R, A> MonadIO<A> for ReaderT<R, MA>
 where
-    Self: MonadTrans<IO<A>>,
-    MA: Pointed<Pointed = A>,
-    A: 'static,
+    R: Term,
+    MA: MonadIO<A, Pointed = A>,
+    A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
         Self::lift(MonadIO::lift_io(m))

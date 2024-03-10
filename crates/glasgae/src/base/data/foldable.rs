@@ -9,12 +9,10 @@
 //!
 //! For the class laws see the Laws section of Data.Foldable.
 
-use std::panic::UnwindSafe;
-
 use crate::prelude::{Compose, Function, FunctionT, Monoid};
 
 use super::{
-    function::{bifunction::BifunT, CurriedClone},
+    function::{bifunction::BifunT, Curried, Term},
     monoid::Endo,
 };
 
@@ -51,32 +49,35 @@ pub trait Foldr<T, U>: Sized {
     ///         "foodcba".to_string()
     ///     );
     /// ```
-    fn foldr(self, f: impl BifunT<T, U, U> + Clone, z: U) -> U;
+    fn foldr(self, f: impl BifunT<T, U, U>, z: U) -> U;
 }
 
 /// Derive foldr from FoldMap
-pub fn foldr_default<This, T, U>(this: This, f: impl BifunT<T, U, U> + Clone, z: U) -> U
+pub fn foldr_default<This, T, U>(this: This, f: impl BifunT<T, U, U>, z: U) -> U
 where
     This: FoldMap<T, Endo<Function<U, U>>>,
     Endo<U>: Monoid,
-    T: 'static + Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    this.fold_map(f.curried_clone().compose_clone(Endo::new))
-        .app()(z)
+    this.fold_map(f.to_bifun().curried().compose_clone(Endo::new)).app()(z)
 }
 
-pub trait FoldMap<T, U>: Sized
+pub trait FoldMap<T, U>: Term
 where
+    T: Term,
     U: Monoid,
 {
     fn fold_map(self, f: impl FunctionT<T, U> + Clone) -> U;
 }
 
 /// Derive fold_map from Foldr
-pub fn fold_map_default<This, T, U>(this: This, f: impl FunctionT<T, U> + Clone) -> U
+pub fn fold_map_default<This, T, U>(this: This, f: impl FunctionT<T, U>) -> U
 where
     This: Foldr<T, U>,
+    T: Term,
     U: Monoid,
 {
+    let f = f.to_function();
     this.foldr(|next, acc| f(next).assoc_s(acc), Monoid::mempty())
 }

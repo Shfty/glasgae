@@ -1,3 +1,5 @@
+use super::function::Term;
+
 /// The class of types with an associative binary operation.
 ///
 /// Instances should satisfy the following:
@@ -17,7 +19,7 @@
 /// ```text
 /// xss.join().concat_s() == xss.fmap(ConcatS::concat_s).concat_s()
 /// ```
-pub trait Semigroup {
+pub trait Semigroup: Term {
     /// An associative operation.
     ///
     /// # Examples

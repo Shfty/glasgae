@@ -1,9 +1,9 @@
 use std::{
     any::Any,
-    panic::{catch_unwind, resume_unwind, UnwindSafe},
+    panic::{catch_unwind, resume_unwind},
 };
 
-use crate::prelude::*;
+use crate::{base::data::function::Term, prelude::*};
 
 pub trait Exception: Sized + Any + Send + Show {
     fn to_exception(self) -> SomeException {
@@ -49,18 +49,19 @@ impl Exception for std::io::ErrorKind {}
 /// Throw an exception inside the IO monad
 pub fn throw<T, E>(e: E) -> IO<T>
 where
-    T: UnwindSafe,
-    E: Clone + UnwindSafe + Exception,
+    T: Term,
+    E: Term + Exception,
 {
     IO::new(move || std::panic::panic_any(e))
 }
 
 /// Catch an exception inside the IO monad
-pub fn catch<E, T>(io: IO<T>, handler: impl FunctionT<E, IO<T>> + Clone) -> IO<T>
+pub fn catch<E, T>(io: IO<T>, handler: impl FunctionT<E, IO<T>>) -> IO<T>
 where
-    T: Clone + UnwindSafe,
-    E: Exception,
+    T: Term,
+    E: Term + Exception,
 {
+    let handler = handler.to_function();
     IO::new(move || match catch_unwind(move || unsafe { io.run() }) {
         Ok(t) => t,
         Err(a) => match E::from_exception(a) {
@@ -73,10 +74,10 @@ where
 /// [`catch`] with the arguments swapped around.
 ///
 /// Useful in situations where the code for the handler is shorter.
-pub fn handle<E, T>(handler: impl FunctionT<E, IO<T>> + Clone, io: IO<T>) -> IO<T>
+pub fn handle<E, T>(handler: impl FunctionT<E, IO<T>>, io: IO<T>) -> IO<T>
 where
-    T: Clone + UnwindSafe,
-    E: Exception,
+    T: Term,
+    E: Term + Exception,
 {
     catch(io, handler)
 }
@@ -91,8 +92,8 @@ where
 /// ```
 pub fn r#try<E, T>(io: IO<T>) -> IO<Either<E, T>>
 where
-    T: Clone + UnwindSafe,
-    E: UnwindSafe,
+    T: Term,
+    E: Term,
 {
     IO::new(move || match catch_unwind(move || unsafe { io.run() }) {
         Ok(t) => Right(t),

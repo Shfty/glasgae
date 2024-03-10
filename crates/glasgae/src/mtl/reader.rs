@@ -24,38 +24,45 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 //!
 //! See examples in Control.Monad.Reader. Note, the partially applied function type (->) r is a simple reader monad. See the instance declaration below.
-use std::panic::UnwindSafe;
-
+use crate::base::data::function::Term;
+use crate::base::data::pointed::Lower;
 use crate::prelude::*;
 
 use crate::transformers::{
     class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,
 };
 
-pub trait MonadAsk<MR, R, A> {
+pub trait MonadAsk<MR, R, A>: Term {
     /// Retrieves the monad environment.
     fn ask() -> Self;
 }
 
-pub trait MonadLocal<MR, R> {
+pub trait MonadLocal<MR, R>: Term
+where
+    R: Term,
+{
     /// Executes a computation in a modified environment.
     ///
     /// Self: Reader to run in the modified environment.
     /// f: The function to modify the environment.
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self;
+    fn local(self, f: impl FunctionT<R, R>) -> Self;
 }
 
-pub trait MonadReader<R, A> {
+pub trait MonadReader<R, A>: Term
+where
+    R: Term,
+    A: Term,
+{
     /// Retrieves a function of the current environment.
     ///
     /// f: The selector function to apply to the environment.
-    fn reader(f: impl FunctionT<R, A> + Clone) -> Self;
+    fn reader(f: impl FunctionT<R, A>) -> Self;
 }
 
 // Fun impl
 impl<R> MonadAsk<(), R, R> for Function<R, R>
 where
-    R: 'static,
+    R: Term,
 {
     fn ask() -> Self {
         identity.boxed()
@@ -64,18 +71,18 @@ where
 
 impl<R> MonadLocal<(), R> for Function<R, R>
 where
-    R: 'static,
+    R: Term,
 {
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
-        f.compose_clone(self).boxed()
+    fn local(self, f: impl FunctionT<R, R>) -> Self {
+        f.to_function().compose_clone(self).boxed()
     }
 }
 
 impl<R> MonadReader<R, R> for Function<R, R>
 where
-    R: 'static,
+    R: Term,
 {
-    fn reader(_: impl FunctionT<R, R> + Clone) -> Self {
+    fn reader(_: impl FunctionT<R, R>) -> Self {
         identity.boxed()
     }
 }
@@ -83,28 +90,31 @@ where
 // ReaderT impl
 impl<MR, R> MonadAsk<MR, R, R> for ReaderT<R, MR>
 where
-    MR: UnwindSafe + ReturnM<Pointed = R>,
+    MR: ReturnM<Pointed = R>,
+    R: Term,
 {
     fn ask() -> Self {
         ReaderT::ask()
     }
 }
 
-impl<MR, R> MonadLocal<MR, R> for ReaderT<R, MR>
+impl<MA, R> MonadLocal<MA, R> for ReaderT<R, MA>
 where
-    R: Clone,
-    MR: Clone,
+    R: Term,
+    MA: Pointed,
 {
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
-        self.local(f)
+    fn local(self, f: impl FunctionT<R, R>) -> Self {
+        self.local(f.to_function())
     }
 }
 
 impl<MA, R, A> MonadReader<R, A> for ReaderT<R, MA>
 where
-    MA: UnwindSafe + ReturnM<Pointed = A>,
+    MA: ReturnM<Pointed = A>,
+    R: Term,
+    A: Term,
 {
-    fn reader(f: impl FunctionT<R, A> + Clone) -> Self {
+    fn reader(f: impl FunctionT<R, A>) -> Self {
         ReaderT::<R, MA>::new(f)
     }
 }
@@ -113,8 +123,9 @@ where
 impl<MR, MA, W, R, A> MonadAsk<MR, R, A> for WriterT<W, MA>
 where
     Self: MonadTrans<MA>,
-    W: Clone + Monoid,
-    MA: Clone + MonadAsk<MR, R, A> + ReturnM<Pointed = (A, W)> + ChainM<MA>,
+    MA: MonadAsk<MR, R, A> + ReturnM<Pointed = (A, W)> + ChainM<MA>,
+    W: Monoid,
+    A: Term,
 {
     fn ask() -> Self {
         Self::lift(MA::ask())
@@ -123,21 +134,26 @@ where
 
 impl<MA, MR, S, R> MonadLocal<MR, R> for WriterT<S, MA>
 where
-    S: Clone,
-    MA: Clone + MonadLocal<MR, R>,
+    MA: MonadLocal<MR, R>,
+    S: Term,
+    R: Term,
 {
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
+    fn local(self, f: impl FunctionT<R, R>) -> Self {
+        let f = f.to_function();
         self.map_t(|t| t.local(f))
     }
 }
 
-impl<MA, S, R, A> MonadReader<R, A> for WriterT<S, MA>
+impl<MA, W, R, A> MonadReader<R, A> for WriterT<W, MA>
 where
-    Self: MonadTrans<MA>,
-    MA: MonadReader<R, A>,
+    MA: Lower<W, A> + ReturnM<Pointed = (A, W)>,
+    MA::Lowered: MonadReader<R, A> + ChainM<MA>,
+    W: Monoid,
+    R: Term,
+    A: Term,
 {
-    fn reader(f: impl FunctionT<R, A> + Clone) -> Self {
-        Self::lift(MA::reader(f))
+    fn reader(f: impl FunctionT<R, A>) -> Self {
+        Self::lift(<MA::Lowered>::reader(f))
     }
 }
 
@@ -145,6 +161,7 @@ where
 impl<MR, MA, S, R, A> MonadAsk<MR, R, A> for StateT<S, MA>
 where
     Self: MonadTrans<MA>,
+    S: Term,
     MA: MonadAsk<MR, R, A>,
 {
     fn ask() -> Self {
@@ -155,10 +172,12 @@ where
 impl<MA, MR, S, R> MonadLocal<MR, R> for StateT<S, MA>
 where
     Self: MonadTrans<MA>,
-    S: UnwindSafe + Clone,
-    MA: Clone + MonadLocal<MR, R>,
+    MA: MonadLocal<MR, R>,
+    S: Term,
+    R: Term,
 {
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
+    fn local(self, f: impl FunctionT<R, R>) -> Self {
+        let f = f.to_function();
         self.map_t(|t| t.local(f))
     }
 }
@@ -166,10 +185,13 @@ where
 impl<MA, S, R, A> MonadReader<R, A> for StateT<S, MA>
 where
     Self: MonadTrans<MA>,
-    S: Clone,
     MA: MonadReader<R, A>,
+    S: Term,
+    R: Term,
+    A: Term,
 {
-    fn reader(f: impl FunctionT<R, A> + Clone) -> Self {
+    fn reader(f: impl FunctionT<R, A>) -> Self {
+        let f = f.to_function();
         Self::lift(MA::reader(f))
     }
 }
@@ -178,8 +200,8 @@ where
 impl<MR, MA, S, R, A> MonadAsk<MR, R, A> for ContT<S, MA>
 where
     Self: MonadTrans<MA>,
-    S: Clone,
-    MA: Clone + MonadAsk<MR, R, A> + Pointed,
+    S: Pointed,
+    MA: MonadAsk<MR, R, A> + Pointed,
 {
     fn ask() -> Self {
         Self::lift(MA::ask())
@@ -188,42 +210,46 @@ where
 
 impl<MR, MR_, MA, R> MonadLocal<MR_, R> for ContT<MR, MA>
 where
-    MR: Clone
-        + UnwindSafe
-        + Pointed<Pointed = R>
-        + MonadAsk<MR_, R, R>
-        + MonadLocal<MR_, R>
-        + ChainM<MR>,
-    MR::Pointed: Clone,
-    MR_: 'static,
-    R: 'static + UnwindSafe,
-    MA: Clone + Pointed,
-    MA::Pointed: Clone,
+    MR: Pointed<Pointed = R> + MonadAsk<MR_, R, R> + MonadLocal<MR_, R> + ChainM<MR>,
+    MR_: Term,
+    R: Term,
+    MA: Pointed,
 {
-    fn local(self, f: impl FunctionT<R, R> + Clone) -> Self {
+    fn local(self, f: impl FunctionT<R, R>) -> Self {
         self.lift_local(MR::ask(), MR::local, f)
     }
 }
 
-impl<MA, S, R, A> MonadReader<R, A> for ContT<S, MA>
+impl<MA, MS, R, A> MonadReader<R, A> for ContT<MS, MA>
 where
-    Self: MonadTrans<MA>,
-    S: Clone,
-    MA: MonadReader<R, A> + Pointed,
+    MA: MonadReader<R, A> + ChainM<MS>,
+    MS: Pointed,
+    R: Term,
+    A: Term,
 {
-    fn reader(f: impl FunctionT<R, A> + Clone) -> Self {
+    fn reader(f: impl FunctionT<R, A>) -> Self {
         Self::lift(MA::reader(f))
     }
 }
 
 // Support functions
-pub trait Asks<R, A>: Sized + MonadReader<R, A> {
+pub trait Asks<R, A>: Sized + MonadReader<R, A>
+where
+    R: Term,
+    A: Term,
+{
     /// Retrieves a function of the current environment.
     ///
     /// f: The selector function to apply to the environment.
-    fn asks(f: impl FunctionT<R, A> + Clone) -> Self {
+    fn asks(f: impl FunctionT<R, A>) -> Self {
         Self::reader(f)
     }
 }
 
-impl<R, A, T> Asks<R, A> for T where T: MonadReader<R, A> {}
+impl<R, A, T> Asks<R, A> for T
+where
+    T: MonadReader<R, A>,
+    R: Term,
+    A: Term,
+{
+}

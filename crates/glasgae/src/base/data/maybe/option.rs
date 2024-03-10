@@ -1,31 +1,40 @@
-use std::panic::UnwindSafe;
-
 use crate::{
-    base::data::function::bifunction::BifunT,
+    base::data::function::{bifunction::BifunT, Term},
     prelude::{
         AppA, Boxed, ChainM, Foldr, FunctionT, Functor, Monoid, Pointed, PureA, ReturnM, Semigroup,
         SequenceA, TraverseT, WithPointed,
     },
 };
 
-impl<T> Pointed for Option<T> {
+impl<T> Pointed for Option<T>
+where
+    T: Term,
+{
     type Pointed = T;
 }
 
-impl<T, U> WithPointed<U> for Option<T> {
+impl<T, U> WithPointed<U> for Option<T>
+where
+    T: Term,
+    U: Term,
+{
     type WithPointed = Option<U>;
 }
 
 impl<T, U> Functor<U> for Option<T>
 where
-    U: Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn fmap(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> Option<U> {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Option<U> {
         self.map(f)
     }
 }
 
-impl<T> PureA for Option<T> {
+impl<T> PureA for Option<T>
+where
+    T: Term,
+{
     fn pure_a(t: Self::Pointed) -> Self {
         Some(t)
     }
@@ -33,16 +42,22 @@ impl<T> PureA for Option<T> {
 
 impl<F, A, B> AppA<Option<A>, Option<B>> for Option<F>
 where
-    F: FnOnce(A) -> B,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, a: Option<A>) -> Option<B> {
         self.and_then(|f| a.map(f))
     }
 }
 
-impl<T> ReturnM for Option<T> {}
+impl<T> ReturnM for Option<T> where T: Term {}
 
-impl<T, U> ChainM<Option<U>> for Option<T> {
+impl<T, U> ChainM<Option<U>> for Option<T>
+where
+    T: Term,
+    U: Term,
+{
     fn chain_m(self, f: impl FunctionT<T, Option<U>> + 'static) -> Option<U> {
         self.and_then(f)
     }
@@ -72,7 +87,7 @@ where
 }
 
 impl<T, U> Foldr<T, U> for Option<T> {
-    fn foldr(self, f: impl BifunT<T, U, U> + Clone, z: U) -> U {
+    fn foldr(self, f: impl BifunT<T, U, U>, z: U) -> U {
         match self {
             Some(x) => f(x, z),
             None => z,
@@ -83,11 +98,11 @@ impl<T, U> Foldr<T, U> for Option<T> {
 impl<T, A, U, B> TraverseT<A, U, B> for Option<T>
 where
     A: Functor<Option<U>, Pointed = U, WithPointed = B>,
-    A::Pointed: 'static,
     A::WithPointed: PureA<Pointed = Option<U>>,
-    U: Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A> + Clone) -> A::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<T, A>) -> A::WithPointed {
         match self {
             Some(x) => f(x).fmap(Some.boxed()),
             None => PureA::pure_a(None),
@@ -98,7 +113,7 @@ where
 impl<A1, A_, A2> SequenceA<A_, A2> for Option<A1>
 where
     A1: Clone + Functor<Option<A_>, Pointed = A_, WithPointed = A2>,
-    A_: 'static + Clone + UnwindSafe,
+    A_: Term,
     A2: PureA<Pointed = Option<A_>>,
 {
     fn sequence_a(self) -> A2 {

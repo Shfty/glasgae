@@ -29,7 +29,7 @@ mod until;
 
 pub mod bifunction;
 
-use std::panic::UnwindSafe;
+use std::panic::{RefUnwindSafe, UnwindSafe};
 
 pub use app::*;
 pub use compose::*;
@@ -42,15 +42,29 @@ pub use until::*;
 
 use crate::prelude::*;
 
-pub trait FunctionT<A, B>: FnOnce(A) -> B + UnwindSafe + 'static {
-    fn clone_fun(&self) -> Function<A, B>;
+/// [`Term`] without its [`Sized`] and [`Clone`] constraints, for object-safety.
+pub trait TermBase: 'static + Send + Sync + UnwindSafe + RefUnwindSafe {}
+impl<T> TermBase for T where T: 'static + Send + Sync + UnwindSafe + RefUnwindSafe {}
+
+/// A type suitable for use within a functional expression.
+pub trait Term: TermBase + Sized + Clone {}
+impl<T> Term for T where T: TermBase + Clone {}
+
+pub trait FunctionT<A, B>: TermBase + FnOnce(A) -> B
+where
+    A: Term,
+    B: Term,
+{
+    fn to_function(&self) -> Function<A, B>;
 }
 
 impl<F, A, B> FunctionT<A, B> for F
 where
-    F: FnOnce(A) -> B + Clone + UnwindSafe + 'static,
+    F: Term + FnOnce(A) -> B,
+    A: Term,
+    B: Term,
 {
-    fn clone_fun(&self) -> Function<A, B> {
+    fn to_function(&self) -> Function<A, B> {
         self.clone().boxed()
     }
 }
@@ -59,36 +73,46 @@ pub type Function<A, B> = Box<dyn FunctionT<A, B>>;
 
 impl<A, B> Clone for Function<A, B>
 where
-    A: 'static,
-    B: 'static,
+    A: Term,
+    B: Term,
 {
     fn clone(&self) -> Self {
-        (**self).clone_fun()
+        (**self).to_function()
     }
 }
 
-impl<A, B> Pointed for Function<A, B> {
+impl<A, B> Pointed for Function<A, B>
+where
+    A: Term,
+    B: Term,
+{
     type Pointed = B;
 }
 
-impl<A, B, C> WithPointed<C> for Function<A, B> {
+impl<A, B, C> WithPointed<C> for Function<A, B>
+where
+    A: Term,
+    B: Term,
+    C: Term,
+{
     type WithPointed = Function<A, C>;
 }
 
 impl<A, B, C> Functor<C> for Function<A, B>
 where
-    A: 'static,
-    B: 'static,
-    C: 'static + Clone + UnwindSafe,
+    A: Term,
+    B: Term,
+    C: Term,
 {
-    fn fmap(self, f: impl FunctionT<Self::Pointed, C> + Clone) -> Function<A, C> {
-        self.compose_clone(f).boxed()
+    fn fmap(self, f: impl FunctionT<Self::Pointed, C>) -> Function<A, C> {
+        self.compose_clone(f.to_function()).boxed()
     }
 }
 
 impl<A, B> PureA for Function<A, B>
 where
-    B: 'static + Clone + UnwindSafe,
+    A: Term,
+    B: Term,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         r#const(t).boxed()
@@ -97,9 +121,10 @@ where
 
 impl<I, F, A, B> AppA<Function<I, A>, Function<I, B>> for Function<I, F>
 where
-    F: FunctionT<A, B> + Clone,
-    I: 'static + Clone,
-    A: 'static,
+    F: Term + FunctionT<A, B>,
+    I: Term,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, g: Function<I, A>) -> Function<I, B> {
         let f = self;
@@ -107,22 +132,30 @@ where
     }
 }
 
-impl<A, B> ReturnM for Function<A, B> where B: 'static + Clone + UnwindSafe {}
+impl<A, B> ReturnM for Function<A, B>
+where
+    A: Term,
+    B: Term,
+{
+}
 
 impl<A, B, C> ChainM<Function<A, C>> for Function<A, B>
 where
-    A: 'static + Clone,
-    B: 'static,
+    A: Term,
+    B: Term,
+    C: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, Function<A, C>> + Clone) -> Function<A, C> {
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, Function<A, C>>) -> Function<A, C> {
         let f = self;
+        let k = k.to_function();
         (|r: A| k(f(r.clone()))(r)).boxed()
     }
 }
 
-pub fn r#const<T, U>(t: U) -> impl FunctionT<T, U> + Clone
+pub fn r#const<T, U>(t: U) -> impl FunctionT<T, U>
 where
-    U: 'static + Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
     move |_| t
 }

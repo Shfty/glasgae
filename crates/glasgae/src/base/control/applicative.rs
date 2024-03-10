@@ -72,9 +72,10 @@
 //! ```
 //! (which implies that pure and <*> satisfy the applicative functor laws).
 
-use std::panic::UnwindSafe;
-
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::function::{bifunction::BifunT, Term},
+    prelude::*,
+};
 
 /// Lift a value.
 pub trait PureA: Pointed {
@@ -127,7 +128,7 @@ pub trait PureA: Pointed {
 ///     .app(produce_bar())
 ///     .app(produce_baz());
 /// ```
-pub trait AppA<A1, A2> {
+pub trait AppA<A1, A2>: Pointed {
     fn app_a(self, a: A1) -> A2;
 }
 
@@ -148,32 +149,25 @@ pub trait AppA<A1, A2> {
 ///     Some((3, 5))
 /// )
 /// ```
-pub trait LiftA2<A1, A2, A3>:
-    FnOnce(A1::Pointed, A2::Pointed) -> A3::Pointed + Clone + 'static
+pub trait LiftA2<A1, A2, A3>: Sized + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>
 where
-    Self: UnwindSafe,
-    A1::Pointed: 'static + Clone + UnwindSafe,
+    Self: Term,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
     A1::WithPointed: AppA<A2, A3>,
     A2: Pointed,
-    A2::Pointed: 'static,
     A3: Pointed,
-    A3::Pointed: 'static,
 {
-    fn lift_a2(self) -> impl BifunT<A1, A2, A3> + Clone {
+    fn lift_a2(self) -> impl BifunT<A1, A2, A3> {
         |a1, a2| a1.fmap(|t| (|v| self(t, v)).boxed()).app_a(a2)
     }
 }
 
 impl<F, A1, A2, A3> LiftA2<A1, A2, A3> for F
 where
-    F: BifunT<A1::Pointed, A2::Pointed, A3::Pointed> + Clone,
+    F: Term + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::Pointed: 'static + Clone + UnwindSafe,
     A1::WithPointed: AppA<A2, A3>,
     A2: Pointed,
-    A2::Pointed: 'static,
     A3: Pointed,
-    A3::Pointed: 'static,
 {
 }

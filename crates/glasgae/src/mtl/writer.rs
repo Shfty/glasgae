@@ -5,8 +5,7 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/pubs/springschool.html>)
 //! Advanced School of Functional Programming, 1995.
 
-use std::panic::UnwindSafe;
-
+use crate::base::data::function::Term;
 use crate::prelude::*;
 
 use crate::transformers::{class::MonadTrans, reader::ReaderT, state::StateT, writer::WriterT};
@@ -34,6 +33,7 @@ pub trait MonadPass<MF> {
 // WriterT impl
 impl<MA, W, A> MonadWriter<W, A> for WriterT<W, MA>
 where
+    W: Term,
     MA: ReturnM<Pointed = (A, W)>,
 {
     fn writer(a: A, w: W) -> Self {
@@ -43,6 +43,7 @@ where
 
 impl<MA, W, A> MonadTell<W, A> for WriterT<W, MA>
 where
+    W: Term,
     MA: ReturnM<Pointed = ((), W)>,
 {
     fn tell(w: W) -> Self {
@@ -52,9 +53,10 @@ where
 
 impl<MA, MO, W, A> MonadListen<WriterT<W, MO>> for WriterT<W, MA>
 where
-    W: Clone,
     MA: ChainM<MO, Pointed = (A, W)>,
-    MO: Clone + ReturnM<Pointed = ((A, W), W)>,
+    MO: ReturnM<Pointed = ((A, W), W)>,
+    W: Term,
+    A: Term,
 {
     fn listen(self) -> WriterT<W, MO> {
         self.listen()
@@ -64,8 +66,11 @@ where
 impl<MA, MB, W, A, F, B> MonadPass<WriterT<W, MB>> for WriterT<W, MA>
 where
     MA: ChainM<MB, Pointed = ((A, F), W)>,
-    MB: Clone + ReturnM<Pointed = (A, B)>,
-    F: Clone + FunctionT<W, B>,
+    MB: ReturnM<Pointed = (A, B)>,
+    W: Term,
+    F: Term + FunctionT<W, B>,
+    A: Term,
+    B: Term,
 {
     fn pass(self) -> WriterT<W, MB> {
         self.pass()
@@ -75,7 +80,8 @@ where
 // ReaderT impl
 impl<MA, R, W, A> MonadWriter<W, A> for ReaderT<R, MA>
 where
-    MA: Clone + UnwindSafe + MonadWriter<W, A>,
+    R: Term,
+    MA: Pointed + MonadWriter<W, A>,
 {
     fn writer(a: A, w: W) -> Self {
         Self::lift(MA::writer(a, w))
@@ -84,7 +90,8 @@ where
 
 impl<MA, R, W, A> MonadTell<W, A> for ReaderT<R, MA>
 where
-    MA: Clone + UnwindSafe + MonadTell<W, A>,
+    R: Term,
+    MA: Pointed + MonadTell<W, A>,
 {
     fn tell(w: W) -> Self {
         Self::lift(MA::tell(w))
@@ -93,9 +100,9 @@ where
 
 impl<MA, MB, R> MonadListen<ReaderT<R, MB>> for ReaderT<R, MA>
 where
-    R: Clone,
-    MA: Clone + UnwindSafe + MonadListen<MB>,
-    MB: UnwindSafe,
+    R: Term,
+    MA: ReturnM + MonadListen<MB>,
+    MB: Pointed,
 {
     fn listen(self) -> ReaderT<R, MB> {
         self.map_t(MA::listen)
@@ -104,9 +111,9 @@ where
 
 impl<MA, MB, R> MonadPass<ReaderT<R, MB>> for ReaderT<R, MA>
 where
-    R: Clone,
-    MA: Clone + UnwindSafe + MonadPass<MB>,
-    MB: UnwindSafe,
+    R: Term,
+    MA: ReturnM + MonadPass<MB>,
+    MB: Pointed,
 {
     fn pass(self) -> ReaderT<R, MB> {
         self.map_t(MA::pass)
@@ -117,7 +124,8 @@ where
 impl<MA, S, W, A> MonadWriter<W, A> for StateT<S, MA>
 where
     Self: MonadTrans<MA>,
-    MA: MonadWriter<W, A>,
+    S: Term,
+    MA: Term + MonadWriter<W, A>,
 {
     fn writer(a: A, w: W) -> Self {
         Self::lift(MA::writer(a, w))
@@ -127,7 +135,8 @@ where
 impl<MA, R, W, A> MonadTell<W, A> for StateT<R, MA>
 where
     Self: MonadTrans<MA>,
-    MA: MonadTell<W, A>,
+    R: Term,
+    MA: Term + MonadTell<W, A>,
 {
     fn tell(w: W) -> Self {
         Self::lift(MA::tell(w))
@@ -136,8 +145,9 @@ where
 
 impl<MA, MB, R> MonadListen<StateT<R, MB>> for StateT<R, MA>
 where
-    R: Clone + UnwindSafe,
-    MA: Clone + UnwindSafe + MonadListen<MB>,
+    R: Term,
+    MA: ReturnM + MonadListen<MB>,
+    MB: Pointed,
 {
     fn listen(self) -> StateT<R, MB> {
         self.map_t(MA::listen)
@@ -146,8 +156,9 @@ where
 
 impl<MA, MB, R> MonadPass<StateT<R, MB>> for StateT<R, MA>
 where
-    R: Clone + UnwindSafe,
-    MA: Clone + UnwindSafe + MonadPass<MB>,
+    R: Term,
+    MA: ReturnM + MonadPass<MB>,
+    MB: Pointed,
 {
     fn pass(self) -> StateT<R, MB> {
         self.map_t(MA::pass)
@@ -155,38 +166,50 @@ where
 }
 
 /// Support functions
-pub trait Listens<W, MA, A, B, MAB>: MonadWriter<W, A> {
+pub trait Listens<W, MA, A, B, MAB>: MonadWriter<W, A>
+where
+    W: Term,
+    B: Term,
+{
     /// listens f m is an action that executes the action m and adds the result of applying f to the output to the value of the computation.
     ///
     /// listens f m = liftM (id *** f) (listen m)
-    fn listens(self, f: impl FunctionT<W, B> + Clone) -> MAB;
+    fn listens(self, f: impl FunctionT<W, B>) -> MAB;
 }
 
 impl<W, MA, A, B, T, MAB> Listens<W, MA, A, B, MAB> for T
 where
     T: MonadWriter<W, A> + MonadListen<MA>,
     MA: ChainM<MAB, Pointed = (A, W)>,
-    MAB: Clone + ReturnM<Pointed = (A, B)>,
-    W: Clone,
+    MAB: ReturnM<Pointed = (A, B)>,
+    W: Term,
+    A: Term,
+    B: Term,
 {
-    fn listens(self, f: impl FunctionT<W, B> + Clone) -> MAB {
+    fn listens(self, f: impl FunctionT<W, B>) -> MAB {
+        let f = f.to_function();
         self.listen().chain_m(|(a, w)| ReturnM::return_m((a, f(w))))
     }
 }
 
-pub trait Censor<W, B, MA, MF> {
+pub trait Censor<W, B, MA, MF>
+where
+    W: Term,
+{
     /// censor f m is an action that executes the action m and applies the function f to its output, leaving the return value unchanged.
     ///
     /// censor f m = pass (liftM (\x -> (x,f)) m)
-    fn censor(self, f: impl FunctionT<W, W> + Clone) -> MF;
+    fn censor(self, f: impl FunctionT<W, W>) -> MF;
 }
 
 impl<T, W, B, MA, MF> Censor<W, B, MA, MF> for T
 where
-    T: MonadPass<MA> + ChainM<MA>,
     MA: MonadPass<MF> + ReturnM<Pointed = (T::Pointed, Function<W, W>)>,
+    W: Term,
+    T: MonadPass<MA> + ChainM<MA>,
 {
-    fn censor(self, f: impl FunctionT<W, W> + Clone) -> MF {
+    fn censor(self, f: impl FunctionT<W, W>) -> MF {
+        let f = f.to_function();
         MA::pass(self.chain_m(|a| ReturnM::return_m((a, (f.boxed() as Box<dyn FunctionT<_, _>>)))))
     }
 }

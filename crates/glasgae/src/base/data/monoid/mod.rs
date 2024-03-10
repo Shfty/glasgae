@@ -83,13 +83,13 @@
 //! );
 //! ```
 
+mod endo;
 mod product;
 mod sum;
-mod endo;
 
+pub use endo::*;
 pub use product::*;
 pub use sum::*;
-pub use endo::*;
 
 use super::{foldable::Foldr, semigroup::Semigroup};
 
@@ -141,7 +141,7 @@ use super::{foldable::Foldr, semigroup::Semigroup};
 /// e.g. both addition and multiplication on numbers.
 ///
 /// In such cases we often define newtypes and make those instances of `Monoid`, e.g. `Sum` and `Product`.
-pub trait Monoid: 'static + Sized + Semigroup {
+pub trait Monoid: Semigroup {
     /// Identity of `assoc_s`
     fn mempty() -> Self {
         Monoid::mconcat(vec![])

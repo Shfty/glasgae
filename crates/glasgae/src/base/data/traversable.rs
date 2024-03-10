@@ -10,6 +10,8 @@
 
 use crate::prelude::*;
 
+use super::function::Term;
+
 /// Map each element of a structure to an action, evaluate these actions from left to right,
 /// and collect the results.
 ///
@@ -51,8 +53,11 @@ use crate::prelude::*;
 ///     Left(0)
 /// );
 /// ```
-pub trait TraverseT<A1, T, A2>: Pointed {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A2;
+pub trait TraverseT<A1, T, A2>: Pointed
+where
+    A1: Term,
+{
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2;
 }
 
 /// Evaluate each action in the structure from left to right, and collect the results.
@@ -130,14 +135,22 @@ where
 }
 
 /// TraverseT with additional Monad semantic
-pub trait MapM<A, T, B>: Sized + TraverseT<A, T, B> {
+pub trait MapM<A, T, B>: TraverseT<A, T, B>
+where
+    A: Term,
+{
     /// Map each element of a structure to a monadic action, evaluate these actions from left to right, and collect the results. For a version that ignores the results see mapM_.
     ///
     /// Examples
     /// mapM is literally a traverse with a type signature restricted to Monad. Its implementation may be more efficient due to additional power of Monad.
-    fn map_m(self, f: impl FunctionT<Self::Pointed, A> + Clone) -> B {
+    fn map_m(self, f: impl FunctionT<Self::Pointed, A>) -> B {
         self.traverse_t(f)
     }
 }
 
-impl<T, A, U, B> MapM<A, U, B> for T where T: TraverseT<A, U, B> {}
+impl<T, A, U, B> MapM<A, U, B> for T
+where
+    T: TraverseT<A, U, B>,
+    A: Term,
+{
+}

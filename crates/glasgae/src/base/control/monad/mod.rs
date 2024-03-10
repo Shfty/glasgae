@@ -42,10 +42,11 @@
 
 pub mod io;
 
-use std::panic::UnwindSafe;
-
 use crate::{
-    base::data::{function::bifunction::BifunT, list::vec::push},
+    base::data::{
+        function::{bifunction::BifunT, Term},
+        list::vec::push,
+    },
     prelude::*,
 };
 
@@ -67,8 +68,9 @@ pub trait ReturnM: PureA {
 /// let a = as();
 /// bs(a);
 /// ```
-pub trait ChainM<T>: Pointed {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, T> + Clone) -> T;
+pub trait ChainM<T: Term>: Pointed
+{
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, T>) -> T;
 }
 
 /// Sequentially compose two actions, discarding any value produced by the first,
@@ -79,15 +81,9 @@ pub trait ChainM<T>: Pointed {
 /// as();
 /// bs();
 /// ```
-pub trait ThenM<T>: ChainM<T>
-where
-    T: UnwindSafe,
+pub trait ThenM<T: Term>: Sized + ChainM<T>
 {
-    fn then_m(self, t: T) -> T
-    where
-        Self: Sized,
-        T: 'static + Clone,
-    {
+    fn then_m(self, t: T) -> T {
         self.chain_m(|_| t)
     }
 }
@@ -95,23 +91,24 @@ where
 impl<T, U> ThenM<U> for T
 where
     T: ChainM<U>,
-    U: UnwindSafe,
+    U: Term,
 {
 }
 
 /// This generalizes the list-based filter function.
-pub trait FilterM<M1, A, M3> {
-    fn filter_m(self, f: impl FunctionT<A, M1> + Clone) -> M3;
+pub trait FilterM<M1: Term, A: Term, M3> {
+    fn filter_m(self, f: impl FunctionT<A, M1>) -> M3;
 }
 
 impl<A, M1, M3> FilterM<M1, A, M3> for Vec<A>
 where
     M1: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool>,
-    M1::WithPointed: Clone + AppA<M3, M3>,
+    M1::WithPointed: AppA<M3, M3>,
     M3: Pointed<Pointed = Vec<A>> + PureA,
-    A: 'static + Clone + UnwindSafe,
+    A: Term,
 {
-    fn filter_m(self, f: impl FunctionT<A, M1> + Clone) -> M3 {
+    fn filter_m(self, f: impl FunctionT<A, M1>) -> M3 {
+        let f = f.to_function();
         self.foldr(
             |next, acc| {
                 {
@@ -148,16 +145,19 @@ where
 ///
 /// Note: foldM is the same as foldlM
 pub trait FoldM<M1, A, B> {
-    fn fold_m(self, f: impl BifunT<A, B, M1> + Clone, a: A) -> M1;
+    fn fold_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
 }
 
 impl<MB, A, B> FoldM<MB, A, B> for Vec<B>
 where
-    MB: ReturnM<Pointed = A> + ChainM<MB> + Clone,
-    B: 'static + Clone + UnwindSafe,
+    MB: ReturnM<Pointed = A> + ChainM<MB>,
+    A: Term,
+    B: Term,
 {
-    fn fold_m(self, f: impl BifunT<A, B, MB> + Clone, a: A) -> MB {
+    fn fold_m(self, f: impl BifunT<A, B, MB>, a: A) -> MB {
         let mut xs = self;
+        let f = f.to_bifun();
+
         if xs.is_empty() {
             ReturnM::return_m(a)
         } else {
@@ -178,16 +178,16 @@ where
 /// # use glasgae::{base::control::monad::ReplicateM, transformers::{state::State}};
 /// assert_eq!(State::new(|s| (s, s + 1)).replicate_m(3).run(1), (vec![1,2,3],4));
 /// ```
-pub trait ReplicateM<MB, T> {
+pub trait ReplicateM<MB, T>: Term {
     fn replicate_m(self, count: usize) -> MB;
 }
 
 impl<MA, MB, T> ReplicateM<MB, T> for MA
 where
-    MA: Clone + Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
+    MA: Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
     MA::WithPointed: AppA<MB, MB>,
     MB: PureA<Pointed = Vec<T>>,
-    T: 'static + Clone + UnwindSafe,
+    T: Term,
 {
     fn replicate_m(self, count: usize) -> MB {
         let f = self;
@@ -199,10 +199,12 @@ where
     }
 }
 
-pub trait LiftM<MA, MB, A, B>: FunctionT<A, B> + Clone
+pub trait LiftM<MA, MB, A, B>: Term + FunctionT<A, B>
 where
     MA: ChainM<MB, Pointed = A>,
     MB: ReturnM<Pointed = B>,
+    A: Term,
+    B: Term,
 {
     fn lift_m(self) -> Function<MA, MB> {
         (|m1: MA| m1.chain_m(|x1| ReturnM::return_m(self(x1)))).boxed()
@@ -211,8 +213,10 @@ where
 
 impl<F, MA, MB, A, B> LiftM<MA, MB, A, B> for F
 where
-    F: FunctionT<A, B> + Clone,
+    F: Term + FunctionT<A, B>,
     MA: ChainM<MB, Pointed = A>,
     MB: ReturnM<Pointed = B>,
+    A: Term,
+    B: Term,
 {
 }

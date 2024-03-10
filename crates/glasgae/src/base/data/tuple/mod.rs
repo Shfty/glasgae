@@ -32,21 +32,26 @@ impl<A, B, C> Apply<2, A, B, C> for (A, B) {
 
 macro_rules ! impl_tuple {
     ($a:tt) => {
-        impl<$a> Pointed for ($a,) {
+        impl<$a> Pointed for ($a,) where $a: crate::base::data::function::Term {
             type Pointed = $a;
         }
 
-        impl<$a, R_> WithPointed<R_> for ($a,) {
+        impl<$a, R_> WithPointed<R_> for ($a,)
+        where
+            $a: crate::base::data::function::Term,
+            R_: crate::base::data::function::Term
+        {
             type WithPointed = (R_,);
         }
 
         impl<$a, R_> Functor<R_> for ($a,)
         where
-            R_: Clone + std::panic::UnwindSafe,
+            $a: crate::base::data::function::Term,
+            R_: crate::base::data::function::Term,
         {
             fn fmap(
                 self,
-                f: impl crate::prelude::FunctionT<Self::Pointed, R_> + Clone,
+                f: impl crate::prelude::FunctionT<Self::Pointed, R_>,
             ) -> Self::WithPointed {
                 let (t,) = self;
                 (f(t),)
@@ -54,21 +59,38 @@ macro_rules ! impl_tuple {
         }
     };
     ($a:tt | $($tuple:tt),*) => {
-        impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a) {
+        impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a)
+        where
+            $(
+                $tuple: crate::base::data::function::Term,
+            )*
+            $a: crate::base::data::function::Term,
+        {
             type Pointed = $a;
         }
 
-        impl<$($tuple,)* $a, R_> WithPointed<R_> for ($($tuple,)* $a) {
+        impl<$($tuple,)* $a, R_> WithPointed<R_> for ($($tuple,)* $a)
+        where
+            $(
+                $tuple: crate::base::data::function::Term,
+            )*
+            $a: crate::base::data::function::Term,
+            R_: crate::base::data::function::Term,
+        {
             type WithPointed = ($($tuple,)* R_,);
         }
 
         impl<$($tuple,)* $a, R_> Functor<R_> for ($($tuple,)* $a)
         where
-            R_: Clone + std::panic::UnwindSafe,
+            $(
+                $tuple: crate::base::data::function::Term,
+            )*
+            $a: crate::base::data::function::Term,
+            R_: crate::base::data::function::Term,
         {
             fn fmap(
                 self,
-                f: impl crate::prelude::FunctionT<Self::Pointed, R_> + Clone,
+                f: impl crate::prelude::FunctionT<Self::Pointed, R_>,
             ) -> Self::WithPointed {
                 #[allow(non_snake_case)]
                 let ($($tuple,)* t,) = self;

@@ -4,10 +4,11 @@
 //!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
-use std::panic::UnwindSafe;
-
 use crate::{
-    base::{control::monad::io::MonadIO, data::FoldMap},
+    base::{
+        control::monad::io::MonadIO,
+        data::{function::Term, FoldMap},
+    },
     prelude::{
         AppA, ChainM, FunctionT, Functor, Maybe, Maybe::*, Monoid, Pointed, PureA, ReturnM,
         SequenceA, TraverseT, WithPointed, IO,
@@ -24,7 +25,10 @@ use super::class::MonadTrans;
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct MaybeT<MA>(MA);
 
-impl<MA> MaybeT<MA> {
+impl<MA> MaybeT<MA>
+where
+    MA: Term,
+{
     /// Convert a Maybe computation to MaybeT.
     pub fn new(t: MA::Pointed) -> Self
     where
@@ -42,7 +46,10 @@ impl<MA> MaybeT<MA> {
     /// ```text
     /// m.map(f).run() = f(m.run())
     /// ```
-    pub fn map<MB>(self, f: impl FunctionT<MA, MB>) -> MaybeT<MB> {
+    pub fn map<MB>(self, f: impl FunctionT<MA, MB>) -> MaybeT<MB>
+    where
+        MB: Term,
+    {
         MaybeT(f(self.run()))
     }
 }
@@ -50,6 +57,7 @@ impl<MA> MaybeT<MA> {
 impl<MA, T> Pointed for MaybeT<MA>
 where
     MA: Pointed<Pointed = Maybe<T>>,
+    T: Term,
 {
     type Pointed = T;
 }
@@ -57,6 +65,8 @@ where
 impl<MA, T, U> WithPointed<U> for MaybeT<MA>
 where
     MA: WithPointed<Maybe<U>, Pointed = Maybe<T>>,
+    T: Term,
+    U: Term,
 {
     type WithPointed = MaybeT<MA::WithPointed>;
 }
@@ -64,10 +74,11 @@ where
 impl<MA, A, B> Functor<B> for MaybeT<MA>
 where
     MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
-    A: Clone,
-    B: Clone + UnwindSafe,
+    A: Term,
+    B: Term,
 {
-    fn fmap(self, f: impl crate::prelude::FunctionT<A, B> + Clone) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::WithPointed {
+        let f = f.to_function();
         self.map(|t| t.fmap(|t| t.fmap(f)))
     }
 }
@@ -75,6 +86,7 @@ where
 impl<MA, A> PureA for MaybeT<MA>
 where
     MA: ReturnM<Pointed = Maybe<A>>,
+    A: Term,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         MaybeT(ReturnM::return_m(Just(t)))
@@ -84,9 +96,11 @@ where
 impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
 where
     MF: ChainM<MB, Pointed = Maybe<F>>,
-    MA: 'static + UnwindSafe + Clone + ChainM<MB, Pointed = Maybe<A>>,
+    MA: ChainM<MB, Pointed = Maybe<A>>,
     MB: ReturnM<Pointed = Maybe<B>>,
-    F: Clone + FunctionT<A, B>,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, mx: MaybeT<MA>) -> MaybeT<MB> {
         let mf = self;
@@ -105,10 +119,9 @@ where
 impl<MA, A> ReturnM for MaybeT<MA>
 where
     MA: ReturnM<Pointed = Maybe<A>>,
+    A: Term,
 {
     fn return_m(t: Self::Pointed) -> Self
-    where
-        Self: Sized,
     {
         MaybeT(ReturnM::return_m(Just(t)))
     }
@@ -118,9 +131,12 @@ impl<MA, MB, A, B> ChainM<MaybeT<MB>> for MaybeT<MA>
 where
     MA: ChainM<MB, Pointed = Maybe<A>>,
     MB: ReturnM<Pointed = Maybe<B>>,
+    A: Term,
+    B: Term,
 {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, MaybeT<MB>> + Clone) -> MaybeT<MB> {
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, MaybeT<MB>>) -> MaybeT<MB> {
         let x = self;
+        let f = f.to_function();
         MaybeT({
             x.run().chain_m(|v| match v {
                 Nothing => ReturnM::return_m(Nothing),
@@ -136,7 +152,8 @@ where
     A: FoldMap<A, B>,
     B: Monoid,
 {
-    fn fold_map(self, f: impl FunctionT<A, B> + Clone) -> B {
+    fn fold_map(self, f: impl FunctionT<A, B>) -> B {
+        let f = f.to_function();
         self.run().fold_map(|t| t.fold_map(f))
     }
 }
@@ -144,8 +161,10 @@ where
 impl<A, MA, A1, T, A2> TraverseT<A1, T, A2> for MaybeT<MA>
 where
     MA: Pointed<Pointed = Maybe<A>>,
+    A: Term,
+    A1: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A2 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         todo!()
     }
 }
@@ -153,6 +172,7 @@ where
 impl<A1, A_, A2> SequenceA<A_, A2> for MaybeT<A1>
 where
     Self: TraverseT<A1, A_, A2>,
+    A1: Term,
 {
     fn sequence_a(self) -> A2 {
         todo!()
@@ -169,7 +189,7 @@ impl<MA, A> MonadIO<A> for MaybeT<MA>
 where
     Self: MonadTrans<IO<A>>,
     MA: Pointed<Pointed = Maybe<A>>,
-    A: 'static,
+    A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
         Self::lift(MonadIO::lift_io(m))

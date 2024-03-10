@@ -4,12 +4,13 @@
 /// This monad transformer provides only limited access to the output
 /// during the computation.
 /// For more general access, use Control.Monad.Trans.State instead.
-use std::{marker::PhantomData, panic::UnwindSafe};
+use std::marker::PhantomData;
 
 use crate::{
     base::{
         control::monad::io::MonadIO,
         data::{
+            function::Term,
             functor::identity::Identity,
             pointed::{Lower, LoweredT},
             tuple::pair::Pair,
@@ -25,7 +26,11 @@ use super::class::MonadTrans;
 /// The return function produces the output mempty, while >>= combines the outputs of the subcomputations using mappend.
 pub type Writer<W, A> = WriterT<W, Identity<(A, W)>>;
 
-impl<W, A> Writer<W, A> {
+impl<W, A> Writer<W, A>
+where
+    W: Term,
+    A: Term,
+{
     /// Unwrap a writer computation as a (result, output) pair. (The inverse of writer.)
     pub fn run(self) -> (A, W) {
         self.run_t().run()
@@ -41,7 +46,12 @@ impl<W, A> Writer<W, A> {
     /// Map both the return value and output of a computation using the given function.
     ///
     /// runWriter (mapWriter f m) = f (runWriter m)
-    pub fn map<B, W_>(self, f: impl FunctionT<(A, W), (B, W_)> + Clone) -> Writer<W_, B> {
+    pub fn map<B, W_>(self, f: impl FunctionT<(A, W), (B, W_)>) -> Writer<W_, B>
+    where
+        B: Term,
+        W_: Term,
+    {
+        let f = f.to_function();
         self.map_t(|t| Identity(f(t.run())))
     }
 }
@@ -55,7 +65,11 @@ impl<W, A> Writer<W, A> {
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct WriterT<W, MA>(MA, PhantomData<W>);
 
-impl<W, M> WriterT<W, M> {
+impl<W, M> WriterT<W, M>
+where
+    W: Term,
+    M: Term,
+{
     pub fn new_t(m: M) -> Self {
         WriterT(m, PhantomData)
     }
@@ -77,8 +91,9 @@ impl<W, M> WriterT<W, M> {
     /// execWriterT m = liftM snd (runWriterT m)
     pub fn exec_t<A, N>(self) -> N
     where
-        M: Clone + ChainM<N, Pointed = (A, W)>,
-        N: Clone + ReturnM<Pointed = W>,
+        M: ChainM<N, Pointed = (A, W)>,
+        N: ReturnM<Pointed = W>,
+        A: Term,
     {
         self.run_t().chain_m(|(_, w)| ReturnM::return_m(w))
     }
@@ -86,7 +101,11 @@ impl<W, M> WriterT<W, M> {
     /// Map both the return value and output of a computation using the given function.
     ///
     /// runWriterT (mapWriterT f m) = f (runWriterT m)
-    pub fn map_t<W_, N>(self, f: impl FunctionT<M, N>) -> WriterT<W_, N> {
+    pub fn map_t<W_, N>(self, f: impl FunctionT<M, N>) -> WriterT<W_, N>
+    where
+        W_: Term,
+        N: Term,
+    {
         WriterT::new_t(f(self.run_t()))
     }
 
@@ -104,8 +123,8 @@ impl<W, M> WriterT<W, M> {
     pub fn listen<N, A>(self) -> WriterT<W, N>
     where
         M: ChainM<N, Pointed = (A, W)>,
-        N: Clone + ReturnM<Pointed = ((A, W), W)>,
-        W: Clone,
+        N: ReturnM<Pointed = ((A, W), W)>,
+        A: Term,
     {
         WriterT::new_t(
             self.run_t()
@@ -117,12 +136,15 @@ impl<W, M> WriterT<W, M> {
     ///
     /// listens f m = liftM (id *** f) (listen m)
     /// runWriterT (listens f m) = liftM (\ (a, w) -> ((a, f w), w)) (runWriterT m)
-    pub fn listens<N, A, B>(self, f: impl FunctionT<W, B> + Clone) -> WriterT<W, N>
+    pub fn listens<N, A, B>(self, f: impl FunctionT<W, B>) -> WriterT<W, N>
     where
         M: ChainM<N, Pointed = (A, W)>,
-        N: Clone + ReturnM<Pointed = ((A, B), W)>,
-        W: Clone,
+        N: ReturnM<Pointed = ((A, B), W)>,
+        W: Term,
+        A: Term,
+        B: Term,
     {
+        let f = f.to_function();
         WriterT::new_t(
             self.run_t()
                 .chain_m(|(a, w)| ReturnM::return_m(((a, f(w.clone())), w))),
@@ -135,8 +157,10 @@ impl<W, M> WriterT<W, M> {
     pub fn pass<F, A, B, N>(self) -> WriterT<W, N>
     where
         M: ChainM<N, Pointed = ((A, F), W)>,
-        N: Clone + ReturnM<Pointed = (A, B)>,
-        F: FunctionT<W, B>,
+        N: ReturnM<Pointed = (A, B)>,
+        F: Term + FunctionT<W, B>,
+        A: Term,
+        B: Term,
     {
         WriterT::new_t(
             self.run_t()
@@ -148,25 +172,31 @@ impl<W, M> WriterT<W, M> {
     ///
     /// censor f m = pass (liftM (\ x -> (x,f)) m)
     /// runWriterT (censor f m) = liftM (\ (a, w) -> (a, f w)) (runWriterT m)
-    pub fn censor<A>(self, f: impl FunctionT<W, W> + Clone) -> Self
+    pub fn censor<A>(self, f: impl FunctionT<W, W>) -> Self
     where
         M: Clone + ChainM<M> + ReturnM<Pointed = (A, W)>,
+        A: Term,
     {
+        let f = f.to_function();
         WriterT::new_t(self.run_t().chain_m(|(a, w)| ReturnM::return_m((a, f(w)))))
     }
 }
 
 impl<W, MA, A> Pointed for WriterT<W, MA>
 where
+    W: Term,
     MA: Pointed<Pointed = (A, W)>,
+    A: Term,
 {
     type Pointed = A;
 }
 
 impl<W, M, A, B> WithPointed<B> for WriterT<W, M>
 where
+    W: Term,
     M: WithPointed<(B, W), Pointed = (A, W)>,
-    M::WithPointed: Pointed<Pointed = (B, W)>,
+    A: Term,
+    B: Term,
 {
     type WithPointed = WriterT<W, M::WithPointed>;
 }
@@ -174,19 +204,21 @@ where
 impl<W, M, A, B> Functor<B> for WriterT<W, M>
 where
     M: Functor<(B, W), Pointed = (A, W)>,
-    M::WithPointed: Pointed<Pointed = (B, W)>,
-    B: Clone + UnwindSafe,
-    W: Clone + UnwindSafe,
+    W: Term,
+    A: Term,
+    B: Term,
 {
-    fn fmap(self, f: impl FunctionT<Self::Pointed, B> + Clone) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed {
+        let f = f.to_function();
         self.map_t(|t| t.fmap(|(a, w)| (f(a), w)))
     }
 }
 
 impl<W, M, A> PureA for WriterT<W, M>
 where
-    M: ReturnM<Pointed = (A, W)>,
     W: Monoid,
+    M: ReturnM<Pointed = (A, W)>,
+    A: Term,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         WriterT::new((t, Monoid::mempty()))
@@ -195,14 +227,15 @@ where
 
 impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
 where
-    MF: Clone + Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
+    MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
+    F: AppA<MA, MB>,
     MF::WithPointed: AppA<MA, MB>,
     MA: Pointed<Pointed = (A, W)>,
     MB: ReturnM<Pointed = (B, W)>,
-    W: Clone + Monoid + UnwindSafe,
-    F: Clone + FunctionT<A, B>,
-    A: 'static,
-    B: 'static,
+    W: Pointed<Pointed = (A, W)> + Semigroup,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, v: WriterT<W, MA>) -> WriterT<W, MB> {
         let k = (|(a, w): (F, W), (b, w_): (A, W)| (a(b), w.assoc_s(w_))).lift_a2();
@@ -215,22 +248,26 @@ where
 
 impl<W, M, A> ReturnM for WriterT<W, M>
 where
-    M: ReturnM<Pointed = (A, W)>,
     W: Monoid,
+    M: ReturnM<Pointed = (A, W)>,
+    A: Term,
 {
 }
 
 impl<W, M, N, A, B> ChainM<WriterT<W, N>> for WriterT<W, M>
 where
-    W: Clone + Monoid + UnwindSafe,
+    W: Monoid,
     M: ReturnM<Pointed = (A, W)> + ChainM<N>,
-    N: Clone + ReturnM<Pointed = (B, W)> + ChainM<N>,
+    N: ReturnM<Pointed = (B, W)> + ChainM<N>,
+    A: Term,
+    B: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, WriterT<W, N>> + Clone) -> WriterT<W, N>
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, WriterT<W, N>>) -> WriterT<W, N>
     where
         WriterT<W, N>: Clone,
     {
         let m = self;
+        let k = k.to_function();
         WriterT::new_t(m.run_t().chain_m(|(a, w)| {
             k(a).run_t()
                 .chain_m(|(b, w_)| ReturnM::return_m((b, w.assoc_s(w_))))
@@ -243,6 +280,7 @@ where
     MO: Lower<W, A> + ReturnM<Pointed = (A, W)>,
     MO::Lowered: ChainM<MO>,
     W: Monoid,
+    A: Term,
 {
     fn lift(m: MO::Lowered) -> Self {
         WriterT::new_t(m.chain_m(|a| ReturnM::return_m((a, Monoid::mempty()))))
@@ -251,10 +289,10 @@ where
 
 impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
 where
-    Self: MonadTrans<MA::Lowered>,
-    MA: Lower<W, A>,
-    MA::Lowered: MonadIO<A>,
-    A: 'static,
+    MA: Lower<W, A> + ReturnM<Pointed = (A, W)>,
+    MA::Lowered: MonadIO<A> + ChainM<MA>,
+    W: Monoid,
+    A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
         Self::lift(LoweredT::<MA, W, A>::lift_io(m))

@@ -2,10 +2,8 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use std::panic::UnwindSafe;
-
 use crate::{
-    base::control::monad::io::MonadIO,
+    base::{control::monad::io::MonadIO, data::function::Term},
     prelude::{AppA, ChainM, FunctionT, Functor, Pointed, PureA, ReturnM, WithPointed, IO},
 };
 
@@ -15,7 +13,10 @@ use super::class::MonadTrans;
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct IdentityT<MA>(MA);
 
-impl<MA> IdentityT<MA> {
+impl<MA> IdentityT<MA>
+where
+    MA: Term,
+{
     pub fn new(ma: MA) -> Self {
         IdentityT(ma)
     }
@@ -28,6 +29,7 @@ impl<MA> IdentityT<MA> {
     pub fn map<MB>(self, f: impl FunctionT<MA, MB>) -> IdentityT<MB>
     where
         MA: Pointed,
+        MB: Term,
     {
         IdentityT(f(self.run()))
     }
@@ -50,12 +52,9 @@ where
 impl<MA, T> Functor<T> for IdentityT<MA>
 where
     MA: Functor<T>,
-    T: Clone + UnwindSafe,
+    T: Term,
 {
-    fn fmap(
-        self,
-        f: impl crate::prelude::FunctionT<Self::Pointed, T> + Clone,
-    ) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, T>) -> Self::WithPointed {
         IdentityT(self.0.fmap(f))
     }
 }
@@ -72,6 +71,8 @@ where
 impl<MA, A1, A2> AppA<IdentityT<A1>, IdentityT<A2>> for IdentityT<MA>
 where
     MA: AppA<A1, A2>,
+    A1: Term,
+    A2: Term,
 {
     fn app_a(self, a: IdentityT<A1>) -> IdentityT<A2> {
         IdentityT(self.run().app_a(a.run()))
@@ -93,17 +94,22 @@ where
 impl<MA, MB> ChainM<IdentityT<MB>> for IdentityT<MA>
 where
     MA: ChainM<MB>,
+    MB: Term,
 {
     fn chain_m(
         self,
-        k: impl crate::prelude::FunctionT<Self::Pointed, IdentityT<MB>> + Clone,
+        k: impl crate::prelude::FunctionT<Self::Pointed, IdentityT<MB>>,
     ) -> IdentityT<MB> {
         let m = self;
+        let k = k.to_function();
         IdentityT(m.run().chain_m(|t| k(t).run()))
     }
 }
 
-impl<MA> MonadTrans<MA> for IdentityT<MA> {
+impl<MA> MonadTrans<MA> for IdentityT<MA>
+where
+    MA: Term,
+{
     fn lift(m: MA) -> Self {
         IdentityT::new(m)
     }
@@ -113,7 +119,7 @@ impl<MA, A> MonadIO<A> for IdentityT<MA>
 where
     Self: MonadTrans<IO<A>>,
     MA: Pointed<Pointed = A>,
-    A: 'static,
+    A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
         Self::lift(MonadIO::lift_io(m))

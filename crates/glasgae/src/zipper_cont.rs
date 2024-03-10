@@ -1,23 +1,21 @@
-use std::panic::UnwindSafe;
-
 use crate::{
     base::{
         control::zipper::{Travel, Zipper},
-        data::function::bifunction::BifunT,
+        data::function::{bifunction::BifunT, Term},
     },
     prelude::*,
     transformers::cont::Cont,
 };
 
-pub trait ZipMove<D, M> {
+pub trait ZipMove<D, M>: Term {
     fn zip_move(self, dir: D) -> M;
 }
 
 impl<M, T, D> ZipMove<D, M> for Zipper<T, D>
 where
     M: ReturnM<Pointed = Zipper<T, D>>,
-    T: std::fmt::Debug,
-    D: std::fmt::Debug,
+    T: Term + std::fmt::Debug,
+    D: Term + std::fmt::Debug,
 {
     fn zip_move(self, dir: D) -> M {
         match self {
@@ -33,25 +31,30 @@ where
 impl<M, T, D> ZipMove<D, M> for Cont<T>
 where
     Self: ChainM<M, Pointed = T>,
-    M: Clone + ReturnM<Pointed = T>,
+    M: ReturnM<Pointed = T>,
     T: ZipMove<D, M>,
-    D: 'static + Clone + UnwindSafe,
+    D: Term,
 {
     fn zip_move(self, dir: D) -> M {
         self.chain_m(|t| t.zip_move(dir))
     }
 }
 
-pub trait ZipAllTheWay<M, T, D>: Sized {
-    fn zip_all_the_way(self, dir: D, f: impl FunctionT<T, Option<T>> + Clone) -> M;
+pub trait ZipAllTheWay<M, T, D>: Term
+where
+    T: Term,
+{
+    fn zip_all_the_way(self, dir: D, f: impl FunctionT<T, Option<T>>) -> M;
 }
 
 impl<M, T, D> ZipAllTheWay<M, T, D> for Zipper<T, D>
 where
     M: ReturnM<Pointed = Zipper<T, D>>,
-    D: Clone + std::fmt::Debug,
+    T: Term,
+    D: Term,
 {
-    fn zip_all_the_way(self, dir: D, f: impl FunctionT<T, Option<T>> + Clone) -> M {
+    fn zip_all_the_way(self, dir: D, f: impl FunctionT<T, Option<T>>) -> M {
+        let f = f.to_function();
         match self {
             Zipper::Zipper(t, k) => k((f.clone()(t), dir.clone())).zip_all_the_way(dir, f),
             Zipper::ZipDone(t) => ReturnM::return_m(Zipper::done(t)),
@@ -62,107 +65,105 @@ where
 impl<M, T, D> ZipAllTheWay<M, T::Pointed, D> for Cont<T>
 where
     Self: ChainM<M, Pointed = T>,
-    M: Clone + ReturnM<Pointed = T>,
+    M: ReturnM<Pointed = T>,
     T: Pointed + ZipAllTheWay<M, T::Pointed, D>,
-    D: 'static + Clone + UnwindSafe,
+    D: Term,
 {
-    fn zip_all_the_way(
-        self,
-        dir: D,
-        f: impl FunctionT<T::Pointed, Option<T::Pointed>> + Clone,
-    ) -> M {
+    fn zip_all_the_way(self, dir: D, f: impl FunctionT<T::Pointed, Option<T::Pointed>>) -> M {
+        let f = f.to_function();
         self.chain_m(|t| t.zip_all_the_way(dir, f))
     }
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub enum Term {
+pub enum ZipperTerm {
     Var(String),
     L(String, Box<Self>),
     A(Box<Self>, Box<Self>),
     Free,
 }
 
-impl Pointed for Term {
+impl Pointed for ZipperTerm {
     type Pointed = String;
 }
 
-impl WithPointed<String> for Term {
-    type WithPointed = Term;
+impl WithPointed<String> for ZipperTerm {
+    type WithPointed = ZipperTerm;
 }
 
-impl Functor<String> for Term {
-    fn fmap(self, f: impl FunctionT<String, String> + Clone) -> Term {
+impl Functor<String> for ZipperTerm {
+    fn fmap(self, f: impl FunctionT<String, String>) -> ZipperTerm {
         match self {
-            Term::Var(t) => Term::var(f(t)),
-            Term::L(s, n) => Term::l(f.clone()(s), n.fmap(f)),
-            Term::A(l, r) => Term::a(l.fmap(f.clone()), r.fmap(f)),
-            Term::Free => unimplemented!(),
+            ZipperTerm::Var(t) => ZipperTerm::var(f(t)),
+            ZipperTerm::L(s, n) => ZipperTerm::l(f.to_function()(s), n.fmap(f)),
+            ZipperTerm::A(l, r) => ZipperTerm::a(l.fmap(f.to_function()), r.fmap(f)),
+            ZipperTerm::Free => unimplemented!(),
         }
     }
 }
 
-impl std::fmt::Debug for Term {
+impl std::fmt::Debug for ZipperTerm {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Term::Var(s) => f.write_str(s),
-            Term::A(l, r) => f.write_fmt(format_args!("({l:?} {r:?})")),
-            Term::L(t, n) => f.write_fmt(format_args!("L{t}. {n:?}")),
-            Term::Free => f.write_str("()"),
+            ZipperTerm::Var(s) => f.write_str(s),
+            ZipperTerm::A(l, r) => f.write_fmt(format_args!("({l:?} {r:?})")),
+            ZipperTerm::L(t, n) => f.write_fmt(format_args!("L{t}. {n:?}")),
+            ZipperTerm::Free => f.write_str("()"),
         }
     }
 }
 
-impl Term {
+impl ZipperTerm {
     pub fn var(t: impl ToString) -> Self {
-        Term::Var(t.to_string())
+        ZipperTerm::Var(t.to_string())
     }
 
     pub fn a(lhs: Self, rhs: Self) -> Self {
-        Term::A(lhs.boxed(), rhs.boxed())
+        ZipperTerm::A(lhs.boxed(), rhs.boxed())
     }
 
     pub fn l(t: impl ToString, n: Self) -> Self {
-        Term::L(t.to_string(), n.boxed())
+        ZipperTerm::L(t.to_string(), n.boxed())
     }
 
     pub fn a_free() -> Self {
-        Self::a(Term::Free, Term::Free)
+        Self::a(ZipperTerm::Free, ZipperTerm::Free)
     }
 
     pub fn l_free(t: impl ToString) -> Self {
-        Self::l(t, Term::Free)
+        Self::l(t, ZipperTerm::Free)
     }
 
     pub fn left(self, t: Self) -> Self {
-        let Term::A(_, r) = self else {
+        let ZipperTerm::A(_, r) = self else {
             panic!("Term is not an A")
         };
-        Term::a(t, *r)
+        ZipperTerm::a(t, *r)
     }
 
     pub fn right(self, t: Self) -> Self {
-        let Term::A(l, _) = self else {
+        let ZipperTerm::A(l, _) = self else {
             panic!("Term is not an A")
         };
-        Term::a(*l, t)
+        ZipperTerm::a(*l, t)
     }
 
     pub fn next(self, t: Self) -> Self {
-        let Term::L(s, _) = self else {
+        let ZipperTerm::L(s, _) = self else {
             panic!("Term is not an L");
         };
-        Term::l(s, t)
+        ZipperTerm::l(s, t)
     }
 }
 
-impl Foldr<String, String> for Term {
-    fn foldr(self, f: impl BifunT<String, String, String> + Clone, init: String) -> String {
+impl Foldr<String, String> for ZipperTerm {
+    fn foldr(self, f: impl BifunT<String, String, String>, init: String) -> String {
+        let f = f.to_bifun();
         match self {
-            Term::Var(t) => f(t, init),
-            Term::L(l, r) => f.clone()(l, r.foldr(f, init)),
-            Term::A(l, r) => l.foldr(f.clone(), r.foldr(f, init)),
-            Term::Free => unimplemented!(),
+            ZipperTerm::Var(t) => f(t, init),
+            ZipperTerm::L(l, r) => f.clone()(l, r.foldr(f, init)),
+            ZipperTerm::A(l, r) => l.foldr(f.clone(), r.foldr(f, init)),
+            ZipperTerm::Free => unimplemented!(),
         }
     }
 }
@@ -176,29 +177,35 @@ pub enum Direction {
     DownRight,
 }
 
-impl<M, N> Travel<Direction, M, N> for Term
+impl<M, N> Travel<Direction, M, N> for ZipperTerm
 where
-    M: ChainM<N, Pointed = (Option<Term>, Direction)>,
-    N: 'static + Clone + ChainM<N, Pointed = Term> + ReturnM<Pointed = Term>,
+    M: ChainM<N, Pointed = (Option<ZipperTerm>, Direction)>,
+    N: ChainM<N, Pointed = ZipperTerm> + ReturnM<Pointed = ZipperTerm>,
 {
-    fn travel(self, tf: impl FunctionT<Self, M> + Clone) -> N {
+    fn travel(self, tf: impl FunctionT<Self, M>) -> N {
+        let tf = tf.to_function();
+
         tf.clone()(self.clone()).chain_m(|(term_, dir)| {
             let t = term_.unwrap_or(self);
 
             match (dir, t) {
-                (Direction::Up, t) | (_, t @ Term::Var(_)) => ReturnM::return_m(t),
-                (_, Term::L(v, t1)) => Travel::<Direction, M, N>::travel(*t1, tf)
-                    .chain_m(|t1| ReturnM::return_m(Term::l(v, t1))),
-                (Direction::Next, Term::A(l, r)) => {
+                (Direction::Up, t) | (_, t @ ZipperTerm::Var(_)) => ReturnM::return_m(t),
+                (_, ZipperTerm::L(v, t1)) => Travel::<Direction, M, N>::travel(*t1, tf)
+                    .chain_m(|t1| ReturnM::return_m(ZipperTerm::l(v, t1))),
+                (Direction::Next, ZipperTerm::A(l, r)) => {
                     Travel::<Direction, M, N>::travel(*l, tf.clone()).chain_m(|l| {
                         Travel::<Direction, M, N>::travel(*r, tf)
-                            .chain_m(|r| ReturnM::return_m(Term::a(l, r)))
+                            .chain_m(|r| ReturnM::return_m(ZipperTerm::a(l, r)))
                     })
                 }
-                (Direction::DownLeft, Term::A(l, r)) => Travel::<Direction, M, N>::travel(*l, tf)
-                    .chain_m(|l| ReturnM::return_m(Term::a(l, *r))),
-                (Direction::DownRight, Term::A(l, r)) => Travel::<Direction, M, N>::travel(*r, tf)
-                    .chain_m(|r| ReturnM::return_m(Term::a(*l, r))),
+                (Direction::DownLeft, ZipperTerm::A(l, r)) => {
+                    Travel::<Direction, M, N>::travel(*l, tf)
+                        .chain_m(|l| ReturnM::return_m(ZipperTerm::a(l, *r)))
+                }
+                (Direction::DownRight, ZipperTerm::A(l, r)) => {
+                    Travel::<Direction, M, N>::travel(*r, tf)
+                        .chain_m(|r| ReturnM::return_m(ZipperTerm::a(*l, r)))
+                }
                 _ => unimplemented!(),
             }
         })
@@ -212,29 +219,31 @@ pub enum Direction1 {
     Parent,
 }
 
-impl<M, N> Travel<Direction1, M, N> for Term
+impl<M, N> Travel<Direction1, M, N> for ZipperTerm
 where
-    M: ChainM<N, Pointed = (Option<Term>, Direction1)>,
-    N: 'static + Clone + ChainM<N, Pointed = Term> + ReturnM<Pointed = Term>,
+    M: ChainM<N, Pointed = (Option<ZipperTerm>, Direction1)>,
+    N: ChainM<N, Pointed = ZipperTerm> + ReturnM<Pointed = ZipperTerm>,
 {
-    fn travel(self, tf: impl FunctionT<Self, M> + Clone) -> N {
+    fn travel(self, tf: impl FunctionT<Self, M>) -> N {
+        let tf = tf.to_function();
+
         tf.clone()(self.clone()).chain_m(|(term_, dir)| {
             let t = term_.unwrap_or(self);
 
             match (dir, t) {
                 (Direction1::Parent, t) => ReturnM::return_m(t),
-                (dir, Term::L(v, t1))
+                (dir, ZipperTerm::L(v, t1))
                     if dir == Direction1::FirstKid || dir == Direction1::RightKid =>
                 {
                     t1.travel(tf.clone())
-                        .chain_m(|t1| Term::l(v, t1).travel(tf))
+                        .chain_m(|t1| ZipperTerm::l(v, t1).travel(tf))
                 }
-                (Direction1::RightKid, Term::A(l, r)) => {
-                    r.travel(tf.clone()).chain_m(|r| Term::a(*l, r).travel(tf))
-                }
-                (Direction1::FirstKid, Term::A(l, r)) => {
-                    l.travel(tf.clone()).chain_m(|l| Term::a(l, *r).travel(tf))
-                }
+                (Direction1::RightKid, ZipperTerm::A(l, r)) => r
+                    .travel(tf.clone())
+                    .chain_m(|r| ZipperTerm::a(*l, r).travel(tf)),
+                (Direction1::FirstKid, ZipperTerm::A(l, r)) => l
+                    .travel(tf.clone())
+                    .chain_m(|l| ZipperTerm::a(l, *r).travel(tf)),
                 _ => unimplemented!(),
             }
         })
@@ -247,30 +256,35 @@ mod test {
 
     use super::*;
 
-    fn term() -> Term {
-        let x = Term::var("x");
-        let f = Term::var("f");
+    fn term() -> ZipperTerm {
+        let x = ZipperTerm::var("x");
+        let f = ZipperTerm::var("f");
 
-        let term =
-            Term::l_free("f").next(
-                Term::l_free("x").next(
-                    Term::a_free()
-                        .left(Term::a_free().left(f.clone()).right(
-                            Term::l_free("f").next(
-                                Term::a_free().left(f.clone()).right(
-                                    Term::l_free("f").next(Term::l_free("x").next(x.clone())),
+        let term = ZipperTerm::l_free("f").next(
+            ZipperTerm::l_free("x").next(
+                ZipperTerm::a_free()
+                    .left(
+                        ZipperTerm::a_free().left(f.clone()).right(
+                            ZipperTerm::l_free("f").next(
+                                ZipperTerm::a_free().left(f.clone()).right(
+                                    ZipperTerm::l_free("f")
+                                        .next(ZipperTerm::l_free("x").next(x.clone())),
                                 ),
                             ),
-                        ))
-                        .right(
-                            Term::a_free()
-                                .left(Term::a_free().left(f.clone()).right(
-                                    Term::l_free("f").next(Term::l_free("x").next(x.clone())),
-                                ))
-                                .right(x.clone()),
                         ),
-                ),
-            );
+                    )
+                    .right(
+                        ZipperTerm::a_free()
+                            .left(
+                                ZipperTerm::a_free().left(f.clone()).right(
+                                    ZipperTerm::l_free("f")
+                                        .next(ZipperTerm::l_free("x").next(x.clone())),
+                                ),
+                            )
+                            .right(x.clone()),
+                    ),
+            ),
+        );
 
         println!("Term:\n{term:#?}");
 
@@ -307,7 +321,7 @@ mod test {
         let term = term
             .travel(|term| {
                 Identity::return_m(match term {
-                    Term::A(ref l, _) if matches!(**l, Term::Var(ref s) if s == "f") => {
+                    ZipperTerm::A(ref l, _) if matches!(**l, ZipperTerm::Var(ref s) if s == "f") => {
                         println!("Cutting {term:#?}");
                         (None, Direction::Up)
                     }
@@ -328,9 +342,14 @@ mod test {
 
         let term = term.travel(|t| {
             Identity::return_m(match t {
-                Term::L(t, n) if t == "x" && matches!(&*n, Term::Var(s) if s == "x") => {
+                ZipperTerm::L(t, n)
+                    if t == "x" && matches!(&*n, ZipperTerm::Var(s) if s == "x") =>
+                {
                     println!("Replacing...");
-                    (Some(Term::l("y", Term::var("y"))), Direction::Next)
+                    (
+                        Some(ZipperTerm::l("y", ZipperTerm::var("y"))),
+                        Direction::Next,
+                    )
                 }
                 t => {
                     println!("Term: {t:#?}");
@@ -344,7 +363,7 @@ mod test {
 
     #[test]
     fn test_zip_1() {
-        let term: Cont<Zipper<Term, Direction>> =
+        let term: Cont<Zipper<ZipperTerm, Direction>> =
             term().zip_travel().zip_all_the_way(Direction::Next, |t| {
                 println!("Encountered: {t:#?}");
                 None
@@ -356,7 +375,7 @@ mod test {
 
     #[test]
     fn test_zip_2() {
-        let term: Cont<Zipper<Term, Direction>> = term()
+        let term: Cont<Zipper<ZipperTerm, Direction>> = term()
             .zip_travel()
             .zip_move(Direction::Next)
             .zip_move(Direction::Next)
@@ -366,10 +385,10 @@ mod test {
         let term = term.fmap(
             Functor::replace
                 .flip_clone()
-                .curry_clone(Term::a(Term::var("x"), Term::var("x"))),
+                .curry_clone(ZipperTerm::a(ZipperTerm::var("x"), ZipperTerm::var("x"))),
         );
 
-        let term: Cont<Zipper<Term, Direction>> = term.zip_all_the_way(Direction::Up, |t| {
+        let term: Cont<Zipper<ZipperTerm, Direction>> = term.zip_all_the_way(Direction::Up, |t| {
             println!("Zipping Up: {t:#?}");
             None
         });
@@ -381,16 +400,18 @@ mod test {
 
     #[test]
     fn test_zip_3() {
-        let term: Cont<Zipper<Term, Direction1>> =
-            Term::l("x", Term::a(Term::var("a"), Term::var("b")))
-                .zip_travel()
-                .zip_move(Direction1::FirstKid)
-                .zip_move(Direction1::FirstKid)
-                .zip_move(Direction1::Parent)
-                .zip_move(Direction1::RightKid)
-                .zip_move(Direction1::Parent)
-                .zip_move(Direction1::Parent)
-                .zip_move(Direction1::Parent);
+        let term: Cont<Zipper<ZipperTerm, Direction1>> = ZipperTerm::l(
+            "x",
+            ZipperTerm::a(ZipperTerm::var("a"), ZipperTerm::var("b")),
+        )
+        .zip_travel()
+        .zip_move(Direction1::FirstKid)
+        .zip_move(Direction1::FirstKid)
+        .zip_move(Direction1::Parent)
+        .zip_move(Direction1::RightKid)
+        .zip_move(Direction1::Parent)
+        .zip_move(Direction1::Parent)
+        .zip_move(Direction1::Parent);
 
         let term = term.eval_t().run();
 

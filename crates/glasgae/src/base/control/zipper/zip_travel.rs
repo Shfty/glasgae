@@ -1,4 +1,4 @@
-use crate::transformers::cont::Cont;
+use crate::{transformers::cont::Cont, base::data::function::Term};
 
 use super::{MakeZipper, travel::Travel, Zipper};
 
@@ -7,7 +7,7 @@ pub trait ZipTravel<D>:
     + MakeZipper<D>
     + Travel<D, Cont<Zipper<Self, D>, (Option<Self>, D)>, Cont<Zipper<Self, D>, Self>>
 where
-    D: 'static,
+    D: Term,
 {
     fn zip_travel(self) -> Cont<Zipper<Self, D>> {
         self.make_zipper(Travel::travel)
@@ -19,6 +19,6 @@ where
     T: 'static
         + MakeZipper<D>
         + Travel<D, Cont<Zipper<Self, D>, (Option<Self>, D)>, Cont<Zipper<Self, D>, Self>>,
-    D: 'static,
+    D: Term,
 {
 }

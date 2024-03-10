@@ -1,17 +1,20 @@
-use std::panic::UnwindSafe;
-
 use crate::prelude::Boxed;
 
+use super::{Term, TermBase};
+
 /// Binary function
-pub trait BifunT<A, B, C>: FnOnce(A, B) -> C + UnwindSafe + 'static {
-    fn clone_bifun(&self) -> Bifun<A, B, C>;
+pub trait BifunT<A, B, C>: TermBase + FnOnce(A, B) -> C {
+    fn to_bifun(&self) -> Bifun<A, B, C>;
 }
 
 impl<F, A, B, C> BifunT<A, B, C> for F
 where
-    F: FnOnce(A, B) -> C + Clone + UnwindSafe + 'static,
+    F: Term + FnOnce(A, B) -> C,
+    A: Term,
+    B: Term,
+    C: Term,
 {
-    fn clone_bifun(&self) -> Bifun<A, B, C> {
+    fn to_bifun(&self) -> Bifun<A, B, C> {
         self.clone().boxed()
     }
 }
@@ -20,11 +23,11 @@ pub type Bifun<A, B, C> = Box<dyn BifunT<A, B, C>>;
 
 impl<A, B, C> Clone for Bifun<A, B, C>
 where
-    A: 'static,
-    B: 'static,
-    C: 'static,
+    A: Term,
+    B: Term,
+    C: Term,
 {
     fn clone(&self) -> Self {
-        (**self).clone_bifun()
+        (**self).to_bifun()
     }
 }

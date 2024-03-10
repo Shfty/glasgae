@@ -1,6 +1,4 @@
-use std::panic::UnwindSafe;
-
-use crate::prelude::*;
+use crate::{prelude::*, base::data::function::Term};
 
 use super::Functor;
 
@@ -30,10 +28,10 @@ where
 
 impl<MA, A> Functor<A> for Const<MA>
 where
-    MA: Clone + Pointed<Pointed = A> + WithPointed<A>,
-    A: Clone + UnwindSafe,
+    MA: Pointed<Pointed = A> + WithPointed<A>,
+    A: Term,
 {
-    fn fmap(self, _: impl FunctionT<Self::Pointed, A> + Clone) -> Self::WithPointed {
+    fn fmap(self, _: impl FunctionT<Self::Pointed, A>) -> Self::WithPointed {
         self
     }
 }

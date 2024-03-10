@@ -1,6 +1,9 @@
 use std::convert::identity;
 
-use crate::prelude::{Boxed, Compose, Function, FunctionT, Semigroup};
+use crate::{
+    base::data::function::Term,
+    prelude::{Boxed, Compose, Function, FunctionT, Semigroup},
+};
 
 use super::Monoid;
 
@@ -8,8 +11,11 @@ use super::Monoid;
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Endo<F>(F);
 
-impl<A> Endo<Function<A, A>> {
-    pub fn new(f: impl FunctionT<A, A> + Clone) -> Self {
+impl<A> Endo<Function<A, A>>
+where
+    A: Term,
+{
+    pub fn new(f: impl FunctionT<A, A>) -> Self {
         Endo(f.boxed())
     }
 
@@ -20,7 +26,7 @@ impl<A> Endo<Function<A, A>> {
 
 impl<A> Semigroup for Endo<Function<A, A>>
 where
-    A: 'static,
+    A: Term,
 {
     fn assoc_s(self, a: Self) -> Self {
         Endo(self.app().compose_clone(a.app()).boxed())
@@ -29,7 +35,7 @@ where
 
 impl<A> Monoid for Endo<Function<A, A>>
 where
-    A: 'static,
+    A: Term,
 {
     fn mempty() -> Self {
         Endo::new(identity)

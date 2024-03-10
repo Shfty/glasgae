@@ -15,11 +15,9 @@
 
 pub mod option;
 
-use std::panic::UnwindSafe;
-
 use crate::prelude::*;
 
-use super::function::bifunction::BifunT;
+use super::function::{bifunction::BifunT, Term};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
@@ -47,19 +45,27 @@ impl<T> From<Maybe<T>> for Option<T> {
     }
 }
 
-impl<T> Pointed for Maybe<T> {
+impl<T> Pointed for Maybe<T>
+where
+    T: Term,
+{
     type Pointed = T;
 }
 
-impl<T, U> WithPointed<U> for Maybe<T> {
+impl<T, U> WithPointed<U> for Maybe<T>
+where
+    T: Term,
+    U: Term,
+{
     type WithPointed = Maybe<U>;
 }
 
 impl<T, U> Functor<U> for Maybe<T>
 where
-    U: Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn fmap(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> Maybe<U> {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Maybe<U> {
         match self {
             Just(t) => Just(f(t)),
             Nothing => Nothing,
@@ -67,7 +73,10 @@ where
     }
 }
 
-impl<T> PureA for Maybe<T> {
+impl<T> PureA for Maybe<T>
+where
+    T: Term,
+{
     fn pure_a(t: Self::Pointed) -> Self {
         Just(t)
     }
@@ -75,8 +84,9 @@ impl<T> PureA for Maybe<T> {
 
 impl<F, A, B> AppA<Maybe<A>, Maybe<B>> for Maybe<F>
 where
-    F: FunctionT<A, B> + Clone,
-    B: Clone + UnwindSafe,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, a: Maybe<A>) -> Maybe<B> {
         match self {
@@ -86,9 +96,13 @@ where
     }
 }
 
-impl<T> ReturnM for Maybe<T> {}
+impl<T> ReturnM for Maybe<T> where T: Term {}
 
-impl<T, U> ChainM<Maybe<U>> for Maybe<T> {
+impl<T, U> ChainM<Maybe<U>> for Maybe<T>
+where
+    T: Term,
+    U: Term,
+{
     fn chain_m(self, f: impl FunctionT<T, Maybe<U>> + 'static) -> Maybe<U> {
         match self {
             Just(t) => f(t),
@@ -113,7 +127,7 @@ where
 
 impl<T> Monoid for Maybe<T>
 where
-    T: 'static + Semigroup,
+    T: Semigroup,
 {
     fn mempty() -> Self {
         Nothing
@@ -121,7 +135,7 @@ where
 }
 
 impl<T, U> Foldr<T, U> for Maybe<T> {
-    fn foldr(self, f: impl BifunT<T, U, U> + Clone, z: U) -> U {
+    fn foldr(self, f: impl BifunT<T, U, U>, z: U) -> U {
         match self {
             Just(x) => f(x, z),
             Nothing => z,
@@ -132,11 +146,11 @@ impl<T, U> Foldr<T, U> for Maybe<T> {
 impl<T, A, U, B> TraverseT<A, U, B> for Maybe<T>
 where
     A: Functor<Maybe<U>, Pointed = U, WithPointed = B>,
-    A::Pointed: 'static,
     A::WithPointed: PureA<Pointed = Maybe<U>>,
-    U: Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A> + Clone) -> A::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<T, A>) -> A::WithPointed {
         match self {
             Just(x) => f(x).fmap(Just.boxed()),
             Nothing => PureA::pure_a(Nothing),
@@ -146,8 +160,8 @@ where
 
 impl<A1, A_, A2> SequenceA<A_, A2> for Maybe<A1>
 where
-    A1: Clone + Functor<Maybe<A_>, Pointed = A_, WithPointed = A2>,
-    A_: 'static + Clone + UnwindSafe,
+    A1: Functor<Maybe<A_>, Pointed = A_, WithPointed = A2>,
+    A_: Term,
     A2: PureA<Pointed = Maybe<A_>>,
 {
     fn sequence_a(self) -> A2 {
@@ -158,7 +172,11 @@ where
     }
 }
 
-pub fn maybe<A, B>(default: B, f: impl FunctionT<A, B>, t: Maybe<A>) -> B {
+pub fn maybe<A, B>(default: B, f: impl FunctionT<A, B>, t: Maybe<A>) -> B
+where
+    A: Term,
+    B: Term,
+{
     match t {
         Just(t) => f(t),
         Nothing => default,

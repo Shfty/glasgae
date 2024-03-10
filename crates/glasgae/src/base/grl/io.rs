@@ -2,7 +2,6 @@
 
 use std::{
     io::{ErrorKind, Read, Write},
-    panic::UnwindSafe,
     path::Path,
     process::Termination,
 };
@@ -10,7 +9,7 @@ use std::{
 use crate::{
     base::{
         control::exception::{throw, Exception},
-        data::function::{Nullary, NullaryT},
+        data::function::{Nullary, NullaryT, Term},
     },
     prelude::{FunctionT, *},
 };
@@ -52,16 +51,14 @@ use crate::{
 ///
 /// (For more details, see the documentation of [`IO::run`].)
 #[derive(Clone)]
-pub struct IO<A>(Nullary<A>)
-where
-    A: 'static;
+pub struct IO<A: Term>(Nullary<A>);
 
 impl<T> IO<T>
 where
-    T: UnwindSafe,
+    T: Term,
 {
     /// Construct a new I/O action from a nullary function.
-    pub fn new(f: impl NullaryT<T> + Clone) -> Self {
+    pub fn new(f: impl NullaryT<T>) -> Self {
         IO(f.boxed())
     }
 
@@ -118,7 +115,7 @@ where
 
 impl<T> Termination for IO<T>
 where
-    T: UnwindSafe + Termination,
+    T: Term + Termination,
 {
     fn report(self) -> std::process::ExitCode {
         let out = unsafe { self.run() };
@@ -126,30 +123,35 @@ where
     }
 }
 
-impl<T> Pointed for IO<T> {
+impl<T> Pointed for IO<T>
+where
+    T: Term,
+{
     type Pointed = T;
 }
 
 impl<T, U> WithPointed<U> for IO<T>
 where
-    U: 'static,
+    T: Term,
+    U: Term,
 {
     type WithPointed = IO<U>;
 }
 
 impl<T, U> Functor<U> for IO<T>
 where
-    T: Clone + UnwindSafe,
-    U: 'static + Clone + UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn fmap(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Self::WithPointed {
+        let f = f.to_function();
         IO::new(|| f(unsafe { self.run() }))
     }
 }
 
 impl<T> PureA for IO<T>
 where
-    T: Clone + UnwindSafe,
+    T: Term,
 {
     fn pure_a(t: Self::Pointed) -> Self {
         IO::new(|| t)
@@ -158,30 +160,31 @@ where
 
 impl<F, A, B> AppA<IO<A>, IO<B>> for IO<F>
 where
-    F: Clone + UnwindSafe + FunctionT<A, B>,
-    A: Clone + UnwindSafe,
-    B: Clone + UnwindSafe,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, a: IO<A>) -> IO<B> {
         IO::new(|| unsafe { self.run()(a.run()) })
     }
 }
 
-impl<T> ReturnM for IO<T> where T: UnwindSafe + Clone {}
+impl<T> ReturnM for IO<T> where T: Term {}
 
 impl<T, U> ChainM<IO<U>> for IO<T>
 where
-    T: Clone + UnwindSafe,
-    U: UnwindSafe,
+    T: Term,
+    U: Term,
 {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, IO<U>> + Clone) -> IO<U> {
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, IO<U>>) -> IO<U> {
+        let f = f.to_function();
         IO::new(|| unsafe { f(self.run()).run() })
     }
 }
 
 impl<T> Semigroup for IO<T>
 where
-    T: Clone + UnwindSafe + Semigroup,
+    T: Semigroup,
 {
     fn assoc_s(self, a: Self) -> Self {
         IO::new(|| unsafe { self.run().assoc_s(a.run()) })
@@ -190,7 +193,7 @@ where
 
 impl<T> Monoid for IO<T>
 where
-    T: Clone + UnwindSafe + Monoid,
+    T: Monoid,
 {
     fn mempty() -> Self {
         IO::new(|| T::mempty())
@@ -205,8 +208,8 @@ where
 /// or [`throw`] its [`Left`] variant as an exception.
 pub fn unwrap_either<E, T>(t: Either<E, T>) -> IO<T>
 where
-    E: Clone + UnwindSafe + Exception,
-    T: Clone + UnwindSafe,
+    E: Term + Exception,
+    T: Term,
 {
     match t {
         Left(e) => throw(e),
@@ -226,7 +229,7 @@ pub fn put_str_ln(t: String) -> IO<()> {
     IO::new(move || println!("{t}"))
 }
 
-pub fn print(t: impl Show + Clone + UnwindSafe + 'static) -> IO<()> {
+pub fn print(t: impl Term + Show) -> IO<()> {
     IO::new(move || println!("{}", t.show()))
 }
 
@@ -272,36 +275,31 @@ pub fn get_contents() -> IO<String> {
     try_get_contents().chain_m(unwrap_either)
 }
 
-pub fn try_read_file(
-    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
-) -> IO<Either<ErrorKind, String>> {
+pub fn try_read_file(path: impl Term + AsRef<Path>) -> IO<Either<ErrorKind, String>> {
     IO::new(move || match std::fs::read_to_string(path) {
         Ok(t) => Right(t),
         Err(e) => Left(e.kind()),
     })
 }
 
-pub fn read_file(path: impl AsRef<Path> + Clone + UnwindSafe + 'static) -> IO<String> {
+pub fn read_file(path: impl Term + AsRef<Path>) -> IO<String> {
     try_read_file(path).chain_m(unwrap_either)
 }
 
 pub fn try_write_file(
-    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
-    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
+    path: impl Term + AsRef<Path>,
+    string: impl Term + AsRef<[u8]>,
 ) -> IO<Either<ErrorKind, ()>> {
     IO::new(move || std::fs::write(path, string).map_err(|e| e.kind()).into())
 }
 
-pub fn write_file(
-    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
-    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
-) -> IO<()> {
+pub fn write_file(path: impl Term + AsRef<Path>, string: impl Term + AsRef<[u8]>) -> IO<()> {
     try_write_file(path, string).chain_m(unwrap_either)
 }
 
 pub fn try_append_file(
-    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
-    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
+    path: impl Term + AsRef<Path>,
+    string: impl Term + AsRef<[u8]>,
 ) -> IO<Either<ErrorKind, ()>> {
     IO::new(move || {
         std::fs::OpenOptions::new()
@@ -314,13 +312,10 @@ pub fn try_append_file(
     })
 }
 
-pub fn append_file(
-    path: impl AsRef<Path> + Clone + UnwindSafe + 'static,
-    string: impl AsRef<[u8]> + Clone + UnwindSafe + 'static,
-) -> IO<()> {
+pub fn append_file(path: impl Term + AsRef<Path>, string: impl Term + AsRef<[u8]>) -> IO<()> {
     try_append_file(path, string).chain_m(unwrap_either)
 }
 
-pub fn interact(f: impl FunctionT<String, String> + Clone) -> IO<String> {
+pub fn interact(f: impl FunctionT<String, String>) -> IO<String> {
     get_contents().fmap(f)
 }

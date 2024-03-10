@@ -7,12 +7,10 @@
 //! For a read-only state, see Control.Monad.Trans.Reader.
 //! To accumulate a value without using it on the way, see Control.Monad.Trans.Writer.
 
-use std::panic::UnwindSafe;
-
 use crate::{
     base::{
         control::monad::io::MonadIO,
-        data::{functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
+        data::{function::Term, functor::identity::Identity, pointed::Lower, tuple::pair::Pair},
     },
     prelude::*,
 };
@@ -27,12 +25,13 @@ pub type State<S, A> = StateT<S, Identity<(A, S)>>;
 #[derive(Clone)]
 pub struct StateT<S, M>(Function<S, M>)
 where
-    S: 'static,
-    M: 'static;
+    S: Term,
+    M: Term;
 
 impl<S, A> State<S, A>
 where
-    S: UnwindSafe,
+    S: Term,
+    A: Term,
 {
     /// Unwrap a state monad computation as a function. (The inverse of new.)
     ///
@@ -74,23 +73,23 @@ where
     /// Map both the return value and final state of a computation using the given function.
     ///
     /// runState (mapState f m) = f . runState m
-    pub fn map<B>(self, f: impl FunctionT<(A, S), (B, S)> + Clone) -> State<S, B>
+    pub fn map<B>(self, f: impl FunctionT<(A, S), (B, S)>) -> State<S, B>
     where
-        S: Clone,
-        A: Clone,
+        B: Term,
     {
+        let f = f.to_function();
         self.map_t(|t| Identity(f(t.run())))
     }
 
     /// withState f m executes action m on a state modified by applying f.
     ///
     /// withState f m = modify f >> m
-    pub fn with(self, f: impl FunctionT<S, S> + Clone) -> Self
+    pub fn with(self, f: impl FunctionT<S, S>) -> Self
     where
         S: Clone,
         A: Clone,
     {
-        self.with_t(f)
+        self.with_t(f.to_function())
     }
 }
 
@@ -102,9 +101,10 @@ where
 /// The return function leaves the state unchanged, while >>= uses the final state of the first computation as the initial state of the second.
 impl<S, M> StateT<S, M>
 where
-    S: UnwindSafe,
+    S: Term,
+    M: Term,
 {
-    pub fn new_t(f: impl FunctionT<S, M> + Clone) -> Self {
+    pub fn new_t(f: impl FunctionT<S, M>) -> Self {
         StateT(f.boxed())
     }
 
@@ -112,12 +112,12 @@ where
     ///
     /// f: Pure state transformer
     /// return: Equivalent state-passing computation
-    pub fn new<A>(f: impl FunctionT<S, (A, S)> + Clone) -> Self
+    pub fn new<A>(f: impl FunctionT<S, (A, S)>) -> Self
     where
         M: ReturnM<Pointed = (A, S)>,
-        A: 'static,
+        A: Term,
     {
-        StateT::new_t(f.compose_clone(ReturnM::return_m))
+        StateT::new_t(f.to_function().compose_clone(ReturnM::return_m))
     }
 
     pub fn run_t(self, s: S) -> M {
@@ -130,8 +130,8 @@ where
     pub fn eval_t<A, N>(self, s: S) -> N
     where
         M: ChainM<N, Pointed = (A, S)>,
-        N: 'static + Clone + ReturnM<Pointed = A>,
-        A: 'static,
+        N: Term + ReturnM<Pointed = A>,
+        A: Term,
     {
         let m = self;
         m.run_t(s)
@@ -144,8 +144,8 @@ where
     pub fn exec_t<A, N>(self, s: S) -> N
     where
         M: ChainM<N, Pointed = (A, S)>,
-        N: 'static + Clone + ReturnM<Pointed = S>,
-        A: 'static,
+        N: ReturnM<Pointed = S>,
+        A: Term,
     {
         let m = self;
         m.run_t(s)
@@ -155,22 +155,23 @@ where
     /// Map both the return value and final state of a computation using the given function.
     ///
     /// runStateT (mapStateT f m) = f . runStateT m
-    pub fn map_t<N>(self, f: impl FunctionT<M, N> + Clone) -> StateT<S, N>
+    pub fn map_t<N>(self, f: impl FunctionT<M, N>) -> StateT<S, N>
     where
-        S: Clone,
-        M: Clone,
+        N: Term,
     {
+        let f = f.to_function();
         StateT::new_t(|t| f(self.run_t(t)))
     }
 
     /// withStateT f m executes action m on a state modified by applying f.
     ///
     /// withStateT f m = modify f >> m
-    pub fn with_t<A>(self, f: impl FunctionT<S, S> + Clone) -> Self
+    pub fn with_t<A>(self, f: impl FunctionT<S, S>) -> Self
     where
-        S: Clone,
-        M: Clone + ReturnM<Pointed = (A, S)>,
+        M: ReturnM<Pointed = (A, S)>,
+        A: Term,
     {
+        let f = f.to_function();
         StateT::new_t(|t| self.run_t(f(t)))
     }
 
@@ -195,56 +196,64 @@ where
     /// modify f is an action that updates the state to the result of applying f to the current state.
     ///
     /// modify f = get >>= (put . f)
-    pub fn modify(f: impl FunctionT<S, S> + Clone) -> State<S, ()>
+    pub fn modify(f: impl FunctionT<S, S>) -> State<S, ()>
     where
         S: Clone,
     {
+        let f = f.to_function();
         StateT::new(|s| ((), f(s)))
     }
 
-    pub fn modify_m<N, O>(f: impl FunctionT<S, N> + Clone) -> StateT<S, O>
+    pub fn modify_m<N, O>(f: impl FunctionT<S, N>) -> StateT<S, O>
     where
         N: ChainM<O, Pointed = S>,
-        O: Clone + ReturnM<Pointed = ((), S)>,
+        O: ReturnM<Pointed = ((), S)>,
     {
+        let f = f.to_function();
         StateT::new_t(|s| f(s).chain_m(|s_| ReturnM::return_m(((), s_))))
     }
 
     /// Get a specific component of the state, using a projection function supplied.
     ///
     /// gets f = liftM f get
-    pub fn gets<A>(f: impl FunctionT<S, A> + Clone) -> State<S, A>
+    pub fn gets<A>(f: impl FunctionT<S, A>) -> State<S, A>
     where
-        S: Clone,
+        A: Term,
     {
+        let f = f.to_function();
         StateT::new(|s: S| (f(s.clone()), s))
     }
 }
 
 impl<S, M, A> Pointed for StateT<S, M>
 where
+    S: Term,
     M: Pointed<Pointed = (A, S)>,
+    A: Term,
 {
     type Pointed = A;
 }
 
 impl<S, M, A, T> WithPointed<T> for StateT<S, M>
 where
+    S: Term,
     M: WithPointed<(T, S), Pointed = (A, S)>,
-    M::WithPointed: 'static + Pointed<Pointed = (T, S)>,
+    A: Term,
+    T: Term,
 {
     type WithPointed = StateT<S, M::WithPointed>;
 }
 
 impl<A, S, M, T> Functor<T> for StateT<S, M>
 where
-    M: Clone + Functor<(T, S), Pointed = (A, S)>,
-    M::WithPointed: Pointed<Pointed = (T, S)>,
-    T: 'static + Clone + UnwindSafe,
-    S: Clone + UnwindSafe,
+    M: Functor<(T, S), Pointed = (A, S)>,
+    T: Term,
+    S: Term,
+    A: Term,
 {
-    fn fmap(self, f: impl FunctionT<A, T> + Clone) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<A, T>) -> Self::WithPointed {
         let m = self;
+        let f = f.to_function();
         StateT::new_t(|s: S| m.run_t(s).fmap(|(a, s_)| (f(a), s_)))
     }
 }
@@ -252,8 +261,8 @@ where
 impl<S, M, A> PureA for StateT<S, M>
 where
     M: ReturnM<Pointed = (A, S)>,
-    S: UnwindSafe,
-    A: 'static + Clone + UnwindSafe,
+    S: Term,
+    A: Term,
 {
     fn pure_a(a: Self::Pointed) -> Self {
         StateT::new_t(|s| ReturnM::return_m((a, s)))
@@ -264,9 +273,11 @@ impl<S, MF, MA, MB, F, A, B> AppA<StateT<S, MA>, StateT<S, MB>> for StateT<S, MF
 where
     MF: ChainM<MB, Pointed = (F, S)>,
     MA: ChainM<MB, Pointed = (A, S)>,
-    MB: ReturnM<Pointed = (B, S)> + Clone,
-    S: UnwindSafe,
-    F: FunctionT<A, B> + Clone + UnwindSafe,
+    MB: ReturnM<Pointed = (B, S)>,
+    S: Term,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, mx: StateT<S, MA>) -> StateT<S, MB> {
         let StateT(mf) = self;
@@ -280,22 +291,24 @@ where
 impl<S, M, A> ReturnM for StateT<S, M>
 where
     M: ReturnM<Pointed = (A, S)>,
-    S: UnwindSafe,
-    A: 'static + Clone + UnwindSafe,
+    S: Term,
+    A: Term,
 {
 }
 
 impl<S, M, N, A, B> ChainM<StateT<S, N>> for StateT<S, M>
 where
-    S: Clone + UnwindSafe,
-    M: Clone + ChainM<N, Pointed = (A, S)>,
-    N: Clone + Pointed<Pointed = (B, S)>,
+    S: Term,
+    M: ChainM<N, Pointed = (A, S)>,
+    N: Pointed<Pointed = (B, S)>,
+    A: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, StateT<S, N>> + Clone) -> StateT<S, N>
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, StateT<S, N>>) -> StateT<S, N>
     where
         StateT<S, N>: Clone,
     {
         let m = self;
+        let k = k.to_function();
         StateT::new_t(|s| m.run_t(s).chain_m(|(a, s_)| k(a).run_t(s_)))
     }
 }
@@ -303,8 +316,9 @@ where
 impl<MO, S, A> MonadTrans<MO::Lowered> for StateT<S, MO>
 where
     MO: Lower<S, A> + ReturnM<Pointed = (A, S)>,
-    MO::Lowered: 'static + Clone + UnwindSafe + ChainM<MO>,
-    S: Clone + UnwindSafe,
+    MO::Lowered: ChainM<MO>,
+    S: Term,
+    A: Term,
 {
     fn lift(m: MO::Lowered) -> Self {
         StateT::new_t(|s| m.chain_m(|a| ReturnM::return_m((a, s))))
@@ -313,9 +327,10 @@ where
 
 impl<MA, S, A> MonadIO<A> for StateT<S, MA>
 where
-    Self: MonadTrans<IO<A>>,
-    MA: Pointed<Pointed = (A, S)>,
-    A: 'static,
+    MA: ReturnM<Pointed = (A, S)> + WithPointed<A>,
+    MA::WithPointed: ChainM<MA> + MonadIO<A>,
+    S: Term,
+    A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
         StateT::lift(MonadIO::lift_io(m))

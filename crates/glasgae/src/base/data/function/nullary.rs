@@ -1,15 +1,16 @@
-use std::panic::UnwindSafe;
-
 use crate::prelude::Boxed;
 
+use super::{Term, TermBase};
+
 /// Nullary function which produces an output from no input.
-pub trait NullaryT<A>: FnOnce() -> A + UnwindSafe + 'static {
+pub trait NullaryT<A: Term>: TermBase + FnOnce() -> A {
     fn clone_io(&self) -> Box<dyn NullaryT<A>>;
 }
 
 impl<F, A> NullaryT<A> for F
 where
-    F: FnOnce() -> A + Clone + UnwindSafe + 'static,
+    F: Term + FnOnce() -> A,
+    A: Term,
 {
     fn clone_io(&self) -> Box<dyn NullaryT<A>> {
         self.clone().boxed()
@@ -18,10 +19,10 @@ where
 
 impl<A> Clone for Box<dyn NullaryT<A>>
 where
-    A: 'static,
+    A: Term,
 {
     fn clone(&self) -> Self {
-        self.clone_io()
+        (**self).clone_io()
     }
 }
 

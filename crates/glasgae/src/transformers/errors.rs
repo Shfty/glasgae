@@ -1,5 +1,5 @@
 use crate::{
-    base::data::functor::r#const::Const,
+    base::data::{function::Term, functor::r#const::Const},
     prelude::{Either, Pointed, PureA},
 };
 
@@ -31,6 +31,7 @@ where
 impl<E, A> From<Either<E, A>> for Errors<E>
 where
     E: Pointed<Pointed = A>,
+    A: Term,
 {
     fn from(value: Either<E, A>) -> Self {
         match value {
@@ -39,4 +40,3 @@ where
         }
     }
 }
-

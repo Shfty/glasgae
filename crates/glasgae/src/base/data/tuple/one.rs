@@ -1,8 +1,12 @@
-use std::panic::UnwindSafe;
+use crate::{
+    base::data::function::{bifunction::BifunT, Term},
+    prelude::*,
+};
 
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
-
-impl<A> PureA for (A,) {
+impl<A> PureA for (A,)
+where
+    A: Term,
+{
     fn pure_a(t: Self::Pointed) -> Self {
         (t,)
     }
@@ -10,17 +14,23 @@ impl<A> PureA for (A,) {
 
 impl<F, A, B> AppA<(A,), (B,)> for (F,)
 where
-    F: FnOnce(A) -> B,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn app_a(self, a: (A,)) -> (B,) {
         (self.0(a.0),)
     }
 }
 
-impl<T> ReturnM for (T,) {}
+impl<T> ReturnM for (T,) where T: Term {}
 
-impl<T, U> ChainM<(U,)> for (T,) {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, (U,)> + Clone) -> (U,) {
+impl<T, U> ChainM<(U,)> for (T,)
+where
+    T: Term,
+    U: Term,
+{
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, (U,)>) -> (U,) {
         f(self.0)
     }
 }
@@ -44,20 +54,21 @@ where
 }
 
 impl<T, U> Foldr<T, U> for (T,) {
-    fn foldr(self, f: impl BifunT<T, U, U> + Clone, init: U) -> U {
+    fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         f(self.0, init)
     }
 }
 
 impl<T, A1, A_, A3> TraverseT<A1, A_, A3> for (T,)
 where
-    A1: Clone + UnwindSafe + PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
-    A1::Pointed: 'static + Clone + Monoid,
+    A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
+    A1::Pointed: Monoid,
     A1::WithPointed: AppA<A3, A3>,
-    A_: UnwindSafe,
+    T: Term,
+    A_: Term,
     A3: PureA<Pointed = (A1::Pointed,)>,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1> + Clone) -> A3 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A3 {
         self.fmap(f).sequence_a()
     }
 }
@@ -65,9 +76,9 @@ where
 impl<A1, A3, A_> SequenceA<A_, A3> for (A1,)
 where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
-    A1::Pointed: 'static + Clone + Monoid,
+    A1::Pointed: Monoid,
     A1::WithPointed: AppA<A3, A3>,
-    A_: UnwindSafe,
+    A_: Term,
     A3: PureA<Pointed = (A1::Pointed,)>,
 {
     fn sequence_a(self) -> A3 {

@@ -10,6 +10,7 @@ use std::panic::UnwindSafe;
 pub use travel::*;
 pub use zip_travel::*;
 
+use crate::base::data::function::Term;
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 use crate::transformers::cont::Cont;
@@ -17,8 +18,8 @@ use crate::transformers::cont::Cont;
 #[derive(Clone)]
 pub enum Zipper<T, D>
 where
-    T: 'static,
-    D: 'static,
+    T: Term,
+    D: Term,
 {
     Zipper(T, Function<(Option<T>, D), Zipper<T, D>>),
     ZipDone(T),
@@ -26,7 +27,8 @@ where
 
 impl<T, D> std::fmt::Debug for Zipper<T, D>
 where
-    T: std::fmt::Debug,
+    T: Term + std::fmt::Debug,
+    D: Term,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -36,7 +38,11 @@ where
     }
 }
 
-impl<T, D> Zipper<T, D> {
+impl<T, D> Zipper<T, D>
+where
+    T: Term,
+    D: Term,
+{
     pub fn zip(a: T, f: impl FunctionT<(Option<T>, D), Zipper<T, D>> + 'static) -> Self {
         Zipper::Zipper(a, f.boxed())
     }
@@ -70,31 +76,41 @@ impl<T, D> Zipper<T, D> {
     }
 }
 
-impl<T, D> Pointed for Zipper<T, D> {
+impl<T, D> Pointed for Zipper<T, D>
+where
+    T: Term,
+    D: Term,
+{
     type Pointed = T;
 }
 
 impl<T, U, D> WithPointed<U> for Zipper<T, D>
 where
-    U: 'static,
+    T: Term,
+    D: Term,
+    U: Term,
 {
     type WithPointed = Zipper<U, D>;
 }
 
 impl<T, D> Functor<T> for Zipper<T, D>
 where
-    T: Clone + UnwindSafe,
-    D: Default,
+    T: Term,
+    D: Term + Default,
 {
-    fn fmap(self, f: impl FunctionT<T, T> + Clone) -> Zipper<T, D> {
+    fn fmap(self, f: impl FunctionT<T, T>) -> Zipper<T, D> {
         match self {
-            Zipper::Zipper(t, n) => n((Some(f.clone()(t)), Default::default())),
+            Zipper::Zipper(t, n) => n((Some(f.to_function()(t)), Default::default())),
             Zipper::ZipDone(t) => Zipper::ZipDone(f(t)),
         }
     }
 }
 
-impl<T, D> PureA for Zipper<T, D> {
+impl<T, D> PureA for Zipper<T, D>
+where
+    T: Term,
+    D: Term,
+{
     fn pure_a(t: Self::Pointed) -> Self {
         Zipper::done(t)
     }
@@ -102,10 +118,9 @@ impl<T, D> PureA for Zipper<T, D> {
 
 impl<F, T, D> AppA<Zipper<T, D>, Zipper<T, D>> for Zipper<F, D>
 where
-    Zipper<T, D>: Pointed<Pointed = T> + Functor<T, WithPointed = Zipper<T, D>>,
-    F: FunctionT<T, T> + Clone,
-    T: Clone + UnwindSafe,
-    D: Default,
+    F: Term + FunctionT<T, T>,
+    T: Term,
+    D: Term + Default,
 {
     fn app_a(self, a: Zipper<T, D>) -> Zipper<T, D> {
         let f = self.unwrap_unchecked();
@@ -113,10 +128,20 @@ where
     }
 }
 
-impl<T, D> ReturnM for Zipper<T, D> {}
+impl<T, D> ReturnM for Zipper<T, D>
+where
+    T: Term,
+    D: Term,
+{
+}
 
-impl<T, U, D> ChainM<Zipper<U, D>> for Zipper<T, D> {
-    fn chain_m(self, f: impl FunctionT<T, Zipper<U, D>> + Clone) -> Zipper<U, D> {
+impl<T, U, D> ChainM<Zipper<U, D>> for Zipper<T, D>
+where
+    T: Term,
+    U: Term,
+    D: Term,
+{
+    fn chain_m(self, f: impl FunctionT<T, Zipper<U, D>>) -> Zipper<U, D> {
         f(self.unwrap_unchecked())
     }
 }
@@ -124,9 +149,12 @@ impl<T, U, D> ChainM<Zipper<U, D>> for Zipper<T, D> {
 // FIXME: Not useful with Default::default direction, useful semantic is Next
 impl<T, U, D> Foldr<T, U> for Zipper<T, D>
 where
-    D: Default,
+    T: Term,
+    D: Term + Default,
+    U: Term,
 {
-    fn foldr(self, f: impl BifunT<T, U, U> + Clone, init: U) -> U {
+    fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
+        let f = f.to_bifun();
         match self {
             Zipper::Zipper(t, n) => f.clone()(t, n((None, Default::default())).foldr(f, init)),
             Zipper::ZipDone(t) => f(t, init),
@@ -134,29 +162,32 @@ where
     }
 }
 
-pub trait MakeZipper<D>: Sized {
+pub trait MakeZipper<D>: Term
+where
+    D: Term,
+{
     fn make_zipper(
         self,
         trav: impl BifunT<
-                Self,
-                Function<Self, Cont<Zipper<Self, D>, (Option<Self>, D)>>,
-                Cont<Zipper<Self, D>, Self>,
-            > + Clone,
+            Self,
+            Function<Self, Cont<Zipper<Self, D>, (Option<Self>, D)>>,
+            Cont<Zipper<Self, D>, Self>,
+        >,
     ) -> Cont<Zipper<Self, D>>;
 }
 
 impl<T, D> MakeZipper<D> for T
 where
-    T: Clone + UnwindSafe,
-    D: Clone,
+    T: Term,
+    D: Term,
 {
     fn make_zipper(
         self,
         trav: impl BifunT<
-                Self,
-                Function<Self, Cont<Zipper<Self, D>, (Option<Self>, D)>>,
-                Cont<Zipper<Self, D>, Self>,
-            > + Clone,
+            Self,
+            Function<Self, Cont<Zipper<Self, D>, (Option<Self>, D)>>,
+            Cont<Zipper<Self, D>, Self>,
+        >,
     ) -> Cont<Zipper<Self, D>> {
         trav(
             self.clone(),

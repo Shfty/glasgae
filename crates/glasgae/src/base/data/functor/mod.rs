@@ -24,13 +24,13 @@
 pub mod r#const;
 pub mod identity;
 
-use std::panic::UnwindSafe;
-
 use crate::prelude::*;
 
-pub trait Functor<T>: Sized + WithPointed<T>
+use super::function::Term;
+
+pub trait Functor<T>: WithPointed<T>
 where
-    T: Clone + UnwindSafe,
+    T: Term,
 {
     /// fmap is used to apply a function of type (a -> b) to a value of type f a, where f is a functor, to produce a value of type f b. Note that for any type constructor with more than one parameter (e.g., Either), only the last type parameter can be modified with fmap (e.g., b in `Either a b`).
     ///
@@ -81,7 +81,7 @@ where
     /// # use glasgae::{prelude::Functor, base::grl::num::Even};
     /// assert_eq!(("hello", 1.0, 4).fmap(Even::even), ("hello",1.0,true));
     /// ```
-    fn fmap(self, f: impl FunctionT<Self::Pointed, T> + Clone) -> Self::WithPointed;
+    fn fmap(self, f: impl FunctionT<Self::Pointed, T>) -> Self::WithPointed;
 
     /// Replace all locations in the input with the same value. The default definition is fmap . const, but this may be overridden with a more efficient version.
     ///

@@ -30,17 +30,16 @@
 //! and that continuations represent the best solution to your particular design problem.
 //! Many algorithms which require continuations in other languages do not require them in Haskell,
 //! due to Haskell's lazy semantics. Abuse of the Continuation monad can produce code that is impossible to understand and maintain.
-use std::panic::UnwindSafe;
-
+use crate::base::data::function::Term;
 use crate::prelude::*;
 
 use crate::transformers::cont::ContT;
 
-pub trait MonadCont<MR, MA, MB>: Sized
+pub trait MonadCont<MR, MA, MB>: Term
 where
-    MR: 'static,
+    MR: Pointed,
     MA: Pointed,
-    MB: 'static + Pointed,
+    MB: Pointed,
 {
     /// callCC (call-with-current-continuation) calls a function with the current continuation as its argument.
     /// Provides an escape continuation mechanism for use with Continuation monads.
@@ -51,17 +50,17 @@ where
     /// allowing more flexibility and better control (see examples in Control.Monad.Cont).
     ///
     /// The standard idiom used with callCC is to provide a lambda-expression to name the continuation. Then calling the named continuation anywhere within its scope will escape from the computation, even if it is many layers deep within nested computations.
-    fn call_cc(f: impl FunctionT<Function<MA::Pointed, ContT<MR, MB>>, Self> + Clone) -> Self;
+    fn call_cc(f: impl FunctionT<Function<MA::Pointed, ContT<MR, MB>>, Self>) -> Self;
 }
 
 // ContT impl
 impl<MR, MA, MB> MonadCont<MR, MA, MB> for ContT<MR, MA>
 where
-    MA: Clone + Pointed,
-    MA::Pointed: Clone + UnwindSafe,
-    MB: 'static + Clone + Pointed,
+    MR: Pointed,
+    MA: Pointed,
+    MB: Pointed,
 {
-    fn call_cc(f: impl FunctionT<Function<MA::Pointed, ContT<MR, MB>>, Self> + Clone) -> Self {
+    fn call_cc(f: impl FunctionT<Function<MA::Pointed, ContT<MR, MB>>, Self>) -> Self {
         Self::call_cc(f)
     }
 }

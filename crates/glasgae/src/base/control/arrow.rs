@@ -40,7 +40,10 @@
 /// ```
 ///
 /// The other combinators have sensible default definitions, which may be overridden for efficiency.
-use crate::prelude::{Boxed, Function, FunctionT};
+use crate::{
+    base::data::function::Term,
+    prelude::{Boxed, Function, FunctionT},
+};
 
 /// Lift a function to an arrow.
 pub trait Arrow<A, B> {
@@ -50,6 +53,8 @@ pub trait Arrow<A, B> {
 impl<F, A, B> Arrow<A, B> for F
 where
     F: FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
     fn arrow(self) -> Self {
         self
@@ -66,8 +71,12 @@ pub trait Split<F, LA, LB, RA, RB> {
 
 impl<FA, FB, LA, LB, RA, RB> Split<FB, LA, LB, RA, RB> for FA
 where
-    FA: Clone + FunctionT<LA, LB>,
-    FB: Clone + FunctionT<RA, RB>,
+    FA: Term + FunctionT<LA, LB>,
+    FB: Term + FunctionT<RA, RB>,
+    LA: Term,
+    LB: Term,
+    RA: Term,
+    RB: Term,
 {
     type Split = Function<(LA, RA), (LB, RB)>;
 
@@ -87,10 +96,12 @@ pub trait Fanout<F, LA, LB, RA, RB> {
 
 impl<FA, FB, A, LB, RB> Fanout<FB, A, LB, A, RB> for FA
 where
-    FA: Clone + FunctionT<A, LB> + Split<FB, A, LB, A, RB>,
-    FB: Clone + FunctionT<A, RB>,
+    FA: Term + FunctionT<A, LB> + Split<FB, A, LB, A, RB>,
+    FB: Term + FunctionT<A, RB>,
     FA::Split: FunctionT<(A, A), (LB, RB)>,
-    A: Clone,
+    A: Term,
+    LB: Term,
+    RB: Term,
 {
     type Fanout = Function<A, (LB, RB)>;
 
