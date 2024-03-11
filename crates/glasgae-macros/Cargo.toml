@@ -6,5 +6,12 @@ edition = "2021"
 [lib]
 proc-macro = true
 
+[build-dependencies]
+glasgae-kiss = { path = "../glasgae-kiss" }
+
 [dependencies]
 proc-macro2 = "1.0.78"
+syn = { version = "2.0.52", features = ["full"] }
+quote = "1.0.35"
+prettyplease = "0.2.16"
+glasgae-kiss = { path = "../glasgae-kiss" }
