@@ -1,6 +1,7 @@
 use glasgae_kiss::*;
 
 fn main() {
+    /*
     let out_dir = std::env::var("OUT_DIR").unwrap();
 
     // Export OUT_DIR to env!() macro
@@ -115,4 +116,5 @@ fn main() {
         ],
     )
     .expect("Operator registration failed");
+    */
 }

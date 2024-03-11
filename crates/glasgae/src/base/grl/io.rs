@@ -319,3 +319,19 @@ pub fn append_file(path: impl Term + AsRef<Path>, string: impl Term + AsRef<[u8]
 pub fn interact(f: impl FunctionT<String, String>) -> IO<String> {
     get_contents().fmap(f)
 }
+
+pub fn exit_with<T: Term>(code: i32) -> IO<T> {
+    IO::new(move || std::process::exit(code))
+}
+
+pub fn exit_success<T: Term>() -> IO<T> {
+    exit_with(0)
+}
+
+pub fn exit_failure<T: Term>() -> IO<T> {
+    exit_with(1)
+}
+
+pub fn die<T: Term>(message: impl Term + Show) -> IO<T> {
+    print(message).then_m(exit_failure())
+}

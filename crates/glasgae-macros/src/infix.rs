@@ -59,6 +59,8 @@ fn split_op(toks: &[Atom], op: &Operator) -> Option<(Vec<Atom>, Vec<Atom>)> {
 }
 
 fn split_ops_impl(input: Vec<Atom>) -> Vec<Atom> {
+    return input;
+    /*
     let out_dir = std::env!("PROC_ARTIFACT_DIR");
     let ops = read_operators(out_dir).expect("Failed to read operators");
 
@@ -77,6 +79,7 @@ fn split_ops_impl(input: Vec<Atom>) -> Vec<Atom> {
         }
         None => input,
     }
+    */
 }
 
 fn token_stream_to_atoms(input: TokenStream2) -> Vec<Atom> {
