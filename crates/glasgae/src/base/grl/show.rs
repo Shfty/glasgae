@@ -119,6 +119,7 @@ impl<'a> Show for Arguments<'a> {
 // ----------------------------------------------------------------------------
 ///
 /// Newtype adapter mapping [`std::fmt::Display`] to [`Show`]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Display<T>(pub T);
 
 impl<T> Show for Display<T>
@@ -131,6 +132,7 @@ where
 }
 
 /// Newtype adapter mapping [`std::fmt::Debug`] to [`Show`]
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Debug<T>(pub T);
 
 impl<T> Show for Debug<T>
@@ -143,6 +145,7 @@ where
 }
 
 /// Newtype adapter mapping multiline [`std::fmt::Debug`] to [`Show`].
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct DebugMultiline<T>(pub T);
 
 impl<T> Show for DebugMultiline<T>

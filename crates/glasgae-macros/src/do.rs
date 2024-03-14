@@ -2,9 +2,30 @@ use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 use quote::{quote, ToTokens};
 use syn::parse::{Parse, ParseStream};
-use syn::{parse_macro_input, Expr, Local, Pat, Stmt, Token};
+use syn::{parse_macro_input, Expr, Local, Pat, PatType, Stmt, Token};
 
 use crate::punct;
+
+struct TypedPat(Pat);
+
+impl Parse for TypedPat {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        if PatType::parse(&input.fork()).is_ok() {
+            return Ok(TypedPat(Pat::Type(PatType::parse(input).unwrap())));
+        };
+
+        match Pat::parse_single(&input.fork()) {
+            Ok(_) => Ok(TypedPat(Pat::parse_single(input).unwrap())),
+            Err(e) => Err(e),
+        }
+    }
+}
+
+impl ToTokens for TypedPat {
+    fn to_tokens(&self, tokens: &mut TokenStream2) {
+        self.0.to_tokens(tokens)
+    }
+}
 
 struct DoChain {
     pat: Pat,
@@ -16,12 +37,12 @@ struct DoChain {
 impl Parse for DoChain {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let _input = input.fork();
-        let _pat: Pat = Pat::parse_single(&_input)?;
+        let _pat: Pat = TypedPat::parse(&_input)?.0;
         let __sep: punct::DoBind = _input.parse()?;
         let _expr: Expr = _input.parse()?;
         let __semi: Token![;] = _input.parse()?;
 
-        let pat: Pat = Pat::parse_single(input).unwrap();
+        let pat: Pat = TypedPat::parse(input).unwrap().0;
         let _sep: punct::DoBind = input.parse().unwrap();
         let expr: Expr = input.parse().unwrap();
         let _semi: Token![;] = input.parse().unwrap();
@@ -88,9 +109,7 @@ impl ToTokens for DoBlock {
             self.0.iter().rfold(
                 TokenStream2::default(),
                 |acc: TokenStream2, next| match next {
-                    DoTerm::Chain(DoChain {
-                        pat, expr, ..
-                    }) => quote! {
+                    DoTerm::Chain(DoChain { pat, expr, .. }) => quote! {
                         glasgae::prelude::ChainM::chain_m(
                             #expr,
                             |#pat| #acc
