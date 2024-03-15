@@ -114,6 +114,19 @@ pub enum Either<A, B = A> {
     Right(B),
 }
 
+impl<A, B> Show for Either<A, B>
+where
+    A: Show,
+    B: Show,
+{
+    fn show(self) -> String {
+        match self {
+            Left(l) => format!("Left({})", l.show()),
+            Right(r) => format!("Right({})", r.show()),
+        }
+    }
+}
+
 use Either::*;
 
 impl<T, E> From<Result<T, E>> for Either<E, T> {

@@ -3,8 +3,8 @@
 use crate::prelude::{Either, Pointed, PointedT, WithPointed};
 
 /// Lift extra data into a monadic type.
-pub trait MonadLift<T>: Pointed {
-    type Lifted: Pointed;
+pub trait MonadLift<B>: Pointed + WithPointed<B> {
+    type Lifted: Pointed<Pointed = B>;
 }
 
 impl<MA, A, B> MonadLift<(A, B)> for MA
@@ -22,7 +22,7 @@ where
 }
 
 /// Convenience alias to [`MonadLift::Lifted`].
-pub type MonadLiftedT<T, U> = <T as MonadLift<U>>::Lifted;
+pub type MonadLiftedT<T, B> = <T as MonadLift<B>>::Lifted;
 
 /// Lower extra data out of a monadic type.
 pub trait MonadLower<T, A>: Pointed {
@@ -61,4 +61,4 @@ pub type LoweredT<T, A, B> = <T as Lower<A, B>>::Lowered;
 pub type HoistTupleT<T, U> = MonadLiftedT<T, (PointedT<T>, U)>;
 
 /// Utility alias for hoisting transformers that use Either data
-pub type HoistEitherT<T, U> = MonadLiftedT<T, Either<U, PointedT<T>>>;
+pub type HoistEitherT<T, E> = MonadLiftedT<T, Either<E, PointedT<T>>>;

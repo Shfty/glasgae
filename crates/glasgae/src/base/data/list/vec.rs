@@ -1,4 +1,7 @@
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::{function::bifunction::BifunT, FoldMap},
+    prelude::*,
+};
 
 impl<T> Pointed for Vec<T>
 where
@@ -67,6 +70,16 @@ where
             acc = f.to_bifun()(next, acc);
         }
         acc
+    }
+}
+
+impl<T, U> FoldMap<T, U> for Vec<T>
+where
+    T: Term,
+    U: Monoid,
+{
+    fn fold_map(self, f: impl FunctionT<T, U> + Clone) -> U {
+        U::mconcat(self.fmap(f))
     }
 }
 

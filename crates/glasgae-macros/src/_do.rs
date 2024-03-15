@@ -112,7 +112,7 @@ impl ToTokens for DoBlock {
                     DoTerm::Chain(DoChain { pat, expr, .. }) => quote! {
                         glasgae::prelude::ChainM::chain_m(
                             #expr,
-                            |#pat| #acc
+                            move |#pat| #acc
                         )
                     },
                     DoTerm::Let(local) => {

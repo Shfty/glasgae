@@ -156,7 +156,7 @@ where
     {
         let m = self;
         let h = h.to_function();
-        ExceptT(m.run_t().chain_m(|a| match a {
+        ExceptT::new_t(m.run_t().chain_m(|a| match a {
             Left(l) => h(l).run_t(),
             Right(r) => ReturnM::return_m(Right(r)),
         }))

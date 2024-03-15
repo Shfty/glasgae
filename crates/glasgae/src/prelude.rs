@@ -17,7 +17,7 @@ pub use crate::base::{
         monoid::Monoid,
         pointed::{Pointed, PointedT, WithPointed, WithPointedT},
         traversable::{MapM, Sequence, SequenceA, TraverseT},
-        Boxed, Foldr, Semigroup,
+        Boxed, Foldr, FoldMap, Semigroup,
     },
     grl::{
         io::{
