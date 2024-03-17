@@ -4,7 +4,10 @@
 
 use crate::prelude::*;
 
-use super::{fold_map_default, function::bifunction::BifunT, FoldMap};
+use super::{
+    bifunctor::Bifunctor, bipointed::Bipointed, fold_map_default, function::bifunction::BifunT,
+    with_bipointed::WithBipointed, FoldMap,
+};
 
 pub mod result;
 
@@ -183,6 +186,67 @@ where
         match self {
             Left(l) => Left(l),
             Right(r) => Right(f(r)),
+        }
+    }
+}
+
+impl<A, B> Bipointed for Either<A, B>
+where
+    A: Term,
+    B: Term,
+{
+    type Left = A;
+    type Right = B;
+}
+
+pub type BipointedLeftT<T> = <T as Bipointed>::Left;
+pub type BipointedRightT<T> = <T as Bipointed>::Right;
+
+impl<A, A_, B, B_> WithBipointed<A_, B_> for Either<A, B>
+where
+    A: Term,
+    A_: Term,
+    B: Term,
+    B_: Term,
+{
+    type WithLeft = Either<A_, B>;
+    type WithRight = Either<A, B_>;
+    type WithBipointed = Either<A_, B_>;
+}
+
+pub type WithBipointedLeftT<T, A, B> = <T as WithBipointed<A, B>>::WithLeft;
+pub type WithBipointedRightT<T, A, B> = <T as WithBipointed<A, B>>::WithRight;
+pub type WithBipointedT<T, A, B> = <T as WithBipointed<A, B>>::WithBipointed;
+
+impl<A, A_, B, B_> Bifunctor<A_, B_> for Either<A, B>
+where
+    A: Term,
+    A_: Term,
+    B: Term,
+    B_: Term,
+{
+    fn first(self, f: impl FunctionT<BipointedLeftT<Self>, A_>) -> Self::WithLeft {
+        match self {
+            Either::Left(l) => Either::Left(f(l)),
+            Either::Right(r) => Either::Right(r),
+        }
+    }
+
+    fn second(self, f: impl FunctionT<BipointedRightT<Self>, B_>) -> Self::WithRight {
+        match self {
+            Either::Left(l) => Either::Left(l),
+            Either::Right(r) => Either::Right(f(r)),
+        }
+    }
+
+    fn bimap(
+        self,
+        fa: impl FunctionT<BipointedLeftT<Self>, A_>,
+        fb: impl FunctionT<BipointedRightT<Self>, B_>,
+    ) -> Self::WithBipointed {
+        match self {
+            Either::Left(l) => Either::Left(fa(l)),
+            Either::Right(r) => Either::Right(fb(r)),
         }
     }
 }
