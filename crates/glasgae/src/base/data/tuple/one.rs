@@ -1,4 +1,7 @@
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
+    prelude::*,
+};
 
 impl<A> PureA for (A,)
 where
@@ -50,12 +53,29 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for (T,)
+impl<T, U> Foldable<T, U> for (T,)
 where
     T: Term,
 {
     fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         f(self.0, init)
+    }
+
+    fn foldl(self, f: impl BifunT<U, T, U>, init: U) -> U {
+        f(init, self.0)
+    }
+}
+
+impl<T> Foldable1<T> for (T,)
+where
+    T: Term,
+{
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
+        foldl1_default(self, f)
     }
 }
 

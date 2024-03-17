@@ -5,8 +5,9 @@
 use crate::prelude::*;
 
 use super::{
-    bifunctor::Bifunctor, bipointed::Bipointed, fold_map_default, function::bifunction::BifunT,
-    with_bipointed::WithBipointed, FoldMap,
+    bifunctor::Bifunctor, bipointed::Bipointed, fold_map_default, foldable::foldr1_default,
+    foldl1_default, function::bifunction::BifunT, with_bipointed::WithBipointed, FoldMap,
+    Foldable1,
 };
 
 pub mod result;
@@ -308,7 +309,7 @@ where
     }
 }
 
-impl<E, A, B> Foldr<A, B> for Either<E, A>
+impl<E, A, B> Foldable<A, B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -316,8 +317,29 @@ where
     fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         match self {
             Left(_) => z,
-            Right(y) => f(y, z),
+            Right(x) => f(x, z),
         }
+    }
+
+    fn foldl(self, f: impl BifunT<B, A, B>, z: B) -> B {
+        match self {
+            Left(_) => z,
+            Right(y) => f(z, y),
+        }
+    }
+}
+
+impl<E, A> Foldable1<A> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
+    fn foldr1(self, f: impl BifunT<A, A, A>) -> A {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<A, A, A>) -> A {
+        foldl1_default(self, f)
     }
 }
 

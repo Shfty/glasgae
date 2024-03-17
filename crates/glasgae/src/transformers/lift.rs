@@ -1,7 +1,10 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
 use crate::{
-    base::data::{foldr_default, function::bifunction::BifunT, monoid::Endo, FoldMap},
+    base::data::{
+        foldl1_default, foldl_default, foldr1_default, foldr_default, function::bifunction::BifunT,
+        monoid::Endo, FoldMap, Foldable1,
+    },
     prelude::*,
 };
 
@@ -132,7 +135,7 @@ where
     }
 }
 
-impl<FA, A, B> Foldr<A, B> for Lift<FA>
+impl<FA, A, B> Foldable<A, B> for Lift<FA>
 where
     Self: FoldMap<A, Endo<Function<B, B>>>,
     Function<B, B>: Term,
@@ -143,6 +146,10 @@ where
 {
     fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         foldr_default::<Self, A, B>(self, f, z)
+    }
+
+    fn foldl(self, f: impl BifunT<B, A, B>, z: B) -> B {
+        foldl_default::<Self, A, B>(self, f, z)
     }
 }
 

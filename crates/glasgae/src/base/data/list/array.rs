@@ -1,4 +1,7 @@
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
+    prelude::*,
+};
 
 impl<T, const N: usize> Pointed for [T; N]
 where
@@ -73,7 +76,7 @@ where
     }
 }
 
-impl<T, const N: usize, U> Foldr<T, U> for [T; N]
+impl<T, const N: usize, U> Foldable<T, U> for [T; N]
 where
     T: Term,
     U: Term,
@@ -81,5 +84,23 @@ where
     fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         let data: Vec<_> = self.into_iter().collect();
         data.foldr(f, init)
+    }
+
+    fn foldl(self, f: impl BifunT<U, T, U>, init: U) -> U {
+        let data: Vec<_> = self.into_iter().collect();
+        data.foldl(f, init)
+    }
+}
+
+impl<T, const N: usize> Foldable1<T> for [T; N]
+where
+    T: Term,
+{
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
+        foldl1_default(self, f)
     }
 }

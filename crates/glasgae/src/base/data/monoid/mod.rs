@@ -91,7 +91,7 @@ pub use endo::*;
 pub use product::*;
 pub use sum::*;
 
-use super::{foldable::Foldr, semigroup::Semigroup};
+use super::{foldable::Foldable, semigroup::Semigroup};
 
 /// The class of monoids (types with an associative binary operation that has an identity).
 ///

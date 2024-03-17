@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, FoldMap, Foldl, Foldl1, Foldr1},
+    base::data::{function::bifunction::BifunT, FoldMap, Foldable1},
     prelude::*,
 };
 
@@ -62,7 +62,7 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for Vec<T>
+impl<T, U> Foldable<T, U> for Vec<T>
 where
     T: Term,
 {
@@ -73,21 +73,7 @@ where
         }
         acc
     }
-}
 
-impl<T> Foldr1<T> for Vec<T>
-where
-    T: Term,
-{
-    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
-        self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
-    }
-}
-
-impl<T, U> Foldl<T, U> for Vec<T>
-where
-    T: Term,
-{
     fn foldl(mut self, f: impl BifunT<U, T, U>, init: U) -> U {
         let mut acc = init;
         while !self.is_empty() {
@@ -98,10 +84,14 @@ where
     }
 }
 
-impl<T> Foldl1<T> for Vec<T>
+impl<T> Foldable1<T> for Vec<T>
 where
     T: Term,
 {
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
+    }
+
     fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
         self.into_iter()
             .rev()

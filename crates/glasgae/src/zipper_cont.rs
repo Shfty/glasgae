@@ -1,7 +1,7 @@
 use crate::{
     base::{
         control::zipper::{Travel, Zipper},
-        data::function::bifunction::BifunT,
+        data::{foldr1_default, function::bifunction::BifunT, Foldable1},
     },
     prelude::*,
     transformers::cont::Cont,
@@ -156,7 +156,7 @@ impl ZipperTerm {
     }
 }
 
-impl Foldr<String, String> for ZipperTerm {
+impl Foldable<String, String> for ZipperTerm {
     fn foldr(self, f: impl BifunT<String, String, String>, init: String) -> String {
         let f = f.to_bifun();
         match self {
@@ -165,6 +165,26 @@ impl Foldr<String, String> for ZipperTerm {
             ZipperTerm::A(l, r) => l.foldr(f.clone(), r.foldr(f, init)),
             ZipperTerm::Free => unimplemented!(),
         }
+    }
+
+    fn foldl(self, f: impl BifunT<String, String, String>, init: String) -> String {
+        let f = f.to_bifun();
+        match self {
+            ZipperTerm::Var(t) => f(init, t),
+            ZipperTerm::L(l, r) => f.clone()(l, r.foldl(f, init)),
+            ZipperTerm::A(l, r) => r.foldl(f.clone(), l.foldl(f, init)),
+            ZipperTerm::Free => unimplemented!(),
+        }
+    }
+}
+
+impl Foldable1<String> for ZipperTerm {
+    fn foldr1(self, f: impl BifunT<String, String, String>) -> String {
+        todo!()
+    }
+
+    fn foldl1(self, f: impl BifunT<String, String, String>) -> String {
+        todo!()
     }
 }
 

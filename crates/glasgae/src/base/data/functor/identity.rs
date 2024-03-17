@@ -5,7 +5,10 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
+use crate::{
+    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
+    prelude::*,
+};
 
 use super::Functor;
 
@@ -100,12 +103,29 @@ where
     }
 }
 
-impl<T, U> Foldr<T, U> for Identity<T>
+impl<T, U> Foldable<T, U> for Identity<T>
 where
     T: Term,
 {
     fn foldr(self, f: impl BifunT<T, U, U>, init: U) -> U {
         f(self.run(), init)
+    }
+
+    fn foldl(self, f: impl BifunT<U, T, U>, init: U) -> U {
+        f(init, self.run())
+    }
+}
+
+impl<T> Foldable1<T> for Identity<T>
+where
+    T: Term,
+{
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
+        foldl1_default(self, f)
     }
 }
 

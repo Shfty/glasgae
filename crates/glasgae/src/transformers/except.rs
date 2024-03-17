@@ -7,7 +7,10 @@
 use crate::{
     base::{
         control::monad::{io::MonadIO, morph::HoistEitherT, LiftM},
-        data::{functor::identity::Identity, FoldMap},
+        data::{
+            foldl1_default, foldr1_default, function::bifunction::BifunT,
+            functor::identity::Identity, FoldMap, Foldable1,
+        },
     },
     prelude::*,
 };
@@ -317,12 +320,32 @@ where
     }
 }
 
-impl<MA, E, A, B> Foldr<A, B> for ExceptT<MA>
+impl<MA, E, A, B> Foldable<A, B> for ExceptT<MA>
 where
     MA: Pointed<Pointed = Either<E, A>>,
+    A: Term,
+    B: Term,
 {
-    fn foldr(self, f: impl crate::base::data::function::bifunction::BifunT<A, B, B>, z: B) -> B {
+    fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
         todo!()
+    }
+
+    fn foldl(self, f: impl BifunT<B, A, B>, z: B) -> B {
+        todo!()
+    }
+}
+
+impl<MA, E, A> Foldable1<A> for ExceptT<MA>
+where
+    MA: Pointed<Pointed = Either<E, A>>,
+    A: Term,
+{
+    fn foldr1(self, f: impl BifunT<A, A, A>) -> A {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<A, A, A>) -> A {
+        foldl1_default(self, f)
     }
 }
 

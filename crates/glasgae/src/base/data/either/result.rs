@@ -1,5 +1,8 @@
 use crate::{
-    base::data::{fold_map_default, function::bifunction::BifunT, FoldMap},
+    base::data::{
+        fold_map_default, foldl1_default, foldr1_default, function::bifunction::BifunT, FoldMap,
+        Foldable1,
+    },
     prelude::*,
 };
 
@@ -96,7 +99,7 @@ where
     }
 }
 
-impl<E, A, B> Foldr<A, B> for Result<A, E>
+impl<E, A, B> Foldable<A, B> for Result<A, E>
 where
     A: Term,
     E: Term,
@@ -106,6 +109,27 @@ where
             Ok(y) => f(y, z),
             Err(_) => z,
         }
+    }
+
+    fn foldl(self, f: impl BifunT<B, A, B>, z: B) -> B {
+        match self {
+            Ok(y) => f(z, y),
+            Err(_) => z,
+        }
+    }
+}
+
+impl<E, A> Foldable1<A> for Result<A, E>
+where
+    A: Term,
+    E: Term,
+{
+    fn foldr1(self, f: impl BifunT<A, A, A>) -> A {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<A, A, A>) -> A {
+        foldl1_default(self, f)
     }
 }
 

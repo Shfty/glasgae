@@ -1,7 +1,9 @@
 use std::collections::BTreeMap;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, FoldMap},
+    base::data::{
+        foldl1_default, foldr1_default, function::bifunction::BifunT, FoldMap, Foldable1,
+    },
     prelude::*,
 };
 
@@ -50,7 +52,7 @@ where
     }
 }
 
-impl<K, V, V_> Foldr<V, V_> for BTreeMap<K, V>
+impl<K, V, V_> Foldable<V, V_> for BTreeMap<K, V>
 where
     K: Term + Ord,
     V: Term,
@@ -61,6 +63,28 @@ where
             acc = f.to_bifun()(next, acc);
         }
         acc
+    }
+
+    fn foldl(mut self, f: impl BifunT<V_, V, V_>, z: V_) -> V_ {
+        let mut acc = z;
+        while let Some((_, next)) = self.pop_first() {
+            acc = f.to_bifun()(acc, next);
+        }
+        acc
+    }
+}
+
+impl<K, V> Foldable1<V> for BTreeMap<K, V>
+where
+    K: Term + Ord,
+    V: Term,
+{
+    fn foldr1(self, f: impl BifunT<V, V, V>) -> V {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<V, V, V>) -> V {
+        foldl1_default(self, f)
     }
 }
 

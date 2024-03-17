@@ -8,6 +8,7 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
+use crate::base::data::{foldl1_default, foldr1_default, Foldable1};
 use crate::{base::data::function::bifunction::BifunT, prelude::*};
 
 use crate::transformers::cont::Cont;
@@ -144,7 +145,7 @@ where
 }
 
 // FIXME: Not useful with Default::default direction, useful semantic is Next
-impl<T, U, D> Foldr<T, U> for Zipper<T, D>
+impl<T, U, D> Foldable<T, U> for Zipper<T, D>
 where
     T: Term,
     D: Term + Default,
@@ -156,6 +157,28 @@ where
             Zipper::Zipper(t, n) => f.clone()(t, n((None, Default::default())).foldr(f, init)),
             Zipper::ZipDone(t) => f(t, init),
         }
+    }
+
+    fn foldl(self, f: impl BifunT<U, T, U>, init: U) -> U {
+        let f = f.to_bifun();
+        match self {
+            Zipper::Zipper(t, n) => f.clone()(n((None, Default::default())).foldl(f, init), t),
+            Zipper::ZipDone(t) => f(init, t),
+        }
+    }
+}
+
+impl<T, D> Foldable1<T> for Zipper<T, D>
+where
+    T: Term,
+    D: Term + Default,
+{
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        foldr1_default(self, f)
+    }
+
+    fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
+        foldl1_default(self, f)
     }
 }
 
