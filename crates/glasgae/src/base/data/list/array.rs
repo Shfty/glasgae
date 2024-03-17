@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<T, const N: usize, U> Foldable<T, U> for [T; N]
+impl<T, const N: usize, U> Foldable<U> for [T; N]
 where
     T: Term,
     U: Term,

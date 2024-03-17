@@ -156,7 +156,7 @@ impl ZipperTerm {
     }
 }
 
-impl Foldable<String, String> for ZipperTerm {
+impl Foldable<String> for ZipperTerm {
     fn foldr(self, f: impl BifunT<String, String, String>, init: String) -> String {
         let f = f.to_bifun();
         match self {

@@ -35,16 +35,13 @@ where
     type Bipointed = L;
 }
 
-impl<L, L_, R, R_> WithBipointed<L_, R_> for (L, R)
+impl<L, L_, R> WithBipointed<L_> for (L, R)
 where
     L: Term,
     L_: Term,
     R: Term,
-    R_: Term,
 {
-    type WithLeft = (L_, R);
-    type WithRight = (L, R_);
-    type WithBipointed = (L_, R_);
+    type WithBipointed = (L_, R);
 }
 
 impl<L, L_, R, R_> Bifunctor<L_, R_> for (L, R)
@@ -54,11 +51,11 @@ where
     R: Term,
     R_: Term,
 {
-    fn first(self, f: impl crate::prelude::FunctionT<Self::Bipointed, L_>) -> Self::WithLeft {
+    fn first(self, f: impl crate::prelude::FunctionT<Self::Bipointed, L_>) -> Self::WithBipointed {
         (f(self.0), self.1)
     }
 
-    fn second(self, f: impl crate::prelude::FunctionT<Self::Pointed, R_>) -> Self::WithRight {
+    fn second(self, f: impl crate::prelude::FunctionT<Self::Pointed, R_>) -> Self::WithPointed {
         (self.0, f(self.1))
     }
 
@@ -66,7 +63,9 @@ where
         self,
         fa: impl crate::prelude::FunctionT<Self::Bipointed, L_>,
         fb: impl crate::prelude::FunctionT<Self::Pointed, R_>,
-    ) -> Self::WithBipointed {
+    ) -> crate::prelude::WithPointedT<crate::base::data::with_bipointed::WithBipointedT<Self, L_>, R_>
+    {
         (fa(self.0), fb(self.1))
     }
 }
+

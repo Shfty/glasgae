@@ -9,14 +9,14 @@
 //!
 //! For the class laws see the Laws section of Data.Foldable.
 
-use crate::prelude::{Compose, Function, FunctionT, Maybe, Maybe::*, Monoid, Term};
+use crate::prelude::{Compose, Function, FunctionT, Monoid, Pointed, Term};
 
 use super::{
     function::{bifunction::BifunT, Curried},
     monoid::Endo,
 };
 
-pub trait Foldable<T, U>: Term {
+pub trait Foldable<U>: Pointed {
     /// Right-associative fold of a structure, lazy in the accumulator.
     ///
     /// In the case of lists, foldr, when applied to a binary operator, a starting value (typically the right-identity of the operator), and a list, reduces the list using the binary operator, from right to left:
@@ -49,7 +49,7 @@ pub trait Foldable<T, U>: Term {
     ///         "foodcba".to_string()
     ///     );
     /// ```
-    fn foldr(self, f: impl BifunT<T, U, U>, z: U) -> U;
+    fn foldr(self, f: impl BifunT<Self::Pointed, U, U>, z: U) -> U;
 
     /// Left-associative fold of a structure, lazy in the accumulator. This is rarely what you want, but can work well for structures with efficient right-to-left sequencing and an operator that is lazy in its left argument.
     ///
@@ -77,45 +77,19 @@ pub trait Foldable<T, U>: Term {
     /// >>> foldl (\a _ -> a) 0 $ repeat 1
     /// * Hangs forever *
     /// WARNING: When it comes to lists, you always want to use either foldl' or foldr instead.
-    fn foldl(self, f: impl BifunT<U, T, U>, z: U) -> U;
-}
-
-pub trait Foldable1<T>: Foldable<T, T> {
-    fn foldr1(self, _f: impl BifunT<T, T, T>) -> T;
-    fn foldl1(self, f: impl BifunT<T, T, T>) -> T;
+    fn foldl(self, f: impl BifunT<U, Self::Pointed, U>, z: U) -> U;
 }
 
 /// Derive foldr from FoldMap
 pub fn foldr_default<This, T, U>(this: This, f: impl BifunT<T, U, U>, z: U) -> U
 where
-    This: FoldMap<T, Endo<Function<U, U>>>,
+    This: FoldMap<Endo<Function<U, U>>, Pointed = T>,
     Endo<U>: Monoid,
     T: Term,
     U: Term,
 {
     this.fold_map(f.to_bifun().curried().compose_clone(Endo::new))
         .app()(z)
-}
-
-/// Derive foldr1 from foldr
-pub fn foldr1_default<This, T>(this: This, f: impl BifunT<T, T, T>) -> T
-where
-    This: Foldable<T, Maybe<T>>,
-    T: Term,
-{
-    let f = f.to_bifun();
-    match this.foldr(
-        |x, m| {
-            Just(match m {
-                Nothing => x,
-                Just(y) => f(x, y),
-            })
-        },
-        Nothing,
-    ) {
-        Just(t) => t,
-        Nothing => panic!("foldr1: empty structure"),
-    }
 }
 
 /// Derive foldl from FoldMap
@@ -127,40 +101,17 @@ pub fn foldl_default<This, T, U>(this: This, f: impl BifunT<U, T, U>, z: U) -> U
     todo!()
 }
 
-/// Derive foldl1 from foldl
-pub fn foldl1_default<This, T>(this: This, f: impl BifunT<T, T, T>) -> T
+pub trait FoldMap<U>: Foldable<U>
 where
-    This: Foldable<T, Maybe<T>>,
-    T: Term,
-{
-    let f = f.to_bifun();
-    match this.foldl(
-        |m, y| {
-            Just(match m {
-                Nothing => y,
-                Just(x) => f(x, y),
-            })
-        },
-        Nothing,
-    ) {
-        Just(t) => t,
-        Nothing => panic!("foldl1: empty structure"),
-    }
-}
-
-pub trait FoldMap<T, U>: Term
-where
-    T: Term,
     U: Monoid,
 {
-    fn fold_map(self, f: impl FunctionT<T, U> + Clone) -> U;
+    fn fold_map(self, f: impl FunctionT<Self::Pointed, U> + Clone) -> U;
 }
 
 /// Derive fold_map from Foldr
-pub fn fold_map_default<This, T, U>(this: This, f: impl FunctionT<T, U>) -> U
+pub fn fold_map_default<This, U>(this: This, f: impl FunctionT<This::Pointed, U>) -> U
 where
-    This: Foldable<T, U>,
-    T: Term,
+    This: Foldable<U>,
     U: Monoid,
 {
     let f = f.to_function();

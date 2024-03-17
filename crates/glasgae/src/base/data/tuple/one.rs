@@ -53,7 +53,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for (T,)
+impl<T, U> Foldable<U> for (T,)
 where
     T: Term,
 {

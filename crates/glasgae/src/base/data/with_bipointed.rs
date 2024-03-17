@@ -2,10 +2,10 @@ use crate::prelude::Pointed;
 
 use super::bipointed::Bipointed;
 
-pub trait WithBipointed<A = <Self as Bipointed>::Bipointed, B = <Self as Pointed>::Pointed>:
+pub trait WithBipointed<A = <Self as Bipointed>::Bipointed>:
     Bipointed
 {
-    type WithLeft: Bipointed<Bipointed = A> + Pointed<Pointed = Self::Pointed>;
-    type WithRight: Bipointed<Bipointed = Self::Bipointed> + Pointed<Pointed = B>;
-    type WithBipointed: Bipointed<Bipointed = A> + Pointed<Pointed = B>;
+    type WithBipointed: Bipointed<Bipointed = A> + Pointed<Pointed = Self::Pointed>;
 }
+
+pub type WithBipointedT<T, A> = <T as WithBipointed<A>>::WithBipointed;

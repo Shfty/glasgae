@@ -1,8 +1,10 @@
 //! # Data
 
+pub mod bifoldable;
+pub mod bifoldable1;
+pub mod bifunctor;
 pub mod bipointed;
 pub mod with_bipointed;
-pub mod bifunctor;
 
 pub mod either;
 pub mod function;
@@ -18,8 +20,12 @@ pub mod tuple;
 
 mod boxed;
 mod foldable;
+mod foldable1;
 mod semigroup;
 
+pub use bifoldable::*;
+pub use bifoldable1::*;
 pub use boxed::*;
 pub use foldable::*;
+pub use foldable1::*;
 pub use semigroup::*;

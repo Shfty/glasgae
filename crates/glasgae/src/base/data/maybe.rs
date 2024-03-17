@@ -134,7 +134,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for Maybe<T>
+impl<T, U> Foldable<U> for Maybe<T>
 where
     T: Term,
 {

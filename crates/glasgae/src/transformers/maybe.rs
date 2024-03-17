@@ -139,10 +139,25 @@ where
     }
 }
 
-impl<MA, A, B> FoldMap<A, B> for MaybeT<MA>
+impl<MA, A, B> Foldable<B> for MaybeT<MA>
 where
-    MA: FoldMap<A, B>,
-    A: FoldMap<A, B>,
+    MA: Pointed<Pointed = Maybe<A>>,
+    A: Term,
+{
+    fn foldr(self, f: impl crate::base::data::function::bifunction::BifunT<A, B, B>, z: B) -> B {
+        todo!()
+    }
+
+    fn foldl(self, f: impl crate::base::data::function::bifunction::BifunT<B, A, B>, z: B) -> B {
+        todo!()
+    }
+}
+
+impl<MA, A, B> FoldMap<B> for MaybeT<MA>
+where
+    MA: FoldMap<B, Pointed = Maybe<A>>,
+    Maybe<A>: FoldMap<B, Pointed = A>,
+    A: Term,
     B: Monoid,
 {
     fn fold_map(self, f: impl FunctionT<A, B>) -> B {

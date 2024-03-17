@@ -37,7 +37,7 @@ where
     }
 }
 
-impl<K, V, V_> FoldMap<V, V_> for BTreeMap<K, V>
+impl<K, V, V_> FoldMap<V_> for BTreeMap<K, V>
 where
     K: Term + Ord,
     V: Term,
@@ -52,7 +52,7 @@ where
     }
 }
 
-impl<K, V, V_> Foldable<V, V_> for BTreeMap<K, V>
+impl<K, V, V_> Foldable<V_> for BTreeMap<K, V>
 where
     K: Term + Ord,
     V: Term,

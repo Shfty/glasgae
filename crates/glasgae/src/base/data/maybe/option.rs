@@ -83,7 +83,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for Option<T>
+impl<T, U> Foldable<U> for Option<T>
 where
     T: Term,
 {

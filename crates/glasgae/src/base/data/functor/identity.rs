@@ -103,7 +103,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for Identity<T>
+impl<T, U> Foldable<U> for Identity<T>
 where
     T: Term,
 {

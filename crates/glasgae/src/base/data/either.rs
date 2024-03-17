@@ -5,9 +5,13 @@
 use crate::prelude::*;
 
 use super::{
-    bifunctor::Bifunctor, bipointed::Bipointed, fold_map_default, foldable::foldr1_default,
-    foldl1_default, function::bifunction::BifunT, with_bipointed::WithBipointed, FoldMap,
-    Foldable1,
+    bifoldl1_default, bifoldr1_default,
+    bifunctor::Bifunctor,
+    bipointed::{Bipointed, BipointedT},
+    fold_map_default, foldl1_default, foldr1_default,
+    function::bifunction::BifunT,
+    with_bipointed::{WithBipointed, WithBipointedT},
+    Bifoldable, Bifoldable1,
 };
 
 pub mod result;
@@ -199,24 +203,14 @@ where
     type Bipointed = A;
 }
 
-pub type BipointedLeftT<T> = <T as Bipointed>::Bipointed;
-pub type BipointedRightT<T> = <T as Pointed>::Pointed;
-
-impl<A, A_, B, B_> WithBipointed<A_, B_> for Either<A, B>
+impl<A, A_, B> WithBipointed<A_> for Either<A, B>
 where
     A: Term,
     A_: Term,
     B: Term,
-    B_: Term,
 {
-    type WithLeft = Either<A_, B>;
-    type WithRight = Either<A, B_>;
-    type WithBipointed = Either<A_, B_>;
+    type WithBipointed = Either<A_, B>;
 }
-
-pub type WithBipointedLeftT<T, A, B> = <T as WithBipointed<A, B>>::WithLeft;
-pub type WithBipointedRightT<T, A, B> = <T as WithBipointed<A, B>>::WithRight;
-pub type WithBipointedT<T, A, B> = <T as WithBipointed<A, B>>::WithBipointed;
 
 impl<A, A_, B, B_> Bifunctor<A_, B_> for Either<A, B>
 where
@@ -225,14 +219,14 @@ where
     B: Term,
     B_: Term,
 {
-    fn first(self, f: impl FunctionT<BipointedLeftT<Self>, A_>) -> Self::WithLeft {
+    fn first(self, f: impl FunctionT<BipointedT<Self>, A_>) -> Self::WithBipointed {
         match self {
             Either::Left(l) => Either::Left(f(l)),
             Either::Right(r) => Either::Right(r),
         }
     }
 
-    fn second(self, f: impl FunctionT<BipointedRightT<Self>, B_>) -> Self::WithRight {
+    fn second(self, f: impl FunctionT<PointedT<Self>, B_>) -> Self::WithPointed {
         match self {
             Either::Left(l) => Either::Left(l),
             Either::Right(r) => Either::Right(f(r)),
@@ -241,9 +235,9 @@ where
 
     fn bimap(
         self,
-        fa: impl FunctionT<BipointedLeftT<Self>, A_>,
-        fb: impl FunctionT<BipointedRightT<Self>, B_>,
-    ) -> Self::WithBipointed {
+        fa: impl FunctionT<BipointedT<Self>, A_>,
+        fb: impl FunctionT<PointedT<Self>, B_>,
+    ) -> WithPointedT<WithBipointedT<Self, A_>, B_> {
         match self {
             Either::Left(l) => Either::Left(fa(l)),
             Either::Right(r) => Either::Right(fb(r)),
@@ -297,7 +291,7 @@ where
     }
 }
 
-impl<E, A, B> FoldMap<A, B> for Either<E, A>
+impl<E, A, B> FoldMap<B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -308,7 +302,7 @@ where
     }
 }
 
-impl<E, A, B> Foldable<A, B> for Either<E, A>
+impl<E, A, B> Foldable<B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -339,6 +333,40 @@ where
 
     fn foldl1(self, f: impl BifunT<A, A, A>) -> A {
         foldl1_default(self, f)
+    }
+}
+
+impl<E, A, E_> Bifoldable<E_> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
+    fn bifoldr(self, f: impl BifunT<E, E_, E_>, z: E_) -> E_ {
+        match self {
+            Left(x) => f(x, z),
+            Right(_) => z,
+        }
+    }
+
+    fn bifoldl(self, f: impl BifunT<E_, E, E_>, z: E_) -> E_ {
+        match self {
+            Left(x) => f(z, x),
+            Right(_) => z,
+        }
+    }
+}
+
+impl<E, A> Bifoldable1<E> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
+    fn bifoldr1(self, f: impl BifunT<E, E, E>) -> E {
+        bifoldr1_default(self, f)
+    }
+
+    fn bifoldl1(self, f: impl BifunT<E, E, E>) -> E {
+        bifoldl1_default(self, f)
     }
 }
 

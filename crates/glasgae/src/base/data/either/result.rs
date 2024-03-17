@@ -88,7 +88,7 @@ where
     }
 }
 
-impl<E, A, B> FoldMap<A, B> for Result<A, E>
+impl<E, A, B> FoldMap<B> for Result<A, E>
 where
     E: Term,
     A: Term,
@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<E, A, B> Foldable<A, B> for Result<A, E>
+impl<E, A, B> Foldable<B> for Result<A, E>
 where
     A: Term,
     E: Term,

@@ -120,9 +120,9 @@ where
     }
 }
 
-impl<FA, A, B> FoldMap<A, B> for Lift<FA>
+impl<FA, A, B> FoldMap<B> for Lift<FA>
 where
-    FA: Pointed<Pointed = A> + FoldMap<A, B>,
+    FA: Pointed<Pointed = A> + FoldMap<B>,
     A: Term,
     B: Monoid,
 {
@@ -135,21 +135,16 @@ where
     }
 }
 
-impl<FA, A, B> Foldable<A, B> for Lift<FA>
+impl<FA, B> Foldable<B> for Lift<FA>
 where
-    Self: FoldMap<A, Endo<Function<B, B>>>,
-    Function<B, B>: Term,
     FA: Pointed,
-    Endo<B>: Monoid,
-    A: Term,
-    B: Term,
 {
-    fn foldr(self, f: impl BifunT<A, B, B>, z: B) -> B {
-        foldr_default::<Self, A, B>(self, f, z)
+    fn foldr(self, f: impl BifunT<Self::Pointed, B, B>, z: B) -> B {
+        todo!()
     }
 
-    fn foldl(self, f: impl BifunT<B, A, B>, z: B) -> B {
-        foldl_default::<Self, A, B>(self, f, z)
+    fn foldl(self, f: impl BifunT<B, Self::Pointed, B>, z: B) -> B {
+        todo!()
     }
 }
 

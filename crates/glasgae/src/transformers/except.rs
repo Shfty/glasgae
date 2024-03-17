@@ -309,7 +309,7 @@ where
     }
 }
 
-impl<MA, E, A, B> FoldMap<A, B> for ExceptT<MA>
+impl<MA, E, A, B> FoldMap<B> for ExceptT<MA>
 where
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
@@ -320,7 +320,7 @@ where
     }
 }
 
-impl<MA, E, A, B> Foldable<A, B> for ExceptT<MA>
+impl<MA, E, A, B> Foldable<B> for ExceptT<MA>
 where
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,

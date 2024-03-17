@@ -62,7 +62,7 @@ where
     }
 }
 
-impl<T, U> Foldable<T, U> for Vec<T>
+impl<T, U> Foldable<U> for Vec<T>
 where
     T: Term,
 {
@@ -100,7 +100,7 @@ where
     }
 }
 
-impl<T, U> FoldMap<T, U> for Vec<T>
+impl<T, U> FoldMap<U> for Vec<T>
 where
     T: Term,
     U: Monoid,

@@ -145,7 +145,7 @@ where
 }
 
 // FIXME: Not useful with Default::default direction, useful semantic is Next
-impl<T, U, D> Foldable<T, U> for Zipper<T, D>
+impl<T, U, D> Foldable<U> for Zipper<T, D>
 where
     T: Term,
     D: Term + Default,

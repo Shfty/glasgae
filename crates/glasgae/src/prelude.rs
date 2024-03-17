@@ -10,14 +10,14 @@ pub use crate::base::{
     data::{
         either::{Either, Either::*},
         function::{r#const, App, Compose, Curry, Flip, Function, FunctionT, Until},
-        term::Term,
         functor::Functor,
         list::{Append, Filter},
         maybe::{Maybe, Maybe::*},
         monoid::Monoid,
         pointed::{Pointed, PointedT, WithPointed, WithPointedT},
+        term::Term,
         traversable::{MapM, Sequence, SequenceA, TraverseT},
-        Boxed, Foldable, FoldMap, Semigroup,
+        Boxed, FoldMap, Foldable, Foldable1, Semigroup,
     },
     grl::{
         io::{
