@@ -157,24 +157,24 @@ where
     }
 }
 
-/// The foldM function is analogous to foldl, except that its result is encapsulated in a monad.
-///
-/// Note that foldM works from left-to-right over the list arguments. This could be an issue where (>>) and the `folded function' are not commutative.
-///
-/// foldM f a1 [x1, x2, ..., xm]
-///
-/// ==
-///
-/// do
-///   a2 <- f a1 x1
-///   a3 <- f a2 x2
-///   ...
-///   f am xm
-/// If right-to-left evaluation is required, the input list should be reversed.
-///
-/// Note: foldM is the same as foldlM
 pub trait FoldM<M1, A, B>: ReturnM {
+    /// The foldlM function is analogous to foldl, except that its result is encapsulated in a monad.
+    ///
+    /// Note that foldlM works from left-to-right over the list arguments.
+    /// This could be an issue where (>>) and the `folded function' are not commutative.
+    ///
+    /// foldM f a1 [x1, x2, ..., xm]
+    ///
+    /// ==
+    ///
+    /// do
+    ///   a2 <- f a1 x1
+    ///   a3 <- f a2 x2
+    ///   ...
+    ///   f am xm
     fn foldl_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
+    
+    /// The foldrM function is analogous to foldr, except that its result is encapsulated in a monad.
     fn foldr_m(self, f: impl BifunT<B, A, M1>, a: A) -> M1;
 }
 
