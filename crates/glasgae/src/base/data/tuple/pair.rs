@@ -32,8 +32,7 @@ where
     L: Term,
     R: Term,
 {
-    type Left = L;
-    type Right = R;
+    type Bipointed = L;
 }
 
 impl<L, L_, R, R_> WithBipointed<L_, R_> for (L, R)
@@ -55,18 +54,18 @@ where
     R: Term,
     R_: Term,
 {
-    fn first(self, f: impl crate::prelude::FunctionT<Self::Left, L_>) -> Self::WithLeft {
+    fn first(self, f: impl crate::prelude::FunctionT<Self::Bipointed, L_>) -> Self::WithLeft {
         (f(self.0), self.1)
     }
 
-    fn second(self, f: impl crate::prelude::FunctionT<Self::Right, R_>) -> Self::WithRight {
+    fn second(self, f: impl crate::prelude::FunctionT<Self::Pointed, R_>) -> Self::WithRight {
         (self.0, f(self.1))
     }
 
     fn bimap(
         self,
-        fa: impl crate::prelude::FunctionT<Self::Left, L_>,
-        fb: impl crate::prelude::FunctionT<Self::Right, R_>,
+        fa: impl crate::prelude::FunctionT<Self::Bipointed, L_>,
+        fb: impl crate::prelude::FunctionT<Self::Pointed, R_>,
     ) -> Self::WithBipointed {
         (fa(self.0), fb(self.1))
     }

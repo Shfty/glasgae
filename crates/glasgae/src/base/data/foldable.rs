@@ -119,13 +119,7 @@ where
 }
 
 /// Derive foldl from FoldMap
-pub fn foldl_default<This, T, U>(this: This, f: impl BifunT<U, T, U>, z: U) -> U
-where
-    This: FoldMap<T, Endo<Function<U, U>>>,
-    Endo<U>: Monoid,
-    T: Term,
-    U: Term,
-{
+pub fn foldl_default<This, T, U>(this: This, f: impl BifunT<U, T, U>, z: U) -> U {
     /*
      foldl f z t = appEndo (getDual (foldMap (Dual . Endo . flip f) t)) z
     */

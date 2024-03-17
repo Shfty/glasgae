@@ -2,8 +2,8 @@
 
 pub mod bipointed;
 pub mod with_bipointed;
-
 pub mod bifunctor;
+
 pub mod either;
 pub mod function;
 pub mod functor;

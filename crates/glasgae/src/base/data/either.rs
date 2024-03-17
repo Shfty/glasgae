@@ -196,12 +196,11 @@ where
     A: Term,
     B: Term,
 {
-    type Left = A;
-    type Right = B;
+    type Bipointed = A;
 }
 
-pub type BipointedLeftT<T> = <T as Bipointed>::Left;
-pub type BipointedRightT<T> = <T as Bipointed>::Right;
+pub type BipointedLeftT<T> = <T as Bipointed>::Bipointed;
+pub type BipointedRightT<T> = <T as Pointed>::Pointed;
 
 impl<A, A_, B, B_> WithBipointed<A_, B_> for Either<A, B>
 where

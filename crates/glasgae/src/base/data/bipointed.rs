@@ -1,7 +1,5 @@
-use crate::prelude::Term;
+use crate::prelude::{Pointed, Term};
 
-pub trait Bipointed: Term {
-    type Left: Term;
-    type Right: Term;
+pub trait Bipointed: Pointed {
+    type Bipointed: Term;
 }
-
