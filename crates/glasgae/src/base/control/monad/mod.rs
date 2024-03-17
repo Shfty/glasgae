@@ -174,7 +174,8 @@ where
 ///
 /// Note: foldM is the same as foldlM
 pub trait FoldM<M1, A, B>: ReturnM {
-    fn fold_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
+    fn foldl_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
+    fn foldr_m(self, f: impl BifunT<B, A, M1>, a: A) -> M1;
 }
 
 impl<MB, A, B> FoldM<MB, A, B> for Vec<B>
@@ -183,7 +184,7 @@ where
     A: Term,
     B: Term,
 {
-    fn fold_m(self, f: impl BifunT<A, B, MB>, a: A) -> MB {
+    fn foldl_m(self, f: impl BifunT<A, B, MB>, a: A) -> MB {
         let mut xs = self;
         let f = f.to_bifun();
 
@@ -193,7 +194,22 @@ where
             let x = xs.remove(0);
             f.clone()(a, x).chain_m({
                 let xs = xs.clone();
-                move |fax| xs.fold_m(f, fax)
+                move |fax| xs.foldl_m(f, fax)
+            })
+        }
+    }
+
+    fn foldr_m(self, f: impl BifunT<B, A, MB>, a: A) -> MB {
+        let mut xs = self;
+        let f = f.to_bifun();
+
+        if xs.is_empty() {
+            ReturnM::return_m(a)
+        } else {
+            let x = xs.pop().unwrap();
+            f.clone()(x, a).chain_m({
+                let xs = xs.clone();
+                move |fax| xs.foldr_m(f, fax)
             })
         }
     }

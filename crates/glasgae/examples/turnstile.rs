@@ -244,7 +244,7 @@ fn inc_if_opens(
 fn count_opens(
     input: Vec<TurnstileInput>,
 ) -> MyComplexMonad<usize, Vec<String>, TurnstileState, usize> {
-    input.fold_m(inc_if_opens, 0)
+    input.foldl_m(inc_if_opens, 0)
 }
 
 fn test_fold_m_reader() -> IO<()> {

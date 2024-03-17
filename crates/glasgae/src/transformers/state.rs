@@ -496,7 +496,7 @@ mod test {
     }
 
     fn count_opens(input: Vec<TurnstileInput>) -> State<TurnstileState, usize> {
-        input.fold_m(inc_if_opens, 0)
+        input.foldl_m(inc_if_opens, 0)
     }
 
     #[test]
