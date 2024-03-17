@@ -1,5 +1,7 @@
+use std::cmp::Ordering;
+
 use crate::{
-    base::data::{function::bifunction::BifunT, FoldMap},
+    base::data::{function::bifunction::BifunT, FoldMap, Foldl, Foldl1, Foldr1},
     prelude::*,
 };
 
@@ -73,6 +75,41 @@ where
     }
 }
 
+impl<T> Foldr1<T> for Vec<T>
+where
+    T: Term,
+{
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T {
+        self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
+    }
+}
+
+impl<T, U> Foldl<T, U> for Vec<T>
+where
+    T: Term,
+{
+    fn foldl(mut self, f: impl BifunT<U, T, U>, init: U) -> U {
+        let mut acc = init;
+        while !self.is_empty() {
+            let next = self.remove(0);
+            acc = f.to_bifun()(acc, next);
+        }
+        acc
+    }
+}
+
+impl<T> Foldl1<T> for Vec<T>
+where
+    T: Term,
+{
+    fn foldl1(self, f: impl BifunT<T, T, T>) -> T {
+        self.into_iter()
+            .rev()
+            .reduce(|y, x| f.to_bifun()(x, y))
+            .unwrap()
+    }
+}
+
 impl<T, U> FoldMap<T, U> for Vec<T>
 where
     T: Term,
@@ -136,4 +173,32 @@ where
 pub fn push<T>(t: T, mut v: Vec<T>) -> Vec<T> {
     v.insert(0, t);
     v
+}
+
+pub trait Sort<T> {
+    fn sort(self) -> Self;
+}
+
+impl<T> Sort<T> for Vec<T>
+where
+    T: Term + Ord,
+{
+    fn sort(mut self) -> Self {
+        <[T]>::sort(&mut self);
+        self
+    }
+}
+
+pub trait SortBy<T> {
+    fn sort_by(self, f: impl BifunT<T, T, Ordering>) -> Self;
+}
+
+impl<T> SortBy<T> for Vec<T>
+where
+    T: Term,
+{
+    fn sort_by(mut self, f: impl BifunT<T, T, Ordering>) -> Vec<T> {
+        <[T]>::sort_by(&mut self, |t, u| f.to_bifun()(t.clone(), u.clone()));
+        self
+    }
 }
