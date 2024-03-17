@@ -10,12 +10,21 @@ pub trait Bifoldable1<T>: Bifoldable<T> {
 /// Derive foldr1 from foldr
 pub fn bifoldr1_default<This, T>(this: This, f: impl BifunT<T, T, T>) -> T
 where
-    This: Bifoldable<Maybe<T>, Bipointed = T>,
+    This: Bifoldable<Maybe<T>, Bipointed = T, Pointed = T>,
     T: Term,
 {
     let f = f.to_bifun();
     match this.bifoldr(
-        |x, m| {
+        {
+            let f = f.clone();
+            move |x, m| {
+                Just(match m {
+                    Nothing => x,
+                    Just(y) => f(x, y),
+                })
+            }
+        },
+        move |x, m| {
             Just(match m {
                 Nothing => x,
                 Just(y) => f(x, y),
@@ -31,11 +40,20 @@ where
 /// Derive foldl1 from foldl
 pub fn bifoldl1_default<This, T>(this: This, f: impl BifunT<T, T, T>) -> T
 where
-    This: Bifoldable<Maybe<T>, Bipointed = T>,
+    This: Bifoldable<Maybe<T>, Bipointed = T, Pointed = T>,
     T: Term,
 {
     let f = f.to_bifun();
     match this.bifoldl(
+        {
+            let f = f.clone();
+            |m, y| {
+                Just(match m {
+                    Nothing => y,
+                    Just(x) => f(x, y),
+                })
+            }
+        },
         |m, y| {
             Just(match m {
                 Nothing => y,
@@ -48,4 +66,3 @@ where
         Nothing => panic!("foldl1: empty structure"),
     }
 }
-

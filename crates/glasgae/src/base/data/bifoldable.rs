@@ -6,9 +6,20 @@ use super::{
     monoid::Endo,
 };
 
-pub trait Bifoldable<U>: Bipointed {
-    fn bifoldr(self, f: impl BifunT<Self::Bipointed, U, U>, z: U) -> U;
-    fn bifoldl(self, f: impl BifunT<U, Self::Bipointed, U>, z: U) -> U;
+pub trait Bifoldable<T>: Bipointed {
+    fn bifoldr(
+        self,
+        fa: impl BifunT<Self::Bipointed, T, T>,
+        fb: impl BifunT<Self::Pointed, T, T>,
+        z: T,
+    ) -> T;
+
+    fn bifoldl(
+        self,
+        fa: impl BifunT<T, Self::Bipointed, T>,
+        fb: impl BifunT<T, Self::Pointed, T>,
+        z: T,
+    ) -> T;
 }
 
 /// Derive foldr from FoldMap
@@ -40,12 +51,20 @@ where
 }
 
 /// Derive fold_map from Foldr
-pub fn bifold_map_default<This, T, U>(this: This, f: impl FunctionT<T, U>) -> U
+pub fn bifold_map_default<This, T>(
+    this: This,
+    fa: impl FunctionT<This::Bipointed, T>,
+    fb: impl FunctionT<This::Pointed, T>,
+) -> T
 where
-    This: Bifoldable<U, Bipointed = T>,
-    T: Term,
-    U: Monoid,
+    This: Bifoldable<T>,
+    T: Monoid,
 {
-    let f = f.to_function();
-    this.bifoldr(|next, acc| f(next).assoc_s(acc), Monoid::mempty())
+    let fa = fa.to_function();
+    let fb = fb.to_function();
+    this.bifoldr(
+        |next, acc| fa(next).assoc_s(acc),
+        |next, acc| fb(next).assoc_s(acc),
+        Monoid::mempty(),
+    )
 }

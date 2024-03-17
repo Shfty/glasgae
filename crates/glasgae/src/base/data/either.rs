@@ -195,12 +195,12 @@ where
     }
 }
 
-impl<A, B> Bipointed for Either<A, B>
+impl<E, A> Bipointed for Either<E, A>
 where
+    E: Term,
     A: Term,
-    B: Term,
 {
-    type Bipointed = A;
+    type Bipointed = E;
 }
 
 impl<A, A_, B> WithBipointed<A_> for Either<A, B>
@@ -336,36 +336,35 @@ where
     }
 }
 
-impl<E, A, E_> Bifoldable<E_> for Either<E, A>
+impl<E, A, T> Bifoldable<T> for Either<E, A>
 where
     E: Term,
     A: Term,
 {
-    fn bifoldr(self, f: impl BifunT<E, E_, E_>, z: E_) -> E_ {
+    fn bifoldr(self, fa: impl BifunT<E, T, T>, fb: impl BifunT<A, T, T>, z: T) -> T {
         match self {
-            Left(x) => f(x, z),
-            Right(_) => z,
+            Left(x) => fa(x, z),
+            Right(x) => fb(x, z),
         }
     }
 
-    fn bifoldl(self, f: impl BifunT<E_, E, E_>, z: E_) -> E_ {
+    fn bifoldl(self, fa: impl BifunT<T, E, T>, fb: impl BifunT<T, A, T>, z: T) -> T {
         match self {
-            Left(x) => f(z, x),
-            Right(_) => z,
+            Left(x) => fa(z, x),
+            Right(x) => fb(z, x),
         }
     }
 }
 
-impl<E, A> Bifoldable1<E> for Either<E, A>
+impl<T> Bifoldable1<T> for Either<T, T>
 where
-    E: Term,
-    A: Term,
+    T: Term,
 {
-    fn bifoldr1(self, f: impl BifunT<E, E, E>) -> E {
+    fn bifoldr1(self, f: impl BifunT<T, T, T>) -> T {
         bifoldr1_default(self, f)
     }
 
-    fn bifoldl1(self, f: impl BifunT<E, E, E>) -> E {
+    fn bifoldl1(self, f: impl BifunT<T, T, T>) -> T {
         bifoldl1_default(self, f)
     }
 }
