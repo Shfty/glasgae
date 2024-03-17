@@ -3,7 +3,7 @@ use crate::prelude::{Maybe, Maybe::*, Term};
 use super::{function::bifunction::BifunT, Foldable};
 
 pub trait Foldable1<T>: Foldable<T> {
-    fn foldr1(self, _f: impl BifunT<T, T, T>) -> T;
+    fn foldr1(self, f: impl BifunT<T, T, T>) -> T;
     fn foldl1(self, f: impl BifunT<T, T, T>) -> T;
 }
 

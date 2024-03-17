@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, FoldMap, Foldable1},
+    base::data::{function::bifunction::BifunT, FoldMap, Foldable1, traversable::traverse_t_default},
     prelude::*,
 };
 
@@ -119,7 +119,7 @@ where
     T: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        self.fmap(f).sequence_a()
+        traverse_t_default(self, f)
     }
 }
 

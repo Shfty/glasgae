@@ -1,5 +1,7 @@
 //! # Data
 
+pub mod tree;
+
 pub mod bifoldable;
 pub mod bifoldable1;
 pub mod bifunctor;

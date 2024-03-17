@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::{
     base::data::{
-        foldl1_default, foldr1_default, function::bifunction::BifunT, FoldMap, Foldable1,
+        foldl1_default, foldr1_default, function::bifunction::BifunT,
+        traversable::traverse_t_default, FoldMap, Foldable1,
     },
     prelude::*,
 };
@@ -90,12 +91,14 @@ where
 
 impl<K, V, A1, T, A2> TraverseT<A1, T, A2> for BTreeMap<K, V>
 where
-    K: Term,
+    Self: Fmap<A1>,
+    WithPointedT<Self, A1>: SequenceA<T, A2>,
+    K: Ord + Term,
     V: Term,
     A1: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        todo!()
+        traverse_t_default(self, f)
     }
 }
 

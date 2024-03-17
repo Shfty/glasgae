@@ -5,7 +5,10 @@
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
 use crate::{
-    base::{control::monad::io::MonadIO, data::FoldMap},
+    base::{
+        control::monad::io::MonadIO,
+        data::{traversable::traverse_t_default, FoldMap},
+    },
     prelude::*,
 };
 
@@ -168,12 +171,14 @@ where
 
 impl<A, MA, A1, T, A2> TraverseT<A1, T, A2> for MaybeT<MA>
 where
+    Self: Fmap<A1>,
+    WithPointedT<Self, A1>: SequenceA<T, A2>,
     MA: Pointed<Pointed = Maybe<A>>,
     A: Term,
     A1: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        todo!()
+        traverse_t_default(self, f)
     }
 }
 

@@ -1,5 +1,5 @@
 use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
+    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1, traversable::traverse_t_default},
     prelude::*,
 };
 
@@ -89,7 +89,7 @@ where
     A3: PureA<Pointed = (A1::Pointed,)>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A3 {
-        self.fmap(f).sequence_a()
+        traverse_t_default(self, f)
     }
 }
 

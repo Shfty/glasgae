@@ -9,7 +9,7 @@ use crate::{
         control::monad::{io::MonadIO, morph::HoistEitherT, LiftM},
         data::{
             foldl1_default, foldr1_default, function::bifunction::BifunT,
-            functor::identity::Identity, FoldMap, Foldable1,
+            functor::identity::Identity, traversable::traverse_t_default, FoldMap, Foldable1,
         },
     },
     prelude::*,
@@ -351,12 +351,15 @@ where
 
 impl<MA, A1, T, A2, E, A> TraverseT<A1, T, A2> for ExceptT<MA>
 where
+    Self: Fmap<A1>,
+    WithPointedT<Self, A1>: SequenceA<T, A2>,
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
     A1: Term,
+    E: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        todo!()
+        traverse_t_default(self, f)
     }
 }
 

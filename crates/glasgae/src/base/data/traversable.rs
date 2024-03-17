@@ -58,6 +58,15 @@ where
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2;
 }
 
+pub fn traverse_t_default<This, A1, T, A2>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A2
+where
+    This: Fmap<A1>,
+    This::WithPointed: SequenceA<T, A2>,
+    A1: Term,
+{
+    this.fmap(f).sequence_a()
+}
+
 /// Evaluate each action in the structure from left to right, and collect the results.
 ///
 /// For a version that ignores the results see sequenceA_.
@@ -81,6 +90,16 @@ where
 /// ```
 pub trait SequenceA<A_, A2>: Pointed {
     fn sequence_a(self) -> A2;
+}
+
+pub fn sequence_a_default<This, A1, A_, A2>(this: This) -> A2
+where
+    This: TraverseT<A1, A_, A2, Pointed = A1>,
+    A1: Term,
+    A_: Term,
+    A2: Term,
+{
+    this.traverse_t(identity)
 }
 
 /// SequenceA with additional Monad semantic

@@ -6,7 +6,7 @@
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
 use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
+    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1, traversable::traverse_t_default},
     prelude::*,
 };
 
@@ -139,7 +139,7 @@ where
     A3: PureA<Pointed = Identity<A1::Pointed>>,
 {
     fn traverse_t(self, f: impl FunctionT<T, A1>) -> A3 {
-        self.fmap(f).sequence_a()
+        traverse_t_default(self, f)
     }
 }
 

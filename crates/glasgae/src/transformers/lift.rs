@@ -3,7 +3,7 @@
 use crate::{
     base::data::{
         foldl1_default, foldl_default, foldr1_default, foldr_default, function::bifunction::BifunT,
-        monoid::Endo, FoldMap, Foldable1,
+        monoid::Endo, FoldMap, Foldable1, traversable::traverse_t_default,
     },
     prelude::*,
 };
@@ -150,11 +150,13 @@ where
 
 impl<FA, A1, A_, A2> TraverseT<A1, A_, A2> for Lift<FA>
 where
+    Self: Fmap<A1>,
+    WithPointedT<Self, A1>: SequenceA<A_, A2>,
     FA: Pointed,
     A1: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        todo!()
+        traverse_t_default(self, f)
     }
 }
 
