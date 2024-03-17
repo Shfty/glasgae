@@ -131,7 +131,7 @@ pub trait FilterM<M1: Term, A: Term, M3>: Term {
 
 impl<A, M1, M3> FilterM<M1, A, M3> for Vec<A>
 where
-    M1: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool>,
+    M1: Fmap<Function<Vec<A>, Vec<A>>, Pointed = bool>,
     M1::WithPointed: AppA<M3, M3>,
     M3: Pointed<Pointed = Vec<A>> + PureA,
     A: Term,
@@ -229,7 +229,7 @@ pub trait ReplicateM<MB, T>: Pointed {
 
 impl<MA, MB, T> ReplicateM<MB, T> for MA
 where
-    MA: Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
+    MA: Fmap<Function<Vec<T>, Vec<T>>, Pointed = T>,
     MA::WithPointed: AppA<MB, MB>,
     MB: PureA<Pointed = Vec<T>>,
     T: Term,

@@ -138,7 +138,7 @@ where
     type WithPointed = IO<U>;
 }
 
-impl<T, U> Functor<U> for IO<T>
+impl<T, U> Fmap<U> for IO<T>
 where
     T: Term,
     U: Term,

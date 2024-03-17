@@ -4,6 +4,7 @@ pub mod bifoldable;
 pub mod bifoldable1;
 pub mod bifunctor;
 pub mod bipointed;
+pub mod bitraversable;
 pub mod with_bipointed;
 
 pub mod either;
@@ -25,6 +26,7 @@ mod semigroup;
 
 pub use bifoldable::*;
 pub use bifoldable1::*;
+pub use bitraversable::*;
 pub use boxed::*;
 pub use foldable::*;
 pub use foldable1::*;

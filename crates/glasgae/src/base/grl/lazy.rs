@@ -46,7 +46,7 @@ where
     type WithPointed = Lazy<U>;
 }
 
-impl<T, U> Functor<U> for Lazy<T>
+impl<T, U> Fmap<U> for Lazy<T>
 where
     T: Term,
     U: Term,

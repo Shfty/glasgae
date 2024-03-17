@@ -5,7 +5,7 @@ use glasgae::{
     },
     mtl::state::{MonadPut, MonadState},
     prelude::{
-        print, ChainM, Curry, Flip, Functor, MapM, PointedT, ReturnM, SequenceA, Show, ThenM, IO,
+        print, ChainM, Curry, Flip, Fmap, MapM, PointedT, ReturnM, SequenceA, Show, ThenM, IO,
     },
     transformers::{reader::ReaderT, state::StateT, writer::WriterT},
 };

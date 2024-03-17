@@ -235,7 +235,7 @@ where
     type WithPointed = ContT<MR, MA::WithPointed>;
 }
 
-impl<MR, MA, A> Functor<A> for ContT<MR, MA>
+impl<MR, MA, A> Fmap<A> for ContT<MR, MA>
 where
     MA: Pointed<Pointed = A> + WithPointed<A>,
     MR: Pointed,

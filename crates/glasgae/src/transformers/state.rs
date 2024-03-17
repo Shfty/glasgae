@@ -250,9 +250,9 @@ where
     type WithPointed = StateT<S, M::WithPointed>;
 }
 
-impl<A, S, M, T> Functor<T> for StateT<S, M>
+impl<A, S, M, T> Fmap<T> for StateT<S, M>
 where
-    M: Functor<(T, S), Pointed = (A, S)>,
+    M: Fmap<(T, S), Pointed = (A, S)>,
     T: Term,
     S: Term,
     A: Term,

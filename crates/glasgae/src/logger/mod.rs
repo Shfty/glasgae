@@ -77,11 +77,11 @@ where
     type WithPointed = LoggingT<LVL, MSG, MA::WithPointed>;
 }
 
-impl<LVL, MSG, MA, A, B> Functor<B> for LoggingT<LVL, MSG, MA>
+impl<LVL, MSG, MA, A, B> Fmap<B> for LoggingT<LVL, MSG, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: Functor<B, Pointed = A>,
+    MA: Fmap<B, Pointed = A>,
     A: Term,
     B: Term,
 {

@@ -20,7 +20,7 @@ where
     type WithPointed = Vec<U>;
 }
 
-impl<T, U> Functor<U> for Vec<T>
+impl<T, U> Fmap<U> for Vec<T>
 where
     T: Term,
     U: Term,
@@ -112,7 +112,7 @@ where
 
 impl<T, A_, A1, A2> TraverseT<A1, A_, A2> for Vec<T>
 where
-    A1: Functor<Function<Vec<A_>, Vec<A_>>, Pointed = A_>,
+    A1: Fmap<Function<Vec<A_>, Vec<A_>>, Pointed = A_>,
     A1::WithPointed: AppA<A2, A2>,
     A_: Term,
     A2: PureA<Pointed = Vec<A_>>,
@@ -125,7 +125,7 @@ where
 
 impl<A1, A_, A2> SequenceA<A_, A2> for Vec<A1>
 where
-    A1: Functor<Function<Vec<A_>, Vec<A_>>, Pointed = A_>,
+    A1: Fmap<Function<Vec<A_>, Vec<A_>>, Pointed = A_>,
     A1::WithPointed: AppA<A2, A2>,
     A_: Term,
     A2: PureA<Pointed = Vec<A_>>,

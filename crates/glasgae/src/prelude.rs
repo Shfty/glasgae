@@ -10,7 +10,7 @@ pub use crate::base::{
     data::{
         either::{Either, Either::*},
         function::{r#const, App, Compose, Curry, Flip, Function, FunctionT, Until},
-        functor::Functor,
+        functor::Fmap,
         list::{Append, Filter},
         maybe::{Maybe, Maybe::*},
         monoid::Monoid,

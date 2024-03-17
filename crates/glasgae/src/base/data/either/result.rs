@@ -34,7 +34,7 @@ where
     type WithPointed = Result<U, E>;
 }
 
-impl<T, E, U> Functor<U> for Result<T, E>
+impl<T, E, U> Fmap<U> for Result<T, E>
 where
     T: Term,
     E: Term,
@@ -135,7 +135,7 @@ where
 
 impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Result<A, E>
 where
-    A1: Functor<Result<A_, E>, Pointed = A_>,
+    A1: Fmap<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,
     E: Term,
     A: Term,
@@ -151,7 +151,7 @@ where
 
 impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Result<A1, E>
 where
-    A1: Functor<Result<A_, E>, Pointed = A_>,
+    A1: Fmap<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,
     E: Term,
     A_: Term,

@@ -2,7 +2,7 @@ pub mod one;
 pub mod pair;
 pub mod unit;
 
-use crate::prelude::{Functor, Pointed, WithPointed};
+use crate::prelude::{Fmap, Pointed, WithPointed};
 
 pub trait Cons<T>: Sized {
     fn cons(self, t: T) -> (Self, T) {
@@ -32,22 +32,22 @@ impl<A, B, C> Apply<2, A, B, C> for (A, B) {
 
 macro_rules ! impl_tuple {
     ($a:tt) => {
-        impl<$a> Pointed for ($a,) where $a: crate::base::data::term::Term {
+        impl<$a> Pointed for ($a,) where $a: crate::prelude::Term {
             type Pointed = $a;
         }
 
         impl<$a, R_> WithPointed<R_> for ($a,)
         where
-            $a: crate::base::data::term::Term,
-            R_: crate::base::data::term::Term
+            $a: crate::prelude::Term,
+            R_: crate::prelude::Term
         {
             type WithPointed = (R_,);
         }
 
-        impl<$a, R_> Functor<R_> for ($a,)
+        impl<$a, R_> Fmap<R_> for ($a,)
         where
-            $a: crate::base::data::term::Term,
-            R_: crate::base::data::term::Term,
+            $a: crate::prelude::Term,
+            R_: crate::prelude::Term,
         {
             fn fmap(
                 self,
@@ -62,9 +62,9 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::term::Term,
+                $tuple: crate::prelude::Term,
             )*
-            $a: crate::base::data::term::Term,
+            $a: crate::prelude::Term,
         {
             type Pointed = $a;
         }
@@ -72,21 +72,21 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a, R_> WithPointed<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::term::Term,
+                $tuple: crate::prelude::Term,
             )*
-            $a: crate::base::data::term::Term,
-            R_: crate::base::data::term::Term,
+            $a: crate::prelude::Term,
+            R_: crate::prelude::Term,
         {
             type WithPointed = ($($tuple,)* R_,);
         }
 
-        impl<$($tuple,)* $a, R_> Functor<R_> for ($($tuple,)* $a)
+        impl<$($tuple,)* $a, R_> crate::prelude::Fmap<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::base::data::term::Term,
+                $tuple: crate::prelude::Term,
             )*
-            $a: crate::base::data::term::Term,
-            R_: crate::base::data::term::Term,
+            $a: crate::prelude::Term,
+            R_: crate::prelude::Term,
         {
             fn fmap(
                 self,

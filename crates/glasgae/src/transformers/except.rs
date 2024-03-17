@@ -114,7 +114,7 @@ where
     /// Transform any exceptions thrown by the computation using the given function.
     pub fn with_t<MB, E, E_, A>(self, f: impl FunctionT<E, E_>) -> ExceptT<MB>
     where
-        MA: Functor<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
+        MA: Fmap<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
         MB: Pointed<Pointed = Either<E_, A>>,
         E_: Term,
         A: Term,
@@ -232,9 +232,9 @@ where
     type WithPointed = ExceptT<MA::WithPointed>;
 }
 
-impl<MA, E, A, B> Functor<B> for ExceptT<MA>
+impl<MA, E, A, B> Fmap<B> for ExceptT<MA>
 where
-    MA: Functor<Either<E, B>, Pointed = Either<E, A>>,
+    MA: Fmap<Either<E, B>, Pointed = Either<E, A>>,
     E: Term,
     A: Term,
     B: Term,

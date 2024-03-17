@@ -24,7 +24,7 @@ where
     type WithPointed = BTreeMap<K, V_>;
 }
 
-impl<K, V, V_> Functor<V_> for BTreeMap<K, V>
+impl<K, V, V_> Fmap<V_> for BTreeMap<K, V>
 where
     K: Term + Ord,
     V: Term,

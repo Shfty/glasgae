@@ -202,9 +202,9 @@ where
     type WithPointed = WriterT<W, M::WithPointed>;
 }
 
-impl<W, M, A, B> Functor<B> for WriterT<W, M>
+impl<W, M, A, B> Fmap<B> for WriterT<W, M>
 where
-    M: Functor<(B, W), Pointed = (A, W)>,
+    M: Fmap<(B, W), Pointed = (A, W)>,
     W: Term,
     A: Term,
     B: Term,
@@ -228,7 +228,7 @@ where
 
 impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
 where
-    MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
+    MF: Fmap<Function<(A, W), (B, W)>, Pointed = (F, W)>,
     F: AppA<MA, MB>,
     MF::WithPointed: AppA<MA, MB>,
     MA: Pointed<Pointed = (A, W)>,

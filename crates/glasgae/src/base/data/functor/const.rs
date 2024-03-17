@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-use super::Functor;
+use super::Fmap;
 
 /// The Const functor.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -26,7 +26,7 @@ where
     type WithPointed = Self;
 }
 
-impl<MA, A> Functor<A> for Const<MA>
+impl<MA, A> Fmap<A> for Const<MA>
 where
     MA: Pointed<Pointed = A> + WithPointed<A>,
     A: Term,

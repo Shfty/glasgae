@@ -1,15 +1,27 @@
-use crate::prelude::{FunctionT, Functor, Term, WithPointed, WithPointedT};
+use crate::prelude::{Fmap, FunctionT, Term, WithPointed, WithPointedT};
 
 use super::with_bipointed::{WithBipointed, WithBipointedT};
 
-pub trait Bifunctor<A, B>: WithBipointed<A> + Functor<B>
+pub trait Bifmap<T>: WithBipointed<T>
+where
+    T: Term,
+{
+    fn bifmap(self, f: impl FunctionT<Self::Bipointed, T>) -> Self::WithBipointed;
+
+    fn bireplace(self, t: T) -> Self::WithBipointed
+    where
+        T: 'static,
+    {
+        self.bifmap(|_| t)
+    }
+}
+
+pub trait Bifunctor<A, B>: Bifmap<A> + Fmap<B>
 where
     A: Term,
     B: Term,
     WithBipointedT<Self, A>: WithPointed<B>,
 {
-    fn first(self, f: impl FunctionT<Self::Bipointed, A>) -> Self::WithBipointed;
-    fn second(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed;
     fn bimap(
         self,
         fa: impl FunctionT<Self::Bipointed, A>,

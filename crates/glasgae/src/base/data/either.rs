@@ -6,7 +6,7 @@ use crate::prelude::*;
 
 use super::{
     bifoldl1_default, bifoldr1_default,
-    bifunctor::Bifunctor,
+    bifunctor::{Bifmap, Bifunctor},
     bipointed::{Bipointed, BipointedT},
     fold_map_default, foldl1_default, foldr1_default,
     function::bifunction::BifunT,
@@ -181,7 +181,7 @@ where
     type WithPointed = Either<E, B>;
 }
 
-impl<E, A, B> Functor<B> for Either<E, A>
+impl<E, A, B> Fmap<B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -212,6 +212,20 @@ where
     type WithBipointed = Either<A_, B>;
 }
 
+impl<A, A_, B> Bifmap<A_> for Either<A, B>
+where
+    A: Term,
+    A_: Term,
+    B: Term,
+{
+    fn bifmap(self, f: impl FunctionT<Self::Bipointed, A_>) -> Self::WithBipointed {
+        match self {
+            Left(t) => Left(f(t)),
+            Right(t) => Right(t),
+        }
+    }
+}
+
 impl<A, A_, B, B_> Bifunctor<A_, B_> for Either<A, B>
 where
     A: Term,
@@ -219,29 +233,12 @@ where
     B: Term,
     B_: Term,
 {
-    fn first(self, f: impl FunctionT<BipointedT<Self>, A_>) -> Self::WithBipointed {
-        match self {
-            Either::Left(l) => Either::Left(f(l)),
-            Either::Right(r) => Either::Right(r),
-        }
-    }
-
-    fn second(self, f: impl FunctionT<PointedT<Self>, B_>) -> Self::WithPointed {
-        match self {
-            Either::Left(l) => Either::Left(l),
-            Either::Right(r) => Either::Right(f(r)),
-        }
-    }
-
     fn bimap(
         self,
         fa: impl FunctionT<BipointedT<Self>, A_>,
         fb: impl FunctionT<PointedT<Self>, B_>,
     ) -> WithPointedT<WithBipointedT<Self, A_>, B_> {
-        match self {
-            Either::Left(l) => Either::Left(fa(l)),
-            Either::Right(r) => Either::Right(fb(r)),
-        }
+        self.bifmap(fa).fmap(fb)
     }
 }
 
@@ -374,7 +371,7 @@ where
     E: Term,
     A: Term,
     A_: Term,
-    A1: Functor<Either<E, A_>, Pointed = A_>,
+    A1: Fmap<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::WithPointed {
@@ -387,7 +384,7 @@ where
 
 impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Either<E, A1>
 where
-    A1: Functor<Either<E, A_>, Pointed = A_>,
+    A1: Fmap<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
     E: Term,
     A_: Term,

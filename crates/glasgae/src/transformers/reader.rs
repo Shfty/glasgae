@@ -170,10 +170,10 @@ where
     type WithPointed = ReaderT<R, M::WithPointed>;
 }
 
-impl<R, M, T> Functor<T> for ReaderT<R, M>
+impl<R, M, T> Fmap<T> for ReaderT<R, M>
 where
     T: Term,
-    M: Functor<T>,
+    M: Fmap<T>,
     R: Term,
 {
     fn fmap(self, f: impl FunctionT<M::Pointed, T>) -> ReaderT<R, M::WithPointed> {

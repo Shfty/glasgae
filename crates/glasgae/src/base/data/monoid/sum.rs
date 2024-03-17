@@ -25,7 +25,7 @@ where
     type WithPointed = Sum<U>;
 }
 
-impl<T, U> Functor<U> for Sum<T>
+impl<T, U> Fmap<U> for Sum<T>
 where
     T: Term,
     U: Term,

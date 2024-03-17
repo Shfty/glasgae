@@ -91,7 +91,7 @@ impl WithPointed<String> for ZipperTerm {
     type WithPointed = ZipperTerm;
 }
 
-impl Functor<String> for ZipperTerm {
+impl Fmap<String> for ZipperTerm {
     fn fmap(self, f: impl FunctionT<String, String>) -> ZipperTerm {
         match self {
             ZipperTerm::Var(t) => ZipperTerm::var(f(t)),
@@ -403,7 +403,7 @@ mod test {
             .zip_move(Direction::DownRight);
 
         let term = term.fmap(
-            Functor::replace
+            Fmap::replace
                 .flip_clone()
                 .curry_clone(ZipperTerm::a(ZipperTerm::var("x"), ZipperTerm::var("x"))),
         );

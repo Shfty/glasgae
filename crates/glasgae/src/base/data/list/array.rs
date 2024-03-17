@@ -18,7 +18,7 @@ where
     type WithPointed = [U; N];
 }
 
-impl<T, const N: usize, U> Functor<U> for [T; N]
+impl<T, const N: usize, U> Fmap<U> for [T; N]
 where
     T: Term,
     U: Term,

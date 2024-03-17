@@ -10,7 +10,7 @@ use crate::{
     prelude::*,
 };
 
-use super::Functor;
+use super::Fmap;
 
 /// Identity functor and monad.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -37,7 +37,7 @@ where
     type WithPointed = Identity<U>;
 }
 
-impl<T, U> Functor<U> for Identity<T>
+impl<T, U> Fmap<U> for Identity<T>
 where
     T: Term,
     U: Term,
@@ -131,7 +131,7 @@ where
 
 impl<T, A_, A1, A3> TraverseT<A1, A_, A3> for Identity<T>
 where
-    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
+    A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: Monoid,
     A1::WithPointed: AppA<A3, A3>,
     T: Term,
@@ -145,7 +145,7 @@ where
 
 impl<A1, A_, A3> SequenceA<A_, A3> for Identity<A1>
 where
-    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
+    A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
     A1::WithPointed: AppA<A3, A3>,
     A_: Monoid,
     A3: PureA<Pointed = Identity<A1::Pointed>>,

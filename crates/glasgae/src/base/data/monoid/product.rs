@@ -25,7 +25,7 @@ where
     type WithPointed = Product<U>;
 }
 
-impl<T, U> Functor<U> for Product<T>
+impl<T, U> Fmap<U> for Product<T>
 where
     T: Term,
     U: Term,

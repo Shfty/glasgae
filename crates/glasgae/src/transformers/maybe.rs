@@ -65,9 +65,9 @@ where
     type WithPointed = MaybeT<MA::WithPointed>;
 }
 
-impl<MA, A, B> Functor<B> for MaybeT<MA>
+impl<MA, A, B> Fmap<B> for MaybeT<MA>
 where
-    MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
+    MA: Fmap<Maybe<B>, Pointed = Maybe<A>>,
     A: Term,
     B: Term,
 {
