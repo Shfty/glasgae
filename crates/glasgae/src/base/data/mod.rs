@@ -14,6 +14,7 @@ pub mod function;
 pub mod functor;
 pub mod list;
 pub mod map;
+pub mod set;
 pub mod maybe;
 pub mod monoid;
 pub mod pointed;
