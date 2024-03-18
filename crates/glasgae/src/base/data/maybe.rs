@@ -17,8 +17,6 @@ pub mod option;
 
 use crate::prelude::*;
 
-use super::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1};
-
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
     Just(T),
@@ -166,7 +164,7 @@ where
     }
 }
 
-impl<T, A, U, B> TraverseT<A, U, B> for Maybe<T>
+impl<T, A, U, B> TraverseT<A, B> for Maybe<T>
 where
     A: Fmap<Maybe<U>, Pointed = U, WithPointed = B>,
     A::WithPointed: PureA<Pointed = Maybe<U>>,
@@ -181,7 +179,7 @@ where
     }
 }
 
-impl<A1, A_, A2> SequenceA<A_, A2> for Maybe<A1>
+impl<A1, A_, A2> SequenceA<A2> for Maybe<A1>
 where
     A1: Fmap<Maybe<A_>, Pointed = A_, WithPointed = A2>,
     A_: Term,

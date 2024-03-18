@@ -5,10 +5,7 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1, traversable::traverse_t_default},
-    prelude::*,
-};
+use crate::prelude::*;
 
 use super::Fmap;
 
@@ -129,28 +126,28 @@ where
     }
 }
 
-impl<T, A_, A1, A3> TraverseT<A1, A_, A3> for Identity<T>
+impl<T, A1, A_, A2> TraverseT<A1, A2> for Identity<T>
 where
     A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A3, A3>,
+    A1::WithPointed: AppA<A2, A2>,
     T: Term,
     A_: Term,
-    A3: PureA<Pointed = Identity<A1::Pointed>>,
+    A2: PureA<Pointed = Identity<A1::Pointed>>,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A1>) -> A3 {
+    fn traverse_t(self, f: impl FunctionT<T, A1>) -> A2 {
         traverse_t_default(self, f)
     }
 }
 
-impl<A1, A_, A3> SequenceA<A_, A3> for Identity<A1>
+impl<A1, A_, A2> SequenceA<A2> for Identity<A1>
 where
     A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
-    A1::WithPointed: AppA<A3, A3>,
+    A1::WithPointed: AppA<A2, A2>,
     A_: Monoid,
-    A3: PureA<Pointed = Identity<A1::Pointed>>,
+    A2: PureA<Pointed = Identity<A1::Pointed>>,
 {
-    fn sequence_a(self) -> A3 {
+    fn sequence_a(self) -> A2 {
         self.foldr(
             |next, acc| next.fmap(|t| (|_| Identity(t)).boxed()).app_a(acc),
             PureA::pure_a(Identity(Monoid::mempty())),

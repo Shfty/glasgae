@@ -1,6 +1,4 @@
-use crate::prelude::{Maybe, Maybe::*, Term};
-
-use super::{function::bifunction::BifunT, Foldable};
+use crate::prelude::*;
 
 pub trait Foldable1<T>: Foldable<T> {
     fn foldr1(self, f: impl BifunT<T, T, T>) -> T;

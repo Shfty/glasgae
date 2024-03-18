@@ -4,16 +4,6 @@
 
 use crate::prelude::*;
 
-use super::{
-    bifoldl1_default, bifoldr1_default,
-    bifunctor::{Bifmap, Bifunctor},
-    bipointed::{Bipointed, BipointedT},
-    fold_map_default, foldl1_default, foldr1_default,
-    function::bifunction::BifunT,
-    with_bipointed::{WithBipointed, WithBipointedT},
-    Bifoldable, Bifoldable1,
-};
-
 pub mod result;
 
 /// The `Either` type is sometimes used to represent a value which is either correct or an error;
@@ -366,7 +356,7 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Either<E, A>
+impl<E, A, A_, A1> TraverseT<A1, A1::WithPointed> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -382,7 +372,7 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Either<E, A1>
+impl<E, A1, A_> SequenceA<A1::WithPointed> for Either<E, A1>
 where
     A1: Fmap<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,

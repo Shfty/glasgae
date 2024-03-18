@@ -1,4 +1,4 @@
-use vector_map::set::VecSet;
+pub use vector_map::set::*;
 
 use crate::derive_iterable_collection;
 

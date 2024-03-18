@@ -1,7 +1,4 @@
-use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1, traversable::traverse_t_default},
-    prelude::*,
-};
+use crate::prelude::*;
 
 impl<A> PureA for (A,)
 where
@@ -79,29 +76,29 @@ where
     }
 }
 
-impl<T, A1, A_, A3> TraverseT<A1, A_, A3> for (T,)
+impl<T, A1, A_, A2> TraverseT<A1, A2> for (T,)
 where
     A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A3, A3>,
+    A1::WithPointed: AppA<A2, A2>,
     T: Term,
     A_: Term,
-    A3: PureA<Pointed = (A1::Pointed,)>,
+    A2: PureA<Pointed = (A1::Pointed,)>,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A3 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         traverse_t_default(self, f)
     }
 }
 
-impl<A1, A3, A_> SequenceA<A_, A3> for (A1,)
+impl<A1, A2, A_> SequenceA<A2> for (A1,)
 where
     A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A3, A3>,
+    A1::WithPointed: AppA<A2, A2>,
     A_: Term,
-    A3: PureA<Pointed = (A1::Pointed,)>,
+    A2: PureA<Pointed = (A1::Pointed,)>,
 {
-    fn sequence_a(self) -> A3 {
+    fn sequence_a(self) -> A2 {
         self.foldr(
             |next, acc| next.fmap(|t| (|_| (t,)).boxed()).app_a(acc),
             PureA::pure_a((Monoid::mempty(),)),

@@ -36,7 +36,7 @@ where
     AA: Term,
     AB: Term,
 {
-    fn map_m(
+    fn bimap_m(
         self,
         fa: impl FunctionT<Self::Bipointed, AA>,
         fb: impl FunctionT<Self::Pointed, AB>,

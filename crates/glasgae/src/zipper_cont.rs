@@ -1,8 +1,5 @@
 use crate::{
-    base::{
-        control::zipper::{Travel, Zipper},
-        data::{foldr1_default, function::bifunction::BifunT, Foldable1},
-    },
+    base::control::zipper::{Travel, Zipper},
     prelude::*,
     transformers::cont::Cont,
 };

@@ -1,15 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{
-    base::data::{
-        collection::list::vec::push, foldl1_default, foldr1_default, function::bifunction::BifunT,
-        traversable::traverse_t_default,
-    },
-    prelude::{
-        AppA, Boxed, ChainM, Curry, Flip, Fmap, Foldable, Foldable1, Function, FunctionT, Pointed,
-        PureA, ReturnM, Semigroup, SequenceA, Show, Term, TraverseT, WithPointed,
-    },
-};
+use crate::prelude::{list::vec::push, *};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RoseTree<T>(pub T, pub Vec<Self>);
@@ -126,12 +117,11 @@ where
     }
 }
 
-impl<T, A1, U, A2> TraverseT<A1, U, A2> for RoseTree<T>
+impl<T, A1, A2> TraverseT<A1, A2> for RoseTree<T>
 where
-    RoseTree<A1>: SequenceA<U, A2>,
+    RoseTree<A1>: SequenceA<A2>,
     T: Term,
     A1: Term,
-    U: Term,
     A2: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
@@ -139,7 +129,7 @@ where
     }
 }
 
-impl<A1, U, A2> SequenceA<U, A2> for RoseTree<A1>
+impl<A1, U, A2> SequenceA<A2> for RoseTree<A1>
 where
     A1: Fmap<Function<Vec<U>, Vec<U>>, Pointed = U>,
     A1::WithPointed: AppA<A2, A2>,

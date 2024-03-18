@@ -51,17 +51,17 @@ use crate::prelude::*;
 ///     Left(0)
 /// );
 /// ```
-pub trait TraverseT<A1, T, A2>: Pointed
+pub trait TraverseT<A1, A2>: Pointed
 where
     A1: Term,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2;
 }
 
-pub fn traverse_t_default<This, A1, T, A2>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A2
+pub fn traverse_t_default<This, A1, A2>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A2
 where
     This: Fmap<A1>,
-    This::WithPointed: SequenceA<T, A2>,
+    This::WithPointed: SequenceA<A2>,
     A1: Term,
 {
     this.fmap(f).sequence_a()
@@ -88,22 +88,21 @@ where
 /// assert_eq!(vec![Some(1), Some(2), Some(3), None].sequence_a(), None);
 /// assert_eq!(vec![Right(1), Right(2), Right(3), Left(4)].sequence_a(), Left(4));
 /// ```
-pub trait SequenceA<A_, A2>: Pointed {
+pub trait SequenceA<A2>: Pointed {
     fn sequence_a(self) -> A2;
 }
 
-pub fn sequence_a_default<This, A1, A_, A2>(this: This) -> A2
+pub fn sequence_a_default<This, A1, A2>(this: This) -> A2
 where
-    This: TraverseT<A1, A_, A2, Pointed = A1>,
+    This: TraverseT<A1, A2, Pointed = A1>,
     A1: Term,
-    A_: Term,
     A2: Term,
 {
     this.traverse_t(identity)
 }
 
 /// SequenceA with additional Monad semantic
-pub trait Sequence<A_, A2>: SequenceA<A_, A2> {
+pub trait Sequence<A2>: SequenceA<A2> {
     /// Evaluate each monadic action in the structure from left to right, and collect the results. For a version that ignores the results see sequence_.
     ///
     /// Examples
@@ -142,9 +141,9 @@ pub trait Sequence<A_, A2>: SequenceA<A_, A2> {
     fn sequence(self) -> A2;
 }
 
-impl<T, A_, B> Sequence<A_, B> for T
+impl<T, B> Sequence<B> for T
 where
-    T: SequenceA<A_, B>,
+    T: SequenceA<B>,
 {
     fn sequence(self) -> B {
         self.sequence_a()
@@ -152,7 +151,7 @@ where
 }
 
 /// TraverseT with additional Monad semantic
-pub trait MapM<A, T, B>: TraverseT<A, T, B>
+pub trait MapM<A, B>: TraverseT<A, B>
 where
     A: Term,
 {
@@ -165,9 +164,9 @@ where
     }
 }
 
-impl<T, A, U, B> MapM<A, U, B> for T
+impl<T, A, B> MapM<A, B> for T
 where
-    T: TraverseT<A, U, B>,
+    T: TraverseT<A, B>,
     A: Term,
 {
 }

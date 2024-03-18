@@ -1,7 +1,4 @@
-use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, Foldable1},
-    prelude::*,
-};
+use crate::prelude::*;
 
 impl<T, const N: usize> Pointed for [T; N]
 where

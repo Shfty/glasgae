@@ -2,29 +2,35 @@
 
 pub use std::convert::identity;
 
-pub use crate::base::{
-    control::{
-        applicative::{AppA, LiftA2, PureA},
-        monad::{ChainM, ReturnM, ThenM},
-    },
-    data::{
-        either::{Either, Either::*},
-        function::{r#const, App, Compose, Curry, Flip, Function, FunctionT, Until},
-        functor::Fmap,
-        collection::list::{Append, Filter},
-        maybe::{Maybe, Maybe::*},
-        monoid::Monoid,
-        pointed::{Pointed, PointedT, WithPointed, WithPointedT},
-        term::Term,
-        traversable::{MapM, Sequence, SequenceA, TraverseT},
-        Boxed, FoldMap, Foldable, Foldable1, Semigroup,
-    },
-    grl::{
-        io::{
-            append_file, get_char, get_contents, get_line, interact, print, put_char, put_str,
-            put_str_ln, read_file, try_append_file, try_get_char, try_get_contents, try_get_line,
-            try_read_file, try_write_file, write_file, IO,
+pub use crate::{
+    base::{
+        control::{
+            applicative::*,
+            monad::{io::*, morph::*, *},
         },
-        Read, Show,
+        data::{
+            bifoldable::*,
+            bifoldable1::*,
+            bifunctor::*,
+            bipointed::*,
+            bitraversable::*,
+            boxed::*,
+            collection::*,
+            either::{Either::*, *},
+            foldable::*,
+            foldable1::*,
+            function::{bifunction::*, *},
+            functor::{identity::*, r#const::*, *},
+            maybe::{Maybe::*, *},
+            monoid::*,
+            pointed::*,
+            semigroup::*,
+            term::*,
+            traversable::*,
+            with_bipointed::*,
+            with_pointed::*,
+        },
+        grl::{io::*, Read, Show},
     },
+    macros::*,
 };

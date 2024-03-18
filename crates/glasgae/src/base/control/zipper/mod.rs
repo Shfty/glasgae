@@ -8,9 +8,7 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::base::data::{foldl1_default, foldr1_default, Foldable1};
-use crate::{base::data::function::bifunction::BifunT, prelude::*};
-
+use crate::prelude::*;
 use crate::transformers::cont::Cont;
 
 #[derive(Clone)]

@@ -1,12 +1,6 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
-use crate::{
-    base::data::{
-        foldl1_default, foldl_default, foldr1_default, foldr_default, function::bifunction::BifunT,
-        monoid::Endo, FoldMap, Foldable1, traversable::traverse_t_default,
-    },
-    prelude::*,
-};
+use crate::prelude::*;
 
 /// Applicative functor formed by adding pure computations to a given applicative functor.
 #[derive(Clone)]
@@ -148,10 +142,10 @@ where
     }
 }
 
-impl<FA, A1, A_, A2> TraverseT<A1, A_, A2> for Lift<FA>
+impl<FA, A1, A2> TraverseT<A1, A2> for Lift<FA>
 where
     Self: Fmap<A1>,
-    WithPointedT<Self, A1>: SequenceA<A_, A2>,
+    WithPointedT<Self, A1>: SequenceA<A2>,
     FA: Pointed,
     A1: Term,
 {
@@ -160,7 +154,7 @@ where
     }
 }
 
-impl<FA, A_, A2> SequenceA<A_, A2> for Lift<FA>
+impl<FA, A2> SequenceA<A2> for Lift<FA>
 where
     FA: Pointed,
 {

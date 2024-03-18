@@ -1,10 +1,4 @@
-use crate::{
-    base::data::{
-        fold_map_default, foldl1_default, foldr1_default, function::bifunction::BifunT, FoldMap,
-        Foldable1,
-    },
-    prelude::*,
-};
+use crate::prelude::*;
 
 use super::{Either, Either::*};
 
@@ -133,7 +127,7 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, A_, A1::WithPointed> for Result<A, E>
+impl<E, A, A_, A1> TraverseT<A1, A1::WithPointed> for Result<A, E>
 where
     A1: Fmap<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,
@@ -149,7 +143,7 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<A_, A1::WithPointed> for Result<A1, E>
+impl<E, A1, A_> SequenceA<A1::WithPointed> for Result<A1, E>
 where
     A1: Fmap<Result<A_, E>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Result<A_, E>>,

@@ -4,16 +4,7 @@
 //!
 //! If the value of the exception is not required, the variant in Control.Monad.Trans.Maybe may be used instead.
 
-use crate::{
-    base::{
-        control::monad::{io::MonadIO, morph::HoistEitherT, LiftM},
-        data::{
-            foldl1_default, foldr1_default, function::bifunction::BifunT,
-            functor::identity::Identity, traversable::traverse_t_default, FoldMap, Foldable1,
-        },
-    },
-    prelude::*,
-};
+use crate::prelude::*;
 
 use super::class::MonadTrans;
 
@@ -349,10 +340,10 @@ where
     }
 }
 
-impl<MA, A1, T, A2, E, A> TraverseT<A1, T, A2> for ExceptT<MA>
+impl<MA, A1, A2, E, A> TraverseT<A1, A2> for ExceptT<MA>
 where
     Self: Fmap<A1>,
-    WithPointedT<Self, A1>: SequenceA<T, A2>,
+    WithPointedT<Self, A1>: SequenceA<A2>,
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
     A1: Term,
@@ -363,7 +354,7 @@ where
     }
 }
 
-impl<A1, T, A2, E, A> SequenceA<T, A2> for ExceptT<A1>
+impl<A1, A2, E, A> SequenceA<A2> for ExceptT<A1>
 where
     A1: Pointed<Pointed = Either<E, A>>,
     E: Term,
