@@ -7,3 +7,4 @@ pub use filter::*;
 pub mod array;
 pub mod string;
 pub mod vec;
+pub mod vec_deque;
