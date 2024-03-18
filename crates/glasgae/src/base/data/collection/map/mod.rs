@@ -97,20 +97,22 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, V2> $crate::prelude::SequenceA<V2> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term $(+ $trait)*,
-            $value: $crate::prelude::Fmap<$crate::prelude::Function<Vec<$value>, Vec<$value>>, Pointed = $value>,
-            $crate::prelude::WithPointedT<$value, $crate::prelude::Function<Vec<$value>, Vec<$value>>>: $crate::prelude::AppA<V2, V2>,
-            V2: $crate::prelude::PureA<Pointed = Vec<$value>>,
+            $value: $crate::prelude::Fmap<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = ($key, $value)>,
+            $crate::prelude::WithPointedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
+            V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>>,
         {
             fn sequence_a(self) -> V2 {
                 $crate::prelude::Foldable::foldr(
                     self,
                     |next, acc| {
                         $crate::prelude::AppA::app_a(
-                            next.fmap(|t| Box::new(|v| $crate::prelude::list::vec::push(t, v))),
+                            next.fmap(|(k, v)|
+                                Box::new(|t| $append(k, v, t))
+                            ),
                             acc,
                         )
                     },
-                    $crate::prelude::PureA::pure_a(vec![]),
+                    $crate::prelude::PureA::pure_a($ty::new()),
                 )
             }
         }
