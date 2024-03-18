@@ -2,8 +2,14 @@ use std::collections::BTreeMap;
 
 use crate::{
     base::data::{
-        foldl1_default, foldr1_default, function::bifunction::BifunT,
-        traversable::traverse_t_default, FoldMap, Foldable1,
+        bifunctor::{Bifmap, Bifunctor},
+        bipointed::Bipointed,
+        foldl1_default, foldr1_default,
+        function::bifunction::BifunT,
+        list::vec::push,
+        traversable::traverse_t_default,
+        with_bipointed::WithBipointed,
+        Bifoldable, BisequenceA, BitraverseT, FoldMap, Foldable1,
     },
     prelude::*,
 };
@@ -109,6 +115,111 @@ where
 {
     fn sequence_a(self) -> V2 {
         todo!()
+    }
+}
+
+impl<K, V> Bipointed for BTreeMap<K, V>
+where
+    K: Term,
+    V: Term,
+{
+    type Bipointed = K;
+}
+
+impl<K, K_, V> WithBipointed<K_> for BTreeMap<K, V>
+where
+    K: Term,
+    K_: Term,
+    V: Term,
+{
+    type WithBipointed = BTreeMap<K_, V>;
+}
+
+impl<K, K_, V> Bifmap<K_> for BTreeMap<K, V>
+where
+    K: Term,
+    K_: Ord + Term,
+    V: Term,
+{
+    fn bifmap(self, f: impl FunctionT<Self::Bipointed, K_>) -> Self::WithBipointed {
+        self.into_iter()
+            .map(|(k, v)| (f.to_function()(k), v))
+            .collect()
+    }
+}
+
+impl<K, K_, V, V_> Bifunctor<K_, V_> for BTreeMap<K, V>
+where
+    K: Term + Ord,
+    K_: Term + Ord,
+    V: Term,
+    V_: Term,
+{
+}
+
+impl<K, V, T> Bifoldable<T> for BTreeMap<K, V>
+where
+    K: Term,
+    V: Term,
+    T: Term,
+{
+    fn bifoldr(
+        self,
+        fa: impl BifunT<Self::Bipointed, T, T>,
+        fb: impl BifunT<Self::Pointed, T, T>,
+        z: T,
+    ) -> T {
+        self.into_iter()
+            .rfold(z, |acc, (k, v)| fb.to_bifun()(v, fa.to_bifun()(k, acc)))
+    }
+
+    fn bifoldl(
+        self,
+        fa: impl BifunT<T, Self::Bipointed, T>,
+        fb: impl BifunT<T, Self::Pointed, T>,
+        z: T,
+    ) -> T {
+        self.into_iter()
+            .fold(z, |acc, (k, v)| fb.to_bifun()(fa.to_bifun()(acc, k), v))
+    }
+}
+
+impl<AA, AB, AC, AD, T, AO> BitraverseT<AC, AD, AO> for BTreeMap<AA, AB>
+where
+    Self: BisequenceA<AO>,
+    AA: Term + Ord,
+    AB: Term + Ord,
+    AC: Term + Fmap<Function<Vec<T>, Vec<T>>, Pointed = T> + Ord,
+    AC::WithPointed: AppA<AO, AO>,
+    AD: Term + Fmap<Function<Vec<T>, Vec<T>>, Pointed = T> + Ord,
+    AD::WithPointed: AppA<AO, AO>,
+    T: Term,
+    AO: PureA<Pointed = Vec<T>>,
+{
+    fn bitraverse_t(
+        self,
+        fa: impl FunctionT<Self::Bipointed, AC>,
+        fb: impl FunctionT<Self::Pointed, AD>,
+    ) -> AO {
+        self.bimap(fa, fb).bisequence_a()
+    }
+}
+
+impl<AA, AB, T, AO> BisequenceA<AO> for BTreeMap<AA, AB>
+where
+    AA: Term + Fmap<Function<Vec<T>, Vec<T>>, Pointed = T>,
+    AA::WithPointed: AppA<AO, AO>,
+    AB: Term + Fmap<Function<Vec<T>, Vec<T>>, Pointed = T>,
+    AB::WithPointed: AppA<AO, AO>,
+    T: Term,
+    AO: PureA<Pointed = Vec<T>>,
+{
+    fn bisequence_a(self) -> AO {
+        self.bifoldr(
+            |next, acc| next.fmap(|t| (|v| push(t, v)).boxed()).app_a(acc),
+            |next, acc| next.fmap(|t| (|v| push(t, v)).boxed()).app_a(acc),
+            PureA::pure_a(vec![]),
+        )
     }
 }
 
