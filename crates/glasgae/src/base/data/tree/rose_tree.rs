@@ -131,15 +131,24 @@ where
 
 impl<A1, U, A2> SequenceA<A2> for RoseTree<A1>
 where
-    A1: Fmap<Function<Vec<U>, Vec<U>>, Pointed = U>,
+    A1: Fmap<Function<RoseTree<U>, RoseTree<U>>, Pointed = U>,
     A1::WithPointed: AppA<A2, A2>,
     U: Term,
-    A2: PureA<Pointed = Vec<U>>,
+    A2: PureA<Pointed = RoseTree<U>>,
 {
     fn sequence_a(self) -> A2 {
         self.foldr(
-            |next, acc| next.fmap(|t| (|v| push(t, v)).boxed()).app_a(acc),
-            PureA::pure_a(vec![]),
+            |next, acc| {
+                next.fmap(|x| {
+                    (|mut v: RoseTree<U>| {
+                        v.1.push(RoseTree(x, vec![]));
+                        v
+                    })
+                    .boxed()
+                })
+                .app_a(acc)
+            },
+            PureA::pure_a(RoseTree(todo!("RoseTree::SequenceA without zero element"), vec![])),
         )
     }
 }
