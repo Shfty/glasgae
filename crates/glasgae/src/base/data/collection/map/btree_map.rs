@@ -4,9 +4,9 @@ use crate::{
     base::data::{
         bifunctor::{Bifmap, Bifunctor},
         bipointed::Bipointed,
+        collection::list::vec::push,
         foldl1_default, foldr1_default,
         function::bifunction::BifunT,
-        list::vec::push,
         traversable::traverse_t_default,
         with_bipointed::WithBipointed,
         Bifoldable, BisequenceA, BitraverseT, FoldMap, Foldable1,

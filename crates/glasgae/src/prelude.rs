@@ -11,7 +11,7 @@ pub use crate::base::{
         either::{Either, Either::*},
         function::{r#const, App, Compose, Curry, Flip, Function, FunctionT, Until},
         functor::Fmap,
-        list::{Append, Filter},
+        collection::list::{Append, Filter},
         maybe::{Maybe, Maybe::*},
         monoid::Monoid,
         pointed::{Pointed, PointedT, WithPointed, WithPointedT},

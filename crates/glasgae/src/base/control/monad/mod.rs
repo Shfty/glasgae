@@ -44,7 +44,7 @@ pub mod io;
 pub mod morph;
 
 use crate::{
-    base::data::{function::bifunction::BifunT, list::vec::push},
+    base::data::{collection::list::vec::push, function::bifunction::BifunT},
     prelude::*,
 };
 
@@ -173,7 +173,7 @@ pub trait FoldM<M1, A, B>: ReturnM {
     ///   ...
     ///   f am xm
     fn foldl_m(self, f: impl BifunT<A, B, M1>, a: A) -> M1;
-    
+
     /// The foldrM function is analogous to foldr, except that its result is encapsulated in a monad.
     fn foldr_m(self, f: impl BifunT<B, A, M1>, a: A) -> M1;
 }

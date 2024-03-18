@@ -1,7 +1,10 @@
 use std::fmt::Debug;
 
 use crate::{
-    base::data::{foldl1_default, foldr1_default, function::bifunction::BifunT, list::vec::push, traversable::traverse_t_default},
+    base::data::{
+        collection::list::vec::push, foldl1_default, foldr1_default, function::bifunction::BifunT,
+        traversable::traverse_t_default,
+    },
     prelude::{
         AppA, Boxed, ChainM, Curry, Flip, Fmap, Foldable, Foldable1, Function, FunctionT, Pointed,
         PureA, ReturnM, Semigroup, SequenceA, Show, Term, TraverseT, WithPointed,

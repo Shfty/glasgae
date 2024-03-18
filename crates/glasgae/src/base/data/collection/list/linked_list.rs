@@ -1,8 +1,8 @@
 use std::collections::LinkedList;
 
-use crate::impl_list;
+use crate::derive_iterable_collection;
 
-impl_list!(LinkedList<T>, push_back);
+derive_iterable_collection!(LinkedList<T>, push_back);
 
 pub fn push_back<T>(t: T, mut list: LinkedList<T>) -> LinkedList<T> {
     list.push_back(t);

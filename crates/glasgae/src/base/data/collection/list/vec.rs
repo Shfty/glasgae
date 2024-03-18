@@ -1,8 +1,8 @@
 use std::cmp::Ordering;
 
-use crate::{base::data::function::bifunction::BifunT, impl_list, prelude::*};
+use crate::{base::data::function::bifunction::BifunT, derive_iterable_collection, prelude::*};
 
-impl_list!(Vec<X>, push);
+derive_iterable_collection!(Vec<X>, push);
 
 pub fn push<T>(t: T, mut v: Vec<T>) -> Vec<T> {
     v.insert(0, t);

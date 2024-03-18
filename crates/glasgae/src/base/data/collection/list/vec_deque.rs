@@ -1,8 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::impl_list;
+use crate::derive_iterable_collection;
 
-impl_list!(VecDeque<T>, push_back);
+derive_iterable_collection!(VecDeque<T>, push_back);
 
 pub fn push_back<T>(t: T, mut deque: VecDeque<T>) -> VecDeque<T> {
     deque.push_back(t);
