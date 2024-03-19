@@ -229,18 +229,18 @@ where
 impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
 where
     MF: Fmap<Function<(A, W), (B, W)>, Pointed = (F, W)>,
-    F: AppA<MA, MB>,
     MF::WithPointed: AppA<MA, MB>,
+    W: Semigroup,
     MA: Pointed<Pointed = (A, W)>,
-    MB: ReturnM<Pointed = (B, W)>,
-    W: Pointed<Pointed = (A, W)> + Semigroup,
+    MB: Pointed<Pointed = (B, W)>,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
     fn app_a(self, v: WriterT<W, MA>) -> WriterT<W, MB> {
-        let k = (|(a, w): (F, W), (b, w_): (A, W)| (a(b), w.assoc_s(w_))).lift_a2();
-        let f: MF = self.run_t();
+        let f = self;
+        let k = (|(a, w): MF::Pointed, (b, w_): MA::Pointed| (a(b), w.assoc_s(w_))).lift_a2();
+        let f: MF = f.run_t();
         let v: MA = v.run_t();
         let out: MB = k(f, v);
         WriterT::new_t(out)

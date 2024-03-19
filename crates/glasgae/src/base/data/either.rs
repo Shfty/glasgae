@@ -37,7 +37,7 @@ pub mod result;
 /// but will apply the supplied function to values contained in a `Right`:
 ///
 /// ```
-/// # use glasgae::prelude::{Functor, Either, Either::*};
+/// # use glasgae::prelude::{Fmap, Either, Either::*};
 /// let s: Either<&str, u32> = Left("foo");
 /// let n: Either<&str, u32> = Right(3);
 /// assert_eq!(s.fmap(|t| t * 2), Left("foo"));

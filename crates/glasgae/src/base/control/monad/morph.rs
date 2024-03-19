@@ -31,7 +31,7 @@ pub trait MonadLower<T, A>: Pointed {
 
 impl<MA, A, B> MonadLower<A, B> for MA
 where
-    MA: Pointed + WithPointed<LoweredT<PointedT<MA>, A, B>>,
+    MA: WithPointed<LoweredT<PointedT<MA>, A, B>>,
     MA::Pointed: Lower<A, B>,
 {
     type Lowered = MA::WithPointed;
@@ -49,7 +49,7 @@ impl<A, B> Lower<A, B> for (A, B) {
 }
 
 impl<A, B> Lower<A, B> for Either<A, B> {
-    type Lowered = A;
+    type Lowered = B;
 }
 
 pub type LoweredT<T, A, B> = <T as Lower<A, B>>::Lowered;

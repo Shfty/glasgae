@@ -141,7 +141,15 @@ macro_rules! derive_iterable_collection {
         {
             fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, A1>) -> A2 {
                 let f = f.to_function();
-                $crate::prelude::Foldable::foldr(self, |x, ys| $crate::prelude::LiftA2::lift_a2($append)(f(x), ys), $crate::prelude::PureA::pure_a($ty::new()))
+                $crate::prelude::Foldable::foldr(
+                    self,
+                    |x, ys|
+                        $crate::prelude::LiftA2::lift_a2($append)(
+                            f(x),
+                            ys
+                        ),
+                    $crate::prelude::PureA::pure_a($ty::new())
+                )
             }
         }
 

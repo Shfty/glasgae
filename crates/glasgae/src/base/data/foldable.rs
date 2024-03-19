@@ -34,15 +34,15 @@ pub trait Foldable<U>: Pointed {
     /// # Examples
     ///
     /// ```
-    /// # use glasgae::{prelude::Foldr, base::grl::bool::Or};
+    /// # use glasgae::{prelude::Foldable, base::grl::bool::Or};
     /// assert_eq!(vec![false, true, false].foldr(Or::or, false), true);
     /// ```
     /// ```
-    /// # use glasgae::{prelude::Foldr, base::grl::bool::Or};
+    /// # use glasgae::{prelude::Foldable, base::grl::bool::Or};
     /// assert_eq!(vec![].foldr(Or::or, false), false);
     /// ```
     /// ```
-    /// # use glasgae::{prelude::Foldr, base::{data::list::Append, grl::bool::Or}};
+    /// # use glasgae::{prelude::{list::Append, Foldable}, base::grl::bool::Or};
     /// assert_eq!(
     ///     vec!['a', 'b', 'c', 'd']
     ///         .foldr(|c, acc| acc.append(c.to_string()), "foo".to_string()),

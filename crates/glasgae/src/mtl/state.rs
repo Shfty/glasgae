@@ -5,7 +5,6 @@
 //! Mark P Jones (<http://web.cecs.pdx.edu/~mpj/>) Advanced School of Functional Programming, 1995.
 
 use crate::{
-    base::control::monad::morph::{Lower, LoweredT},
     prelude::*,
     transformers::{
         class::MonadTrans, cont::ContT, reader::ReaderT, state::StateT, writer::WriterT,
@@ -124,38 +123,38 @@ where
 
 impl<W, MA, A> MonadGet for WriterT<W, MA>
 where
-    Self: Pointed<Pointed = A> + MonadTrans<LoweredT<MA, W, A>>,
-    MA: StateTypes + Lower<W, A>,
+    Self: Pointed<Pointed = A> + MonadTrans<MonadLoweredT<MA, A, W>>,
+    MA: StateTypes + MonadLower<A, W>,
     MA::Lowered: MonadGet<State = StateTypesStateT<MA>, Pointed = A>,
     W: Monoid,
 {
     fn get() -> Self {
-        Self::lift(LoweredT::<MA, W, A>::get())
+        Self::lift(MonadLoweredT::<MA, A, W>::get())
     }
 }
 
 impl<MA, W, A> MonadPut for WriterT<W, MA>
 where
-    Self: Pointed<Pointed = A> + MonadTrans<LoweredT<MA, W, A>>,
-    MA: StateTypes + Lower<W, A>,
+    Self: Pointed<Pointed = A> + MonadTrans<MonadLoweredT<MA, A, W>>,
+    MA: StateTypes + MonadLower<A, W>,
     MA::Lowered: MonadPut<State = StateTypesStateT<MA>, Pointed = A>,
     W: Monoid,
 {
     fn put(s: Self::State) -> Self {
-        Self::lift(LoweredT::<MA, W, A>::put(s))
+        Self::lift(MonadLoweredT::<MA, A, W>::put(s))
     }
 }
 
 impl<MA, W, A> MonadState for WriterT<W, MA>
 where
-    Self: Pointed<Pointed = A> + MonadTrans<LoweredT<MA, W, A>>,
-    MA: StateTypes + Lower<W, A>,
+    Self: Pointed<Pointed = A> + MonadTrans<MonadLoweredT<MA, A, W>>,
+    MA: StateTypes + MonadLower<A, W>,
     MA::Lowered: MonadState<State = StateTypesStateT<MA>, Pointed = A>,
     W: Monoid,
     A: Term,
 {
     fn state(f: impl FunctionT<Self::State, (Self::Pointed, Self::State)>) -> Self {
-        Self::lift(LoweredT::<MA, W, A>::state(f))
+        Self::lift(MonadLoweredT::<MA, A, W>::state(f))
     }
 }
 

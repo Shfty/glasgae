@@ -1,15 +1,13 @@
 use glasgae::{
     base::{
-        control::monad::{FilterM, FoldM, ReplicateM},
-        data::{function::Term, functor::identity::Identity, pointed::Lower},
+        control::monad::{FilterM, FoldM},
+        data::functor::identity::Identity,
     },
-    mtl::state::{MonadPut, MonadState},
-    prelude::{
-        print, ChainM, Curry, Flip, Fmap, MapM, PointedT, ReturnM, SequenceA, Show, ThenM, IO,
-    },
+    mtl::state::*,
+    prelude::*,
     transformers::{reader::ReaderT, state::StateT, writer::WriterT},
 };
-use std::fmt::{Debug, Display};
+use std::fmt::Debug;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum TurnstileState {
@@ -127,7 +125,7 @@ fn test_type_name() {
     type Point = PointedT<W>;
     println!("W Pointed: {}", std::any::type_name::<Point>());
 
-    type S_ = <S as Lower<Vec<String>, PointedT<W>>>::Lowered;
+    type S_ = <S as MonadLower<PointedT<W>, Vec<String>>>::Lowered;
     println!("S Lowered: {}", std::any::type_name::<S_>());
 
     type Point_ = PointedT<S>;
@@ -135,7 +133,8 @@ fn test_type_name() {
 }
 
 fn coin_s() -> MyComplexMonad<usize, Vec<String>, TurnstileState, TurnstileOutput> {
-    MyComplexMonad::state(coin).map_t(log_w)
+    let foo = WriterT::<Vec<String>, StateT::<TurnstileState, Identity<((TurnstileOutput, Vec<String>), TurnstileState)>>>::state(coin);
+    todo!()
 }
 
 fn push_s() -> MyComplexMonad<usize, Vec<String>, TurnstileState, TurnstileOutput> {
@@ -206,7 +205,7 @@ fn test_map_m_reader() -> IO<()> {
     print("MapM:")
         .then_m(IO::return_m(
             vec![Coin, Push, Push, Coin, Push]
-                .map_m(turn_s)
+                .traverse_t(turn_s)
                 .run((1, Locked)),
         ))
         .chain_m(print)

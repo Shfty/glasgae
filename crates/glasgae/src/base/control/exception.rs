@@ -87,7 +87,7 @@ where
 ///
 /// If any other type of exception is raised then it will be propagated
 /// up to the next enclosing exception handler.
-/// ```
+/// ```text
 /// r#try(a) == catch(Right.lift_m(a), Left::compose_clone(ReturnM::return_m))
 /// ```
 pub fn r#try<E, T>(io: IO<T>) -> IO<Either<E, T>>

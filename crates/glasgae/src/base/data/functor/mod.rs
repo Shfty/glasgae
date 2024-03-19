@@ -39,7 +39,7 @@ where
     /// Convert from a `Maybe<usize>` to a `Maybe<String>` using show:
     ///
     ///```
-    /// # use glasgae::prelude::{Functor, Show};
+    /// # use glasgae::prelude::{Fmap, Show};
     /// assert_eq!(None::<usize>.fmap(Show::show), None);
     /// assert_eq!((Some(3)).fmap(Show::show), Some("3".to_string()));
     /// ```
@@ -47,20 +47,20 @@ where
     /// Convert from an `Either<Int, Int>, to an `Either<Int, String>` using show:
     ///
     /// ```
-    /// # use glasgae::prelude::{Either::*, Functor, Show};
+    /// # use glasgae::prelude::{Either::*, Fmap, Show};
     /// assert_eq!(Left::<usize, String>(17).fmap(Show::show), Left(17));
     /// assert_eq!(Right::<usize, usize>(17).fmap(Show::show), Right("17".to_string()));
     /// ```
     ///
     /// Double each element of a list:
     /// ```
-    /// # use glasgae::prelude::{Functor};
+    /// # use glasgae::prelude::{Fmap};
     /// assert_eq!(vec![1,2,3].fmap(|t| t * 2), vec![2,4,6]);
     /// ```
     ///
     /// Apply even to the second element of a pair:
     /// ```
-    /// # use glasgae::{prelude::{Functor}, base::grl::num::Even};
+    /// # use glasgae::{prelude::{Fmap}, base::grl::num::Even};
     /// assert_eq!((2, 2).fmap(Even::even), (2,true));
     /// ```
     ///
@@ -76,7 +76,7 @@ where
     /// It explains why fmap can be used with tuples containing values
     /// of different types as in the following example:
     /// ```
-    /// # use glasgae::{prelude::Functor, base::grl::num::Even};
+    /// # use glasgae::{prelude::Fmap, base::grl::num::Even};
     /// assert_eq!(("hello", 1.0, 4).fmap(Even::even), ("hello",1.0,true));
     /// ```
     fn fmap(self, f: impl FunctionT<Self::Pointed, T>) -> Self::WithPointed;
@@ -87,7 +87,7 @@ where
     ///
     /// Perform a computation with Maybe and replace the result with a constant value if it is Some:
     /// ```
-    /// # use glasgae::prelude::Functor;
+    /// # use glasgae::prelude::Fmap;
     /// assert_eq!(Some(2).replace('a'), Some('a'));
     /// assert_eq!(None::<usize>.replace('a'), None);
     /// ```

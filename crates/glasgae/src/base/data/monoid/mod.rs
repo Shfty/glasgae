@@ -40,7 +40,7 @@
 //! Note that we have to specify the type here
 //! since [`usize`] is a monoid under several different operations:
 //! ```
-//! # use glasgae::{prelude::{Functor, Monoid}, base::data::monoid::Sum};
+//! # use glasgae::{prelude::{Fmap, Monoid}, base::data::monoid::Sum};
 //! assert_eq!(
 //!     Sum::<usize>::mconcat(vec![1,2,3,4].fmap(Sum)),
 //!     Sum(10)
@@ -69,7 +69,7 @@
 //! );
 //! ```
 //! ```
-//! # use glasgae::{prelude::{Functor, Monoid}, base::data::monoid::Product};
+//! # use glasgae::{prelude::{Fmap, Monoid}, base::data::monoid::Product};
 //! assert_eq!(
 //!     Product::<usize>::mconcat(vec![1,2,3,4].fmap(Product)),
 //!     Product(24)
@@ -154,7 +154,7 @@ pub trait Monoid: Semigroup {
     /// so that an optimized version can be provided for specific types.
     ///
     /// ```
-    /// # use glasgae::prelude::{Functor, Monoid, Show};
+    /// # use glasgae::prelude::{Fmap, Monoid, Show};
     /// assert_eq!(String::mconcat(vec!["Hello", " ", "Glasgae", "!"].fmap(Show::show)), "Hello Glasgae!".to_string());
     /// ```
     fn mconcat(list: Vec<Self>) -> Self {
