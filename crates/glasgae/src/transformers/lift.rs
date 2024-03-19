@@ -142,10 +142,10 @@ where
     }
 }
 
-impl<FA, A1, A2> TraverseT<A1, A2> for Lift<FA>
+impl<FA, A1, A2> TraverseT<A1, (), A2> for Lift<FA>
 where
     Self: Fmap<A1>,
-    WithPointedT<Self, A1>: SequenceA<A2>,
+    WithPointedT<Self, A1>: SequenceA<(), A2>,
     FA: Pointed,
     A1: Term,
 {
@@ -154,7 +154,7 @@ where
     }
 }
 
-impl<FA, A2> SequenceA<A2> for Lift<FA>
+impl<FA, A2> SequenceA<(), A2> for Lift<FA>
 where
     FA: Pointed,
 {

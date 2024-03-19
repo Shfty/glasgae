@@ -15,6 +15,13 @@ use crate::prelude::*;
 ///
 /// For a version that ignores the results see traverse_.
 ///
+/// # Note
+///
+/// The `A2` parameter is specific to types whose traversals
+/// require a generically-specifiable intermediary functor,
+/// and thus should be constrained to `()` in cases where
+/// this is not necessary.
+///
 /// # Examples
 ///
 /// Basic usage:
@@ -51,17 +58,17 @@ use crate::prelude::*;
 ///     Left(0)
 /// );
 /// ```
-pub trait TraverseT<A1, A2>: Pointed
+pub trait TraverseT<A1, A2, A3>: Pointed
 where
     A1: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2;
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A3;
 }
 
-pub fn traverse_t_default<This, A1, A2>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A2
+pub fn traverse_t_default<This, A1, A2, A3>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A3
 where
     This: Fmap<A1>,
-    This::WithPointed: SequenceA<A2>,
+    This::WithPointed: SequenceA<A2, A3>,
     A1: Term,
 {
     this.fmap(f).sequence_a()
@@ -88,21 +95,22 @@ where
 /// assert_eq!(vec![Some(1), Some(2), Some(3), None].sequence_a(), None);
 /// assert_eq!(vec![Right(1), Right(2), Right(3), Left(4)].sequence_a(), Left(4));
 /// ```
-pub trait SequenceA<A2>: Pointed {
-    fn sequence_a(self) -> A2;
+pub trait SequenceA<A2, A3>: Pointed {
+    fn sequence_a(self) -> A3;
 }
 
-pub fn sequence_a_default<This, A1, A2>(this: This) -> A2
+pub fn sequence_a_default<This, A1, A2, A3>(this: This) -> A3
 where
-    This: TraverseT<A1, A2, Pointed = A1>,
+    This: TraverseT<A1, A2, A3, Pointed = A1>,
     A1: Term,
     A2: Term,
+    A3: Term,
 {
     this.traverse_t(identity)
 }
 
 /// SequenceA with additional Monad semantic
-pub trait Sequence<A2>: SequenceA<A2> {
+pub trait Sequence<A2, A3>: SequenceA<A2, A3> {
     /// Evaluate each monadic action in the structure from left to right, and collect the results. For a version that ignores the results see sequence_.
     ///
     /// Examples
@@ -138,20 +146,20 @@ pub trait Sequence<A2>: SequenceA<A2> {
     /// assert_eq!(Left::<Vec<usize>, Vec<usize>>(vec![1,2,3,4]), Left(vec![1,2,3,4]));
     /// assert_eq!(vec![Left::<usize, usize>(0), Right(1), Right(2), Right(3), Right(4)].sequence(), Left(0))
     /// ```
-    fn sequence(self) -> A2;
+    fn sequence(self) -> A3;
 }
 
-impl<T, B> Sequence<B> for T
+impl<T, B, C> Sequence<B, C> for T
 where
-    T: SequenceA<B>,
+    T: SequenceA<B, C>,
 {
-    fn sequence(self) -> B {
+    fn sequence(self) -> C {
         self.sequence_a()
     }
 }
 
 /// TraverseT with additional Monad semantic
-pub trait MapM<A, B>: TraverseT<A, B>
+pub trait MapM<A, B, C>: TraverseT<A, B, C>
 where
     A: Term,
 {
@@ -159,14 +167,14 @@ where
     ///
     /// Examples
     /// mapM is literally a traverse with a type signature restricted to Monad. Its implementation may be more efficient due to additional power of Monad.
-    fn map_m(self, f: impl FunctionT<Self::Pointed, A>) -> B {
+    fn map_m(self, f: impl FunctionT<Self::Pointed, A>) -> C {
         self.traverse_t(f)
     }
 }
 
-impl<T, A, B> MapM<A, B> for T
+impl<T, A, B, C> MapM<A, B, C> for T
 where
-    T: TraverseT<A, B>,
+    T: TraverseT<A, B, C>,
     A: Term,
 {
 }

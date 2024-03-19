@@ -112,7 +112,7 @@ where
     }
 }
 
-impl<T, A, U, B> TraverseT<A, B> for Option<T>
+impl<T, A, U, B> TraverseT<A, (), B> for Option<T>
 where
     A: Fmap<Option<U>, Pointed = U, WithPointed = B>,
     A::WithPointed: PureA<Pointed = Option<U>>,
@@ -127,7 +127,7 @@ where
     }
 }
 
-impl<A1, A_, A2> SequenceA<A2> for Option<A1>
+impl<A1, A_, A2> SequenceA<(), A2> for Option<A1>
 where
     A1: Clone + Fmap<Option<A_>, Pointed = A_, WithPointed = A2>,
     A_: Term,

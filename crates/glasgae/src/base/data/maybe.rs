@@ -164,7 +164,7 @@ where
     }
 }
 
-impl<T, A, U, B> TraverseT<A, B> for Maybe<T>
+impl<T, A, U, B> TraverseT<A, (), B> for Maybe<T>
 where
     A: Fmap<Maybe<U>, Pointed = U, WithPointed = B>,
     A::WithPointed: PureA<Pointed = Maybe<U>>,
@@ -179,7 +179,7 @@ where
     }
 }
 
-impl<A1, A_, A2> SequenceA<A2> for Maybe<A1>
+impl<A1, A_, A2> SequenceA<(), A2> for Maybe<A1>
 where
     A1: Fmap<Maybe<A_>, Pointed = A_, WithPointed = A2>,
     A_: Term,

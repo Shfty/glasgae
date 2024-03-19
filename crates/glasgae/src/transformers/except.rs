@@ -340,10 +340,10 @@ where
     }
 }
 
-impl<MA, A1, A2, E, A> TraverseT<A1, A2> for ExceptT<MA>
+impl<MA, A1, A2, E, A> TraverseT<A1, (), A2> for ExceptT<MA>
 where
     Self: Fmap<A1>,
-    WithPointedT<Self, A1>: SequenceA<A2>,
+    WithPointedT<Self, A1>: SequenceA<(), A2>,
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
     A1: Term,
@@ -354,7 +354,7 @@ where
     }
 }
 
-impl<A1, A2, E, A> SequenceA<A2> for ExceptT<A1>
+impl<A1, A2, E, A> SequenceA<(), A2> for ExceptT<A1>
 where
     A1: Pointed<Pointed = Either<E, A>>,
     E: Term,

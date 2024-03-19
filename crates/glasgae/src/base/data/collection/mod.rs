@@ -52,8 +52,9 @@ macro_rules! derive_iterable_collection {
             A: $crate::prelude::Term $(+ $trait)*,
             B: $crate::prelude::Term $(+ $trait)*,
         {
-            fn app_a(self, a: $ty<A>) -> $ty<B> {
-                self.into_iter().zip(a).map(|(f, a)| f(a)).collect()
+            fn app_a(self, xs: $ty<A>) -> $ty<B> {
+                let fs = self;
+                $crate::prelude::ChainM::chain_m(fs, |f| $crate::prelude::ChainM::chain_m(xs, |x| $crate::prelude::ReturnM::return_m(f(x))))
             }
         }
 
@@ -130,7 +131,7 @@ macro_rules! derive_iterable_collection {
             }
         }
 
-        impl<$arg, A_, A1, A2> $crate::prelude::TraverseT<A1, A2> for $ty<$arg>
+        impl<$arg, A_, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$arg>
         where
             A1: $crate::prelude::Fmap<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
             A1::WithPointed: $crate::prelude::AppA<A2, A2>,
@@ -139,28 +140,19 @@ macro_rules! derive_iterable_collection {
             $arg: $crate::prelude::Term $(+ $trait)*,
         {
             fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, A1>) -> A2 {
-                $crate::base::data::traversable::traverse_t_default(self, f)
+                let f = f.to_function();
+                $crate::prelude::Foldable::foldr(self, |x, ys| $crate::prelude::LiftA2::lift_a2($append)(f(x), ys), $crate::prelude::PureA::pure_a($ty::new()))
             }
         }
 
-        impl<$arg, A_, A2> $crate::prelude::SequenceA<A2> for $ty<$arg>
+        impl<$arg, A2> $crate::prelude::SequenceA<(), A2> for $ty<$arg>
         where
-            $arg: $crate::prelude::Fmap<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
-            $arg::WithPointed: $crate::prelude::AppA<A2, A2>,
-            A_: $crate::prelude::Term $(+ $trait)*,
-            A2: $crate::prelude::PureA<Pointed = $ty<A_>> $(+ $trait)*,
+            Self: $crate::prelude::TraverseT<$arg, (), A2, Pointed = $arg>,
+            $arg: $crate::prelude::Term,
+            A2: $crate::prelude::Term
         {
             fn sequence_a(self) -> A2 {
-                $crate::prelude::Foldable::foldr(
-                    self,
-                    |next, acc| {
-                        $crate::prelude::AppA::app_a(
-                            next.fmap(|t| Box::new(|v| $append(t, v))),
-                            acc,
-                        )
-                    },
-                    $crate::prelude::PureA::pure_a(Default::default()),
-                )
+                $crate::prelude::sequence_a_default(self)
             }
         }
 

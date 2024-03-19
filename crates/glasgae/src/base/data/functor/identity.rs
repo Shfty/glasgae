@@ -126,7 +126,7 @@ where
     }
 }
 
-impl<T, A1, A_, A2> TraverseT<A1, A2> for Identity<T>
+impl<T, A1, A_, A2> TraverseT<A1, (), A2> for Identity<T>
 where
     A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: Monoid,
@@ -140,7 +140,7 @@ where
     }
 }
 
-impl<A1, A_, A2> SequenceA<A2> for Identity<A1>
+impl<A1, A_, A2> SequenceA<(), A2> for Identity<A1>
 where
     A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
     A1::WithPointed: AppA<A2, A2>,

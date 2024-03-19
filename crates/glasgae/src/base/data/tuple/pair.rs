@@ -99,7 +99,7 @@ where
     }
 }
 
-impl<L, R, A1, R_, A2> TraverseT<A1, A2> for (L, R)
+impl<L, R, A1, R_, A2> TraverseT<A1, (), A2> for (L, R)
 where
     L: Term,
     R: Term,
@@ -112,9 +112,9 @@ where
     }
 }
 
-impl<L, A1, A2> SequenceA<A2> for (L, A1)
+impl<L, A1, A2> SequenceA<(), A2> for (L, A1)
 where
-    Self: TraverseT<A1, A2, Pointed = A1>,
+    Self: TraverseT<A1, (), A2, Pointed = A1>,
     A1: Term,
     A2: Term,
 {

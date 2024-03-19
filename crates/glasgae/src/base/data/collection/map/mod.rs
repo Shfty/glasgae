@@ -81,10 +81,10 @@ macro_rules! derive_iterable_map {
             }
         }
 
-        impl<$key, $value, A1, A2> $crate::prelude::TraverseT<A1, A2> for $ty<$key, $value>
+        impl<$key, $value, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$key, $value>
         where
             Self: $crate::prelude::Fmap<A1>,
-            $crate::prelude::WithPointedT<Self, A1>: $crate::prelude::SequenceA<A2>,
+            $crate::prelude::WithPointedT<Self, A1>: $crate::prelude::SequenceA<(), A2>,
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
             A1: $crate::prelude::Term,
@@ -94,7 +94,7 @@ macro_rules! derive_iterable_map {
             }
         }
 
-        impl<$key, $value, V2> $crate::prelude::SequenceA<V2> for $ty<$key, $value>
+        impl<$key, $value, V2> $crate::prelude::SequenceA<(), V2> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Fmap<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,

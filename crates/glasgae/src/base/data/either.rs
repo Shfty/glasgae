@@ -356,7 +356,7 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, A1::WithPointed> for Either<E, A>
+impl<E, A, A_, A1> TraverseT<A1, (), A1::WithPointed> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -372,7 +372,7 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<A1::WithPointed> for Either<E, A1>
+impl<E, A1, A_> SequenceA<(), A1::WithPointed> for Either<E, A1>
 where
     A1: Fmap<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,

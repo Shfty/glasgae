@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::prelude::{list::vec::push, *};
+use crate::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RoseTree<T>(pub T, pub Vec<Self>);
@@ -117,38 +117,80 @@ where
     }
 }
 
-impl<T, A1, A2> TraverseT<A1, A2> for RoseTree<T>
+impl<T, A1, A2, U, A3> TraverseT<A1, A2, A3> for RoseTree<T>
 where
-    RoseTree<A1>: SequenceA<A2>,
     T: Term,
-    A1: Term,
-    A2: Term,
+    A1: Term + Fmap<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
+    A1::WithPointed: AppA<A2, A3>,
+    A2: PureA<Pointed = Vec<RoseTree<U>>>,
+    U: Term,
+    A3: PureA<Pointed = RoseTree<U>> + Fmap<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
+    A3::WithPointed: AppA<A2, A2>,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
-        traverse_t_default(self, f)
+    fn traverse_t(self, f: impl FunctionT<T, A1>) -> A3 {
+        rose_tree_traverse(self, f)
     }
 }
 
-impl<A1, U, A2> SequenceA<A2> for RoseTree<A1>
+fn rose_tree_traverse<T, A1, A2, U, A3>(
+    RoseTree(x, xs): RoseTree<T>,
+    f: impl FunctionT<T, A1>,
+) -> A3
 where
-    A1: Fmap<Function<RoseTree<U>, RoseTree<U>>, Pointed = U>,
-    A1::WithPointed: AppA<A2, A2>,
+    T: Term,
+    A1: Term + Fmap<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
+    A1::WithPointed: AppA<A2, A3>,
+    A2: PureA<Pointed = Vec<RoseTree<U>>>,
     U: Term,
-    A2: PureA<Pointed = RoseTree<U>>,
+    A3: PureA<Pointed = RoseTree<U>> + Fmap<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
+    A3::WithPointed: AppA<A2, A2>,
 {
-    fn sequence_a(self) -> A2 {
-        self.foldr(
-            |next, acc| {
-                next.fmap(|x| {
-                    (|mut v: RoseTree<U>| {
-                        v.1.push(RoseTree(x, vec![]));
-                        v
-                    })
-                    .boxed()
-                })
-                .app_a(acc)
-            },
-            PureA::pure_a(RoseTree(todo!("RoseTree::SequenceA without zero element"), vec![])),
-        )
+    let f = f.to_function();
+    RoseTree.lift_a2()(f.clone()(x), xs.traverse_t(|t| rose_tree_traverse(t, f)))
+}
+
+#[test]
+fn test_rose_tree_sequence() {
+    let tree = RoseTree(
+        0,
+        vec![
+            RoseTree(
+                1,
+                vec![
+                    RoseTree(4, vec![RoseTree(10, vec![])]),
+                    RoseTree(5, vec![RoseTree(11, vec![])]),
+                ],
+            ),
+            RoseTree(
+                2,
+                vec![
+                    RoseTree(6, vec![RoseTree(12, vec![])]),
+                    RoseTree(7, vec![RoseTree(13, vec![])]),
+                ],
+            ),
+            RoseTree(
+                3,
+                vec![
+                    RoseTree(8, vec![RoseTree(14, vec![])]),
+                    RoseTree(9, vec![RoseTree(15, vec![])]),
+                ],
+            ),
+        ],
+    );
+    println!("Tree:\n{tree:#?}");
+
+    let traversed: Vec<RoseTree<_>> = rose_tree_traverse(tree, |t| vec![(t + 1).show()]);
+    println!("Traversed:\n{traversed:#?}");
+}
+
+impl<A1, A2, A3> SequenceA<A2, A3> for RoseTree<A1>
+where
+    Self: TraverseT<A1, A2, A3, Pointed = A1>,
+    A1: Term,
+    A2: Term,
+    A3: Term,
+{
+    fn sequence_a(self) -> A3 {
+        sequence_a_default(self)
     }
 }

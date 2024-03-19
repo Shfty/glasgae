@@ -76,7 +76,7 @@ where
     }
 }
 
-impl<T, A1, A_, A2> TraverseT<A1, A2> for (T,)
+impl<T, A1, A_, A2> TraverseT<A1, (), A2> for (T,)
 where
     A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
@@ -90,7 +90,7 @@ where
     }
 }
 
-impl<A1, A2, A_> SequenceA<A2> for (A1,)
+impl<A1, A2, A_> SequenceA<(), A2> for (A1,)
 where
     A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
