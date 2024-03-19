@@ -105,36 +105,40 @@ where
     }
 }
 
-fn log_w<MA, MB>(t: MA) -> WriterT<Vec<String>, MB>
+fn log_w<MA, MB>(m: MA) -> WriterT<Vec<String>, MB>
 where
     MA: ChainM<WriterT<Vec<String>, MB>>,
     MA::Pointed: Debug,
     MB: ReturnM<Pointed = (MA::Pointed, Vec<String>)>,
 {
-    t.chain_m(|t| WriterT::new((t.clone(), vec![format!("{t:?}")])))
+    _do! {
+        a <- m;
+        WriterT::new((a.clone(), vec![format!("{a:?}")]))
+    }
 }
 
-fn test_type_name() {
+fn test_type_name() -> IO<()> {
     type S = StateT<TurnstileState, Identity<((TurnstileOutput, Vec<String>), TurnstileState)>>;
     type W = WriterT<Vec<String>, S>;
     type R = ReaderT<usize, W>;
-    println!("R: {}", std::any::type_name::<R>());
-    println!("W: {}", std::any::type_name::<W>());
-    println!("W: {}", std::any::type_name::<S>());
 
     type Point = PointedT<W>;
-    println!("W Pointed: {}", std::any::type_name::<Point>());
-
     type S_ = <S as MonadLower<PointedT<W>, Vec<String>>>::Lowered;
-    println!("S Lowered: {}", std::any::type_name::<S_>());
-
     type Point_ = PointedT<S>;
-    println!("S Value: {}", std::any::type_name::<Point_>());
+
+    _do! {
+        print(format!("R: {}", std::any::type_name::<R>()));
+        print(format!("W: {}", std::any::type_name::<W>()));
+        print(format!("W: {}", std::any::type_name::<S>()));
+
+        print(format!("W Pointed: {}", std::any::type_name::<Point>()));
+        print(format!("S Lowered: {}", std::any::type_name::<S_>()));
+        print(format!("S Value: {}", std::any::type_name::<Point_>()))
+    }
 }
 
 fn coin_s() -> MyComplexMonad<usize, Vec<String>, TurnstileState, TurnstileOutput> {
-    let foo = WriterT::<Vec<String>, StateT::<TurnstileState, Identity<((TurnstileOutput, Vec<String>), TurnstileState)>>>::state(coin);
-    todo!()
+    MyComplexMonad::state(coin)
 }
 
 fn push_s() -> MyComplexMonad<usize, Vec<String>, TurnstileState, TurnstileOutput> {
@@ -156,14 +160,19 @@ fn turn_s(
 }
 
 fn test_coin_s_reader() -> IO<()> {
-    print("CoinS:")
-        .then_m(IO::return_m(coin_s().run((1, Locked))))
-        .chain_m(print)
+    _do! {
+        print("CoinS:");
+        print(
+            coin_s()
+            .run((1, Locked))
+        )
+    }
 }
 
 fn test_monday_s_reader() -> IO<()> {
-    print("MondayS:")
-        .then_m(IO::return_m(
+    _do! {
+        print("MondayS:");
+        print(
             vec![
                 turn_s(Coin),
                 turn_s(Push),
@@ -172,72 +181,82 @@ fn test_monday_s_reader() -> IO<()> {
                 turn_s(Push),
             ]
             .sequence_a()
-            .run((1, Locked)),
-        ))
-        .chain_m(print)
+            .run((1, Locked))
+        )
+    }
 }
 
 fn test_turnstile_reader() -> IO<()> {
-    print("Turnstile:")
-        .then_m(IO::return_m(MyComplexMonad::put(Locked).then_m(
-            push_s().chain_m(move |check1| {
-                MyComplexMonad::put(Unlocked).then_m(push_s().chain_m(move |check2| {
-                    MyComplexMonad::put(Locked)
-                        .then_m(ReturnM::return_m(check1 == Tut && check2 == Open))
-                }))
-            }),
-        )))
-        .fmap(
-            RunMyComplexMonad::run
-                .flip_clone()
-                .curry_clone((1, Unlocked)),
-        )
-        .chain_m(print)
+    _do! {
+        print("Turnstile:");
+        let out = _do!{
+                      MyComplexMonad::put(Locked);
+                      check1 <- push_s();
+                      MyComplexMonad::put(Unlocked);
+                      check2 <- push_s();
+                      MyComplexMonad::put(Locked);
+                      ReturnM::return_m(check1 == Tut && check2 == Open)
+                  }
+                  .run((1, Unlocked));
+
+        print(out)
+    }
 }
 
 fn test_replicate_reader() -> IO<()> {
-    print("ReplicateM:")
-        .then_m(IO::return_m(push_s().replicate_m(6).run((1, Unlocked))))
-        .chain_m(print)
+    _do! {
+        print("ReplicateM:");
+        print(
+            push_s()
+            .replicate_m(6)
+            .run((1, Unlocked))
+        )
+    }
 }
 
 fn test_map_m_reader() -> IO<()> {
-    print("MapM:")
-        .then_m(IO::return_m(
+    _do! {
+        print("MapM:");
+        print(
             vec![Coin, Push, Push, Coin, Push]
-                .traverse_t(turn_s)
-                .run((1, Locked)),
-        ))
-        .chain_m(print)
+           .traverse_t(turn_s)
+           .run((1, Locked))
+        )
+    }
 }
 
 fn gets_through_s(
     input: TurnstileInput,
 ) -> MyComplexMonad<usize, Vec<String>, TurnstileState, bool> {
-    turn_s(input).chain_m(|output| ReturnM::return_m(output == Open))
+    _do! {
+        output <- turn_s(input);
+        ReturnM::return_m(output == Open)
+    }
 }
 
 fn test_filter_m_reader() -> IO<()> {
-    print("FilterM:")
-        .then_m(IO::return_m(
+    _do! {
+        print("FilterM:");
+        print(
             vec![Coin, Push, Coin, Push, Push, Coin, Push]
-                .filter_m(|t| gets_through_s(t).map_t(log_w))
-                .run((1, Locked)),
-        ))
-        .chain_m(print)
+            .filter_m(|t| gets_through_s(t).map_t(log_w))
+            .run((1, Locked))
+        )
+    }
 }
 
 fn inc_if_opens(
     n: usize,
     i: TurnstileInput,
 ) -> MyComplexMonad<usize, Vec<String>, TurnstileState, usize> {
-    gets_through_s(i).map_t(log_w).chain_m(move |g| {
+    _do! {
+        g <- gets_through_s(i).map_t(log_w);
         if g {
             ReturnM::return_m(n + 1)
         } else {
             ReturnM::return_m(n)
         }
-    })
+    }
 }
 
 fn count_opens(
@@ -247,25 +266,38 @@ fn count_opens(
 }
 
 fn test_fold_m_reader() -> IO<()> {
-    print("FoldM:")
-        .then_m(IO::return_m(
-            count_opens(vec![Coin, Push, Coin, Push, Push, Coin, Push]).run((1, Locked)),
-        ))
-        .chain_m(print)
+    _do! {
+        print("FoldM:");
+        print(
+            count_opens(vec![
+                Coin,
+                Push,
+                Coin,
+                Push,
+                Push,
+                Coin,
+                Push
+            ])
+            .run((1, Locked))
+        )
+    }
 }
 
 fn main() -> IO<()> {
-    test_coin_s_reader()
-        .then_m(print(""))
-        .then_m(test_monday_s_reader())
-        .then_m(print(""))
-        .then_m(test_turnstile_reader())
-        .then_m(print(""))
-        .then_m(test_replicate_reader())
-        .then_m(print(""))
-        .then_m(test_map_m_reader())
-        .then_m(print(""))
-        .then_m(test_filter_m_reader())
-        .then_m(print(""))
-        .then_m(test_fold_m_reader())
+    _do! {
+        test_type_name();
+        test_coin_s_reader();
+        print("");
+        test_monday_s_reader();
+        print("");
+        test_turnstile_reader();
+        print("");
+        test_replicate_reader();
+        print("");
+        test_map_m_reader();
+        print("");
+        test_filter_m_reader();
+        print("");
+        test_fold_m_reader()
+    }
 }

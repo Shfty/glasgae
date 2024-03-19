@@ -5,9 +5,8 @@ use crate::{
         with_bipointed::WithBipointed,
     },
     prelude::{
-        foldl1_default, foldr1_default, identity, sequence_a_default, AppA, Bifoldable,
-        BitraverseT, Fmap, FoldMap, Foldable, Foldable1, Function, FunctionT, LiftA2, Monoid,
-        Pointed, PureA, SequenceA, Term, TraverseT,
+        foldl1_default, foldr1_default, sequence_a_default, AppA, Bifoldable, Fmap, FoldMap,
+        Foldable, Foldable1, FunctionT, Monoid, PureA, SequenceA, Term, TraverseT,
     },
 };
 
@@ -193,4 +192,3 @@ where
         fb(fa(z, self.0), self.1)
     }
 }
-
