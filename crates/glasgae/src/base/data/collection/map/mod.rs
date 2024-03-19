@@ -97,7 +97,7 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, V2> $crate::prelude::SequenceA<V2> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term $(+ $trait)*,
-            $value: $crate::prelude::Fmap<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = ($key, $value)>,
+            $value: $crate::prelude::Fmap<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,
             $crate::prelude::WithPointedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
             V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>>,
         {
@@ -106,8 +106,11 @@ macro_rules! derive_iterable_map {
                     self,
                     |next, acc| {
                         $crate::prelude::AppA::app_a(
-                            next.fmap(|(k, v)|
-                                Box::new(|t| $append(k, v, t))
+                            next.fmap(|t|
+                                Box::new(|mut u| {
+                                    u.extend(t);
+                                    u
+                                })
                             ),
                             acc,
                         )
