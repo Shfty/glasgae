@@ -319,6 +319,31 @@ where
     }
 }
 
+impl<S, MA, A, MB, MC> TraverseT<MB, (), MC> for StateT<S, MA>
+where
+    S: Term,
+    MA: Pointed<Pointed = (A, S)>,
+    A: Term,
+    MB: Term,
+    MC: Term,
+{
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, MB>) -> MC {
+        todo!()
+    }
+}
+
+impl<S, MB, B, MC> SequenceA<(), MC> for StateT<S, MB>
+where
+    S: TraverseT<MB, (), MC>,
+    MB: Pointed<Pointed = (B, S)>,
+    MC: Term,
+    B: Term,
+{
+    fn sequence_a(self) -> MC {
+        todo!()
+    }
+}
+
 impl<MA, S, A> MonadTrans<MA::Lowered> for StateT<S, MA>
 where
     MA: MonadLower<A, S> + ReturnM<Pointed = (A, S)>,

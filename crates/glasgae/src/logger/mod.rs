@@ -223,7 +223,7 @@ mod test {
     use super::{
         indent_logger, print_logger,
         rust_logger::rust_logger,
-        state_logging::{LogScope, RunStateLogging, StateLogging},
+        state_logging::{LogScope, RunStateLogging, StateLoggingT},
         LoggingT, MonadLogger,
     };
 
@@ -240,18 +240,18 @@ mod test {
 
     #[test]
     fn test_monad_logger_state() -> IO<()> {
-        StateLogging::lift(MonadIO::lift_io(IO::<()>::new(env_logger::init)))
-            .then_m(StateLogging::log(Level::Trace, "hmm..."))
+        StateLoggingT::lift(MonadIO::lift_io(IO::<()>::new(env_logger::init)))
+            .then_m(StateLoggingT::log(Level::Trace, "hmm..."))
             .then_m(
-                StateLogging::log_scope(
-                    StateLogging::log(Level::Debug, "hmm..?")
-                        .then_m(StateLogging::log_scope(StateLogging::log(
+                StateLoggingT::log_scope(
+                    StateLoggingT::<_, _, _, IO<_>>::log(Level::Debug, "hmm..?")
+                        .then_m(StateLoggingT::log_scope(StateLoggingT::log(
                             Level::Info,
                             "hmm?",
                         )))
-                        .then_m(StateLogging::log(Level::Warn, "ah!")),
+                        .then_m(StateLoggingT::log(Level::Warn, "ah!")),
                 )
-                .then_m(StateLogging::log(Level::Error, "aha!")),
+                .then_m(StateLoggingT::log(Level::Error, "aha!")),
             )
             .run(indent_logger(rust_logger))
     }
