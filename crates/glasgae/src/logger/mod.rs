@@ -96,11 +96,11 @@ where
     type WithPointed = LoggingT<LVL, MSG, MA::WithPointed>;
 }
 
-impl<LVL, MSG, MA, A, B> Fmap<B> for LoggingT<LVL, MSG, MA>
+impl<LVL, MSG, MA, A, B> Functor<B> for LoggingT<LVL, MSG, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: Fmap<B, Pointed = A>,
+    MA: Functor<B, Pointed = A>,
     A: Term,
     B: Term,
 {
@@ -126,7 +126,7 @@ impl<LVL, MSG, MF, MA, MB> AppA<LoggingT<LVL, MSG, MA>, LoggingT<LVL, MSG, MB>>
 where
     LVL: Term,
     MSG: Term,
-    MF: AppA<MA, MB>,
+    MF: Applicative<MA, MB>,
     MA: Pointed,
     MB: Pointed,
 {
@@ -150,13 +150,14 @@ where
     }
 }
 
-impl<LVL, MSG, MA, MB, A, B> ChainM<LoggingT<LVL, MSG, MB>> for LoggingT<LVL, MSG, MA>
+impl<LVL, MSG, MA, MB, A, B> ChainM<B> for LoggingT<LVL, MSG, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: ChainM<MB, Pointed = A>,
+    MA: ChainM<B, Pointed = A, WithPointed = MB>,
     MB: Pointed<Pointed = B>,
     A: Term,
+    B: Term,
 {
     fn chain_m(self, f: impl FunctionT<A, LoggingT<LVL, MSG, MB>>) -> LoggingT<LVL, MSG, MB> {
         let f = f.to_function();
@@ -259,18 +260,16 @@ mod test {
 
     #[test]
     fn test_monad_logger_state() -> IO<()> {
-        StateLoggingT::lift(MonadIO::lift_io(IO::<()>::new(env_logger::init)))
-            .then_m(StateLoggingT::log(Level::Trace, "hmm..."))
+        type S<T> = StateLoggingT<Level, &'static str, usize, IO<T>>;
+        S::lift(MonadIO::lift_io(IO::new(env_logger::init)))
+            .then_m(S::log(Level::Trace, "hmm..."))
             .then_m(
-                StateLoggingT::log_scope(
-                    StateLoggingT::<_, _, _, IO<_>>::log(Level::Debug, "hmm..?")
-                        .then_m(StateLoggingT::log_scope(StateLoggingT::log(
-                            Level::Info,
-                            "hmm?",
-                        )))
-                        .then_m(StateLoggingT::log(Level::Warn, "ah!")),
+                S::log_scope(
+                    S::log(Level::Debug, "hmm..?")
+                        .then_m(S::log_scope(S::log(Level::Info, "hmm?")))
+                        .then_m(S::log(Level::Warn, "ah!")),
                 )
-                .then_m(StateLoggingT::log(Level::Error, "aha!")),
+                .then_m(S::log(Level::Error, "aha!")),
             )
             .run(indent_logger(rust_logger))
     }

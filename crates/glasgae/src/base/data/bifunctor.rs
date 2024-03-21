@@ -1,4 +1,4 @@
-use crate::prelude::{Fmap, FunctionT, Term, WithPointedT};
+use crate::prelude::{Functor, FunctionT, Term, WithPointedT};
 
 use super::with_bipointed::{WithBipointed, WithBipointedT};
 
@@ -16,9 +16,9 @@ where
     }
 }
 
-pub trait Bifunctor<A, B>: Bifmap<A> + Fmap<B>
+pub trait Bifunctor<A, B>: Bifmap<A> + Functor<B>
 where
-    Self::WithBipointed: Fmap<B>,
+    Self::WithBipointed: Functor<B>,
     A: Term,
     B: Term,
 {

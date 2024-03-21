@@ -92,7 +92,7 @@ where
     /// execWriterT m = liftM snd (runWriterT m)
     pub fn exec_t<A, N>(self) -> N
     where
-        M: ChainM<N, Pointed = (A, W)>,
+        M: Monad<W, Pointed = (A, W), WithPointed = N>,
         N: ReturnM<Pointed = W>,
         A: Term,
     {
@@ -123,7 +123,7 @@ where
     /// runWriterT (listen m) = liftM (\ (a, w) -> ((a, w), w)) (runWriterT m)
     pub fn listen<N, A>(self) -> WriterT<W, N>
     where
-        M: ChainM<N, Pointed = (A, W)>,
+        M: Monad<((A, W), W), Pointed = (A, W), WithPointed = N>,
         N: ReturnM<Pointed = ((A, W), W)>,
         A: Term,
     {
@@ -139,7 +139,7 @@ where
     /// runWriterT (listens f m) = liftM (\ (a, w) -> ((a, f w), w)) (runWriterT m)
     pub fn listens<N, A, B>(self, f: impl FunctionT<W, B>) -> WriterT<W, N>
     where
-        M: ChainM<N, Pointed = (A, W)>,
+        M: Monad<((A, B), W), Pointed = (A, W), WithPointed = N>,
         N: ReturnM<Pointed = ((A, B), W)>,
         W: Term,
         A: Term,
@@ -157,7 +157,7 @@ where
     /// runWriterT (pass m) = liftM (\ ((a, f), w) -> (a, f w)) (runWriterT m)
     pub fn pass<F, A, B, N>(self) -> WriterT<W, N>
     where
-        M: ChainM<N, Pointed = ((A, F), W)>,
+        M: Monad<(A, B), Pointed = ((A, F), W), WithPointed = N>,
         N: ReturnM<Pointed = (A, B)>,
         F: Term + FunctionT<W, B>,
         A: Term,
@@ -175,7 +175,7 @@ where
     /// runWriterT (censor f m) = liftM (\ (a, w) -> (a, f w)) (runWriterT m)
     pub fn censor<A>(self, f: impl FunctionT<W, W>) -> Self
     where
-        M: Clone + ChainM<M> + ReturnM<Pointed = (A, W)>,
+        M: Clone + Monad<(A, W), WithPointed = M> + ReturnM<Pointed = (A, W)>,
         A: Term,
     {
         let f = f.to_function();
@@ -219,9 +219,9 @@ where
     type WithPointed = WriterT<W, M::WithPointed>;
 }
 
-impl<W, M, A, B> Fmap<B> for WriterT<W, M>
+impl<W, M, A, B> Functor<B> for WriterT<W, M>
 where
-    M: Fmap<(B, W), Pointed = (A, W)>,
+    M: Functor<(B, W), Pointed = (A, W)>,
     W: Term,
     A: Term,
     B: Term,
@@ -245,8 +245,8 @@ where
 
 impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
 where
-    MF: Fmap<Function<(A, W), (B, W)>, Pointed = (F, W)>,
-    MF::WithPointed: AppA<MA, MB>,
+    MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
+    MF::WithPointed: Applicative<MA, MB>,
     W: Semigroup,
     MA: Pointed<Pointed = (A, W)>,
     MB: Pointed<Pointed = (B, W)>,
@@ -272,11 +272,11 @@ where
 {
 }
 
-impl<W, M, N, A, B> ChainM<WriterT<W, N>> for WriterT<W, M>
+impl<W, M, N, A, B> ChainM<B> for WriterT<W, M>
 where
     W: Monoid,
-    M: ReturnM<Pointed = (A, W)> + ChainM<N>,
-    N: ReturnM<Pointed = (B, W)> + ChainM<N>,
+    M: Monad<(B, W), Pointed = (A, W), WithPointed = N>,
+    N: Monad<(B, W), Pointed = (B, W), WithPointed = N>,
     A: Term,
     B: Term,
 {
@@ -296,7 +296,7 @@ where
 impl<MA, W, A> MonadTrans<MA::Lowered> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: ChainM<MA, Pointed = A>,
+    MA::Lowered: Monad<(A, W), Pointed = A, WithPointed = MA>,
     W: Monoid,
     A: Term,
 {
@@ -308,7 +308,7 @@ where
 impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: MonadIO<A> + ChainM<MA>,
+    MA::Lowered: Monad<(A, W), WithPointed = MA> + MonadIO<A>,
     W: Monoid,
     A: Term,
 {

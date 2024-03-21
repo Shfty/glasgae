@@ -105,7 +105,7 @@ where
     /// Transform any exceptions thrown by the computation using the given function.
     pub fn with_t<MB, E, E_, A>(self, f: impl FunctionT<E, E_>) -> ExceptT<MB>
     where
-        MA: Fmap<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
+        MA: Functor<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
         MB: Pointed<Pointed = Either<E_, A>>,
         E_: Term,
         A: Term,
@@ -143,10 +143,11 @@ where
     /// ```
     pub fn catch<MB, E, E_, A>(self, h: impl FunctionT<E, ExceptT<MB>>) -> ExceptT<MB>
     where
-        MA: ChainM<MB, Pointed = Either<E, A>>,
+        MA: Monad<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
         MB: ReturnM<Pointed = Either<E_, A>>,
         E: Term,
         A: Term,
+        E_: Term,
     {
         let m = self;
         let h = h.to_function();
@@ -160,9 +161,10 @@ where
     /// which is useful in situations where the code for the handler is shorter.
     pub fn handle<MB, E, E_, A>(h: impl FunctionT<E, ExceptT<MB>>, this: Self) -> ExceptT<MB>
     where
-        MA: ChainM<MB, Pointed = Either<E, A>>,
+        MA: Monad<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
         MB: ReturnM<Pointed = Either<E_, A>>,
         E: Term,
+        E_: Term,
         A: Term,
     {
         this.catch(h)
@@ -173,9 +175,9 @@ where
     /// or `Left(ex)` if an exception `ex` was thrown.
     pub fn r#try<MB, MC, E, A>(self) -> ExceptT<MC>
     where
-        MA: ChainM<MB, Pointed = Either<E, A>>,
-        MB: ReturnM<Pointed = Either<E, Either<E, A>>> + ChainM<MC>,
-        MC: ReturnM<Pointed = Either<E, Either<E, A>>>,
+        MA: Monad<Either<E, Either<E, A>>, Pointed = Either<E, A>, WithPointed = MC>,
+        MB: Monad<Either<E, Either<E, A>>, Pointed = Either<E, Either<E, A>>, WithPointed = MC>,
+        MC: Monad<Either<E, Either<E, A>>, Pointed = Either<E, Either<E, A>>, WithPointed = MC>,
         E: Term,
         A: Term,
     {
@@ -186,20 +188,18 @@ where
     /// even if `a` exits early by throwing an exception.
     ///
     /// In the latter case, the exception is re-thrown after `b` has been executed.
-    pub fn finally<MB, MC, E, A>(self, closer: ExceptT<MC>) -> Self
+    pub fn finally<MB, MC, E, A>(self, closer: ExceptT<MC>) -> ExceptT<MC>
     where
-        MA: ChainM<MB, Pointed = Either<E, A>> + ReturnM,
-        MB: ReturnM<Pointed = Either<E, Either<E, A>>> + ChainM<MB> + ChainM<MA>,
-        MC: ChainM<MA, Pointed = Either<E, ()>>,
+        MA: Monad<Either<E, Either<E, A>>, Pointed = Either<E, A>, WithPointed = MC>,
+        MB: Monad<Either<E, Either<E, A>>, Pointed = Either<E, Either<E, A>>, WithPointed = MC>,
+        MC: Monad<Either<E, Either<E, A>>, Pointed = Either<E, Either<E, A>>, WithPointed = MC>,
         E: Term,
         A: Term,
     {
-        let m: ExceptT<MA> = self;
-        let m: ExceptT<MB> = m.r#try();
-        m.chain_m(|res| {
+        self.r#try::<MB, MC, E, A>().chain_m(|res: Either<E, A>| {
             closer.then_m(match res {
                 Left(e) => ExceptT::throw(e),
-                Right(x) => ReturnM::return_m(x),
+                Right(x) => ReturnM::return_m(ReturnM::return_m(x)),
             })
         })
     }
@@ -226,9 +226,9 @@ where
     type WithPointed = ExceptT<MA::WithPointed>;
 }
 
-impl<MA, E, A, B> Fmap<B> for ExceptT<MA>
+impl<MA, E, A, B> Functor<B> for ExceptT<MA>
 where
-    MA: Fmap<Either<E, B>, Pointed = Either<E, A>>,
+    MA: Functor<Either<E, B>, Pointed = Either<E, A>>,
     E: Term,
     A: Term,
     B: Term,
@@ -252,8 +252,8 @@ where
 
 impl<MF, MA, MB, E, F, A, B> AppA<ExceptT<MA>, ExceptT<MB>> for ExceptT<MF>
 where
-    MF: ChainM<MB, Pointed = Either<E, F>>,
-    MA: ChainM<MB, Pointed = Either<E, A>>,
+    MF: Monad<Either<E, B>, Pointed = Either<E, F>, WithPointed = MB>,
+    MA: Monad<Either<E, B>, Pointed = Either<E, A>, WithPointed = MB>,
     MB: ReturnM<Pointed = Either<E, B>>,
     F: Term + FunctionT<A, B>,
     E: Term,
@@ -286,12 +286,13 @@ where
     }
 }
 
-impl<MA, MB, E, A, B> ChainM<ExceptT<MB>> for ExceptT<MA>
+impl<MA, MB, E, A, B> ChainM<B> for ExceptT<MA>
 where
-    MA: ChainM<MB, Pointed = Either<E, A>>,
+    MA: Monad<Either<E, B>, Pointed = Either<E, A>, WithPointed = MB>,
     MB: ReturnM<Pointed = Either<E, B>>,
     E: Term,
     A: Term,
+    B: Term,
 {
     fn chain_m(self, k: impl FunctionT<A, ExceptT<MB>>) -> ExceptT<MB> {
         let m = self;
@@ -345,7 +346,7 @@ where
 
 impl<MA, A1, A2, E, A> TraverseT<A1, (), A2> for ExceptT<MA>
 where
-    Self: Fmap<A1>,
+    Self: Functor<A1>,
     WithPointedT<Self, A1>: SequenceA<(), A2>,
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
@@ -371,7 +372,8 @@ where
 impl<MA, MB, E, A> MonadTrans<MB> for ExceptT<MA>
 where
     MA: ReturnM<Pointed = Either<E, A>>,
-    MB: Pointed<Pointed = A> + ChainM<MA>,
+    MB: Monad<Either<E, A>, Pointed = A, WithPointed = MA>,
+    E: Term,
     A: Term,
 {
     fn lift(m: MB) -> Self {

@@ -67,7 +67,7 @@ where
 
 pub fn traverse_t_default<This, A1, A2, A3>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A3
 where
-    This: Fmap<A1>,
+    This: Functor<A1>,
     This::WithPointed: SequenceA<A2, A3>,
     A1: Term,
 {

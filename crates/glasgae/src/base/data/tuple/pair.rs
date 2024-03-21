@@ -5,7 +5,7 @@ use crate::{
         with_bipointed::WithBipointed,
     },
     prelude::{
-        foldl1_default, foldr1_default, sequence_a_default, AppA, Bifoldable, Fmap, FoldMap,
+        foldl1_default, foldr1_default, sequence_a_default, AppA, Bifoldable, Functor, FoldMap,
         Foldable, Foldable1, FunctionT, Monoid, PureA, SequenceA, Term, TraverseT,
     },
 };
@@ -102,7 +102,7 @@ impl<L, R, A1, R_, A2> TraverseT<A1, (), A2> for (L, R)
 where
     L: Term,
     R: Term,
-    A1: Fmap<(L, R_), Pointed = R_, WithPointed = A2>,
+    A1: Functor<(L, R_), Pointed = R_, WithPointed = A2>,
     R_: Term,
     A2: Term,
 {
@@ -156,7 +156,7 @@ where
     L_: Term,
     R: Term,
     R_: Term,
-    (L_, R): Fmap<R_, Pointed = R>,
+    (L_, R): Functor<R_, Pointed = R>,
 {
     fn bimap(
         self,

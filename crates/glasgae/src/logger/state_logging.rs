@@ -1,3 +1,5 @@
+extern crate self as glasgae;
+
 use crate::{
     base::{
         control::monad::io::MonadIO,
@@ -22,8 +24,8 @@ where
     MSG: Term,
     S: Term,
     MA: ReturnM<Pointed = ((), S)> + WithPointed<(S, S)> + WithPointed<()>,
-    WithPointedT<MA, (S, S)>: ReturnM<Pointed = (S, S)> + ChainM<MA>,
-    WithPointedT<MA, ()>: MonadIO<()> + ChainM<MA>,
+    WithPointedT<MA, (S, S)>: Monad<((), S), Pointed = (S, S), WithPointed = MA>,
+    WithPointedT<MA, ()>: Monad<((), S), WithPointed = MA> + MonadIO<()>,
 {
     fn log(level: LVL, message: MSG) -> Self {
         StateLoggingT::<LVL, MSG, S, WithPointedT<MA, (S, S)>>::get().chain_m(move |s| {
@@ -43,7 +45,7 @@ impl<LVL, MSG, MA, MB, S, T> RunStateLogging<LVL, (MSG, S), MB> for StateLogging
 where
     LVL: Term,
     MSG: Term,
-    MA: Pointed<Pointed = (T, S)> + ChainM<MB>,
+    MA: Monad<T, Pointed = (T, S), WithPointed = MB>,
     MB: ReturnM<Pointed = T>,
     S: Term + Default,
     T: Term,
@@ -55,44 +57,58 @@ where
     }
 }
 
-pub fn indent<LVL, MSG, MA>() -> StateLoggingT<LVL, MSG, usize, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: ReturnM<Pointed = usize> + ChainM<MA>,
-{
-    StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-        LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s + 1)
-    })
+pub trait Indent {
+    fn indent() -> Self;
 }
 
-pub fn unindent<LVL, MSG, MA>() -> StateLoggingT<LVL, MSG, usize, MA>
+impl<LVL, MSG, MA> Indent for StateLoggingT<LVL, MSG, usize, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: ReturnM<Pointed = usize> + ChainM<MA>,
+    MA: Monad<usize, Pointed = ((), usize)>,
+    MA::WithPointed: Monad<((), usize), Pointed = usize, WithPointed = MA>,
 {
-    StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-        LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s - 1)
-    })
+    fn indent() -> Self {
+        StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
+            LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s + 1)
+        })
+    }
+}
+
+pub trait Unindent {
+    fn unindent() -> Self;
+}
+
+impl<LVL, MSG, MA> Unindent for StateLoggingT<LVL, MSG, usize, MA>
+where
+    LVL: Term,
+    MSG: Term,
+    MA: Monad<usize, Pointed = ((), usize)>,
+    MA::WithPointed: Monad<((), usize), Pointed = usize, WithPointed = MA>,
+{
+    fn unindent() -> Self {
+        StateLoggingT::modify_m(|s| LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s - 1))
+    }
 }
 
 pub trait LogScope: Term {
     fn log_scope(m: Self) -> Self;
 }
 
-impl<LVL, MSG, MA> LogScope for StateLoggingT<LVL, MSG, usize, MA>
+impl<LVL, MSG, T> LogScope for StateLoggingT<LVL, MSG, usize, IO<(T, usize)>>
 where
-    Self: Pointed + ThenM<StateLoggingT<LVL, MSG, usize, MA>>,
-    PointedT<Self>: Term,
     LVL: Term,
     MSG: Term,
-    MA: ReturnM<Pointed = ((), usize)> + WithPointed<usize>,
-    MA::WithPointed: ReturnM<Pointed = usize> + ChainM<MA>,
+    T: Term,
 {
-    fn log_scope(m: Self) -> Self {
-        indent().then_m(m).then_m(unindent())
+    fn log_scope(
+        m: StateLoggingT<LVL, MSG, usize, IO<(T, usize)>>,
+    ) -> StateLoggingT<LVL, MSG, usize, IO<(T, usize)>> {
+        _do! {
+            StateLoggingT::<LVL, MSG, usize, IO<((), usize)>>::indent();
+            out <- m;
+            StateLoggingT::<LVL, MSG, usize, IO<((), usize)>>::unindent();
+            StateLoggingT::<LVL, MSG, usize, IO<(T, usize)>>::return_m(out)
+        }
     }
 }

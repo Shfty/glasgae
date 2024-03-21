@@ -159,6 +159,10 @@ macro_rules! derive_app_a_unary {
     };
 }
 
+pub trait Applicative<A1, A2>: PureA + AppA<A1, A2> {}
+
+impl<T, A1, A2> Applicative<A1, A2> for T where T: PureA + AppA<A1, A2> {}
+
 /// Lift a binary function to actions.
 ///
 /// Some functors support an implementation of [`lift_a2`](LiftA2::lift_a2)
@@ -179,8 +183,8 @@ macro_rules! derive_app_a_unary {
 pub trait LiftA2<A1, A2, A3>: Sized + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>
 where
     Self: Term,
-    A1: Fmap<Function<A2::Pointed, A3::Pointed>>,
-    A1::WithPointed: AppA<A2, A3>,
+    A1: Functor<Function<A2::Pointed, A3::Pointed>>,
+    A1::WithPointed: Applicative<A2, A3>,
     A2: Pointed,
     A3: Pointed,
 {
@@ -192,8 +196,8 @@ where
 impl<F, A1, A2, A3> LiftA2<A1, A2, A3> for F
 where
     F: Term + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>,
-    A1: Fmap<Function<A2::Pointed, A3::Pointed>>,
-    A1::WithPointed: AppA<A2, A3>,
+    A1: Functor<Function<A2::Pointed, A3::Pointed>>,
+    A1::WithPointed: Applicative<A2, A3>,
     A2: Pointed,
     A3: Pointed,
 {

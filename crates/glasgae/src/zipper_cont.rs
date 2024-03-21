@@ -27,7 +27,7 @@ where
 
 impl<M, T, D> ZipMove<D, M> for Cont<T>
 where
-    Self: ChainM<M, Pointed = T>,
+    Self: Monad<T, Pointed = T, WithPointed = M>,
     M: ReturnM<Pointed = T>,
     T: ZipMove<D, M>,
     D: Term,
@@ -61,7 +61,7 @@ where
 
 impl<M, T, D> ZipAllTheWay<M, T::Pointed, D> for Cont<T>
 where
-    Self: ChainM<M, Pointed = T>,
+    Self: Monad<T, Pointed = T, WithPointed = M>,
     M: ReturnM<Pointed = T>,
     T: Pointed + ZipAllTheWay<M, T::Pointed, D>,
     D: Term,
@@ -88,7 +88,7 @@ impl WithPointed<String> for ZipperTerm {
     type WithPointed = ZipperTerm;
 }
 
-impl Fmap<String> for ZipperTerm {
+impl Functor<String> for ZipperTerm {
     fn fmap(self, f: impl FunctionT<String, String>) -> ZipperTerm {
         match self {
             ZipperTerm::Var(t) => ZipperTerm::var(f(t)),
@@ -196,8 +196,9 @@ pub enum Direction {
 
 impl<M, N> Travel<Direction, M, N> for ZipperTerm
 where
-    M: ChainM<N, Pointed = (Option<ZipperTerm>, Direction)>,
-    N: ChainM<N, Pointed = ZipperTerm> + ReturnM<Pointed = ZipperTerm>,
+    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction), WithPointed = N>,
+    N: Monad<ZipperTerm, Pointed = ZipperTerm, WithPointed = N>
+        + ReturnM<Pointed = ZipperTerm>,
 {
     fn travel(self, tf: impl FunctionT<Self, M>) -> N {
         let tf = tf.to_function();
@@ -238,8 +239,8 @@ pub enum Direction1 {
 
 impl<M, N> Travel<Direction1, M, N> for ZipperTerm
 where
-    M: ChainM<N, Pointed = (Option<ZipperTerm>, Direction1)>,
-    N: ChainM<N, Pointed = ZipperTerm> + ReturnM<Pointed = ZipperTerm>,
+    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction1), WithPointed = N>,
+    N: Monad<ZipperTerm, Pointed = ZipperTerm, WithPointed = N>,
 {
     fn travel(self, tf: impl FunctionT<Self, M>) -> N {
         let tf = tf.to_function();
@@ -400,7 +401,7 @@ mod test {
             .zip_move(Direction::DownRight);
 
         let term = term.fmap(
-            Fmap::replace
+            Functor::replace
                 .flip_clone()
                 .curry_clone(ZipperTerm::a(ZipperTerm::var("x"), ZipperTerm::var("x"))),
         );

@@ -36,7 +36,7 @@ macro_rules! derive_iterable_collection {
             type WithPointed = $ty<U>;
         }
 
-        impl<$arg, U> $crate::prelude::Fmap<U> for $ty<$arg>
+        impl<$arg, U> $crate::prelude::Functor<U> for $ty<$arg>
         where
             $arg: $crate::prelude::Term $(+ $trait)*,
             U: $crate::prelude::Term $(+ $trait)*,
@@ -75,7 +75,7 @@ macro_rules! derive_iterable_collection {
 
         impl<$arg> $crate::prelude::ReturnM for $ty<$arg> where $arg: $crate::prelude::Term $(+ $trait)* {}
 
-        impl<$arg, U> $crate::prelude::ChainM<$ty<U>> for $ty<$arg>
+        impl<$arg, U> $crate::prelude::ChainM<U> for $ty<$arg>
         where
             $arg: $crate::prelude::Term $(+ $trait)*,
             U: $crate::prelude::Term $(+ $trait)*,
@@ -148,8 +148,8 @@ macro_rules! derive_iterable_collection {
 
         impl<$arg, A_, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$arg>
         where
-            A1: $crate::prelude::Fmap<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
-            A1::WithPointed: $crate::prelude::AppA<A2, A2>,
+            A1: $crate::prelude::Functor<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
+            A1::WithPointed: $crate::prelude::Applicative<A2, A2>,
             A_: $crate::prelude::Term $(+ $trait)*,
             A2: $crate::prelude::PureA<Pointed = $ty<A_>> $(+ $trait)*,
             $arg: $crate::prelude::Term $(+ $trait)*,

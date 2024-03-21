@@ -88,9 +88,9 @@ where
     type WithPointed = Lift<FA::WithPointed>;
 }
 
-impl<FA, A, B> Fmap<B> for Lift<FA>
+impl<FA, A, B> Functor<B> for Lift<FA>
 where
-    FA: Fmap<B, Pointed = A>,
+    FA: Functor<B, Pointed = A>,
     A: Term,
     B: Term,
 {
@@ -113,10 +113,10 @@ where
 
 impl<FF, FA, FB, F, A, B> AppA<Lift<FA>, Lift<FB>> for Lift<FF>
 where
-    Lift<FA>: Fmap<B, Pointed = A, WithPointed = Lift<FB>>,
+    Lift<FA>: Functor<B, Pointed = A, WithPointed = Lift<FB>>,
     FA: PureA<Pointed = A>,
     FB: Pointed<Pointed = B>,
-    FF: Pointed<Pointed = F> + AppA<FA, FB>,
+    FF: Pointed<Pointed = F> + Applicative<FA, FB>,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
@@ -159,7 +159,7 @@ where
 
 impl<FA, A1, A2> TraverseT<A1, (), A2> for Lift<FA>
 where
-    Self: Fmap<A1>,
+    Self: Functor<A1>,
     WithPointedT<Self, A1>: SequenceA<(), A2>,
     FA: Pointed,
     A1: Term,

@@ -37,7 +37,7 @@ pub mod result;
 /// but will apply the supplied function to values contained in a `Right`:
 ///
 /// ```
-/// # use glasgae::prelude::{Fmap, Either, Either::*};
+/// # use glasgae::prelude::{Functor, Either, Either::*};
 /// let s: Either<&str, u32> = Left("foo");
 /// let n: Either<&str, u32> = Right(3);
 /// assert_eq!(s.fmap(|t| t * 2), Left("foo"));
@@ -188,7 +188,7 @@ where
     type WithPointed = Either<E, B>;
 }
 
-impl<E, A, B> Fmap<B> for Either<E, A>
+impl<E, A, B> Functor<B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -281,7 +281,7 @@ where
 {
 }
 
-impl<E, A, B> ChainM<Either<E, B>> for Either<E, A>
+impl<E, A, B> ChainM<B> for Either<E, A>
 where
     E: Term,
     A: Term,
@@ -378,7 +378,7 @@ where
     E: Term,
     A: Term,
     A_: Term,
-    A1: Fmap<Either<E, A_>, Pointed = A_>,
+    A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
 {
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::WithPointed {
@@ -391,7 +391,7 @@ where
 
 impl<E, A1, A_> SequenceA<(), A1::WithPointed> for Either<E, A1>
 where
-    A1: Fmap<Either<E, A_>, Pointed = A_>,
+    A1: Functor<Either<E, A_>, Pointed = A_>,
     A1::WithPointed: PureA<Pointed = Either<E, A_>>,
     E: Term,
     A_: Term,

@@ -192,7 +192,7 @@ where
     pub fn reset_t<MR_>(self) -> ContT<MR_, MA>
     where
         MR_: Pointed,
-        MR: ChainM<MR_> + ReturnM,
+        MR: Monad<MR_::Pointed, WithPointed = MR_>,
         MA: Pointed<Pointed = MR::Pointed>,
     {
         ContT::lift(self.eval_t())
@@ -208,7 +208,7 @@ where
     where
         MR: Pointed,
         MA: Term,
-        MR_: ChainM<MR>,
+        MR_: Monad<MR::Pointed, WithPointed = MR>,
     {
         let local = local.to_bifun();
         let f = f.to_function();
@@ -252,7 +252,7 @@ where
     type WithPointed = ContT<MR, MA::WithPointed>;
 }
 
-impl<MR, MA, A> Fmap<A> for ContT<MR, MA>
+impl<MR, MA, A> Functor<A> for ContT<MR, MA>
 where
     MA: Pointed<Pointed = A> + WithPointed<A>,
     MR: Pointed,
@@ -296,11 +296,12 @@ where
 {
 }
 
-impl<MR, MA, MN> ChainM<ContT<MR, MN>> for ContT<MR, MA>
+impl<MR, MA, MN, N> ChainM<N> for ContT<MR, MA>
 where
-    MA: Pointed,
-    MN: Pointed,
+    MA: Pointed + WithPointed<N, WithPointed = MN>,
+    MN: Pointed<Pointed = N>,
     MR: Pointed,
+    N: Term,
 {
     fn chain_m(self, k: impl FunctionT<Self::Pointed, ContT<MR, MN>>) -> ContT<MR, MN> {
         let m = self;
@@ -312,7 +313,7 @@ where
 impl<MI, MO, MR> MonadTrans<MI> for ContT<MR, MO>
 where
     MO: Pointed<Pointed = MI::Pointed>,
-    MI: ChainM<MR>,
+    MI: ChainM<MR::Pointed, WithPointed = MR>,
     MR: Pointed,
 {
     fn lift(m: MI) -> ContT<MR, MO> {

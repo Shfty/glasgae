@@ -22,7 +22,7 @@ where
 
 impl<T> ReturnM for (T,) where T: Term {}
 
-impl<T, U> ChainM<(U,)> for (T,)
+impl<T, U> ChainM<U> for (T,)
 where
     T: Term,
     U: Term,
@@ -78,9 +78,9 @@ where
 
 impl<T, A1, A_, A2> TraverseT<A1, (), A2> for (T,)
 where
-    A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
+    A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A2, A2>,
+    A1::WithPointed: Applicative<A2, A2>,
     T: Term,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
@@ -92,9 +92,9 @@ where
 
 impl<A1, A2, A_> SequenceA<(), A2> for (A1,)
 where
-    A1: PureA<Pointed = A_> + Fmap<Function<(A_,), (A_,)>>,
+    A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A2, A2>,
+    A1::WithPointed: Applicative<A2, A2>,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
 {

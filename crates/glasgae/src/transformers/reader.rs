@@ -2,8 +2,6 @@
 //!
 //! If the computation is to modify the stored information, use Control.Monad.Trans.State instead.
 
-use std::panic::UnwindSafe;
-
 use crate::{
     base::{control::monad::io::MonadIO, data::functor::identity::Identity},
     prelude::*,
@@ -187,10 +185,10 @@ where
     type WithPointed = ReaderT<R, M::WithPointed>;
 }
 
-impl<R, M, T> Fmap<T> for ReaderT<R, M>
+impl<R, M, T> Functor<T> for ReaderT<R, M>
 where
     T: Term,
-    M: Fmap<T>,
+    M: Functor<T>,
     R: Term,
 {
     fn fmap(self, f: impl FunctionT<M::Pointed, T>) -> ReaderT<R, M::WithPointed> {
@@ -212,7 +210,7 @@ where
 impl<R, F, A, B> AppA<ReaderT<R, A>, ReaderT<R, B>> for ReaderT<R, F>
 where
     R: Term,
-    F: Pointed + AppA<A, B>,
+    F: Pointed + Applicative<A, B>,
     A: Pointed,
     B: Pointed,
 {
@@ -229,11 +227,12 @@ where
 {
 }
 
-impl<R, M, N> ChainM<ReaderT<R, N>> for ReaderT<R, M>
+impl<R, M, N, B> ChainM<B> for ReaderT<R, M>
 where
     R: Term,
-    M: ChainM<N> + UnwindSafe,
-    N: Pointed,
+    M: Monad<B, WithPointed = N>,
+    N: Pointed<Pointed = B>,
+    B: Term,
 {
     fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, N>>) -> ReaderT<R, N> {
         let m = self;

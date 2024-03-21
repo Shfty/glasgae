@@ -4,7 +4,7 @@
 //!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
-use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
+use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
 
 use super::class::MonadTrans;
 
@@ -65,9 +65,9 @@ where
     type WithPointed = MaybeT<MA::WithPointed>;
 }
 
-impl<MA, A, B> Fmap<B> for MaybeT<MA>
+impl<MA, A, B> Functor<B> for MaybeT<MA>
 where
-    MA: Fmap<Maybe<B>, Pointed = Maybe<A>>,
+    MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
     A: Term,
     B: Term,
 {
@@ -89,8 +89,8 @@ where
 
 impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
 where
-    MF: ChainM<MB, Pointed = Maybe<F>>,
-    MA: ChainM<MB, Pointed = Maybe<A>>,
+    MF: Monad<Maybe<B>, Pointed = Maybe<F>, WithPointed = MB>,
+    MA: Monad<Maybe<B>, Pointed = Maybe<A>, WithPointed = MB>,
     MB: ReturnM<Pointed = Maybe<B>>,
     F: Term + FunctionT<A, B>,
     A: Term,
@@ -120,9 +120,9 @@ where
     }
 }
 
-impl<MA, MB, A, B> ChainM<MaybeT<MB>> for MaybeT<MA>
+impl<MA, MB, A, B> ChainM<B> for MaybeT<MA>
 where
-    MA: ChainM<MB, Pointed = Maybe<A>>,
+    MA: Monad<Maybe<B>, Pointed = Maybe<A>, WithPointed = MB>,
     MB: ReturnM<Pointed = Maybe<B>>,
     A: Term,
     B: Term,
@@ -168,7 +168,7 @@ where
 
 impl<A, MA, A1, A2> TraverseT<A1, (), A2> for MaybeT<MA>
 where
-    Self: Fmap<A1>,
+    Self: Functor<A1>,
     WithPointedT<Self, A1>: SequenceA<(), A2>,
     MA: Pointed<Pointed = Maybe<A>>,
     A: Term,

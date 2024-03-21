@@ -83,14 +83,14 @@ macro_rules! derive_return_m_unary {
 /// let a = as();
 /// bs(a);
 /// ```
-pub trait ChainM<T: Term>: Pointed {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, T>) -> T;
+pub trait ChainM<T: Term>: WithPointed<T> {
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::WithPointed>) -> Self::WithPointed;
 }
 
 #[macro_export]
 macro_rules! derive_chain_m_unary {
     ($ty:ident<$free:ident>) => {
-        impl<$free, U> $crate::prelude::ChainM<$ty<U>> for $ty<$free>
+        impl<$free, U> $crate::prelude::ChainM<U> for $ty<$free>
         where
             $free: $crate::prelude::Term,
             U: $crate::prelude::Term,
@@ -103,6 +103,19 @@ macro_rules! derive_chain_m_unary {
     };
 }
 
+pub trait Monad<U>: ReturnM + ChainM<U>
+where
+    U: Term,
+{
+}
+
+impl<T, U> Monad<U> for T
+where
+    T: ReturnM + ChainM<U>,
+    U: Term,
+{
+}
+
 /// Sequentially compose two actions, discarding any value produced by the first,
 /// like sequencing operators (such as the semicolon) in imperative languages.
 ///
@@ -111,15 +124,15 @@ macro_rules! derive_chain_m_unary {
 /// as();
 /// bs();
 /// ```
-pub trait ThenM<T: Term>: ChainM<T> {
-    fn then_m(self, t: T) -> T {
+pub trait ThenM<T: Term>: Monad<T> {
+    fn then_m(self, t: Self::WithPointed) -> Self::WithPointed {
         self.chain_m(|_| t)
     }
 }
 
 impl<T, U> ThenM<U> for T
 where
-    T: ChainM<U>,
+    T: Monad<U>,
     U: Term,
 {
 }
@@ -131,8 +144,8 @@ pub trait FilterM<M1: Term, A: Term, M3>: Term {
 
 impl<A, M1, M3> FilterM<M1, A, M3> for Vec<A>
 where
-    M1: Fmap<Function<Vec<A>, Vec<A>>, Pointed = bool>,
-    M1::WithPointed: AppA<M3, M3>,
+    M1: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool>,
+    M1::WithPointed: Applicative<M3, M3>,
     M3: Pointed<Pointed = Vec<A>> + PureA,
     A: Term,
 {
@@ -180,7 +193,7 @@ pub trait FoldM<M1, A, B>: ReturnM {
 
 impl<MB, A, B> FoldM<MB, A, B> for Vec<B>
 where
-    MB: ReturnM<Pointed = A> + ChainM<MB>,
+    MB: Monad<A, Pointed = A, WithPointed = MB>,
     A: Term,
     B: Term,
 {
@@ -229,8 +242,8 @@ pub trait ReplicateM<MB, T>: Pointed {
 
 impl<MA, MB, T> ReplicateM<MB, T> for MA
 where
-    MA: Fmap<Function<Vec<T>, Vec<T>>, Pointed = T>,
-    MA::WithPointed: AppA<MB, MB>,
+    MA: Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
+    MA::WithPointed: Applicative<MB, MB>,
     MB: PureA<Pointed = Vec<T>>,
     T: Term,
 {
@@ -246,7 +259,7 @@ where
 
 pub trait LiftM<MA, MB, A, B>: Term + FunctionT<A, B>
 where
-    MA: ChainM<MB, Pointed = A>,
+    MA: Monad<B, Pointed = A, WithPointed = MB>,
     MB: ReturnM<Pointed = B>,
     A: Term,
     B: Term,
@@ -259,7 +272,7 @@ where
 impl<F, MA, MB, A, B> LiftM<MA, MB, A, B> for F
 where
     F: Term + FunctionT<A, B>,
-    MA: ChainM<MB, Pointed = A>,
+    MA: Monad<B, Pointed = A, WithPointed = MB>,
     MB: ReturnM<Pointed = B>,
     A: Term,
     B: Term,

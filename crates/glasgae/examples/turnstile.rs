@@ -5,7 +5,7 @@ use glasgae::{
     },
     mtl::state::*,
     prelude::*,
-    transformers::{reader::ReaderT, state::StateT, writer::WriterT},
+    transformers::{class::MonadTrans, reader::ReaderT, state::StateT, writer::WriterT},
 };
 use std::fmt::Debug;
 
@@ -105,11 +105,11 @@ where
     }
 }
 
-fn log_w<MA, MB>(m: MA) -> WriterT<Vec<String>, MB>
+fn log_w<MA, MB, A>(m: WriterT<Vec<String>, MA>) -> WriterT<Vec<String>, MB>
 where
-    MA: ChainM<WriterT<Vec<String>, MB>>,
-    MA::Pointed: Debug,
-    MB: ReturnM<Pointed = (MA::Pointed, Vec<String>)>,
+    MA: Monad<(A, Vec<String>), Pointed = (A, Vec<String>), WithPointed = MB>,
+    MB: Monad<(A, Vec<String>), Pointed = (A, Vec<String>), WithPointed = MB>,
+    A: Term + Debug,
 {
     _do! {
         a <- m;

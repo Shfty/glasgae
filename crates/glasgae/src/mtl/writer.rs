@@ -52,7 +52,7 @@ where
 
 impl<MA, MO, W, A> MonadListen<WriterT<W, MO>> for WriterT<W, MA>
 where
-    MA: ChainM<MO, Pointed = (A, W)>,
+    MA: Monad<((A, W), W), Pointed = (A, W), WithPointed = MO>,
     MO: ReturnM<Pointed = ((A, W), W)>,
     W: Term,
     A: Term,
@@ -64,7 +64,7 @@ where
 
 impl<MA, MB, W, A, F, B> MonadPass<WriterT<W, MB>> for WriterT<W, MA>
 where
-    MA: ChainM<MB, Pointed = ((A, F), W)>,
+    MA: Monad<(A, B), Pointed = ((A, F), W), WithPointed = MB>,
     MB: ReturnM<Pointed = (A, B)>,
     W: Term,
     F: Term + FunctionT<W, B>,
@@ -179,7 +179,7 @@ where
 impl<W, MA, A, B, T, MAB> Listens<W, MA, A, B, MAB> for T
 where
     T: MonadWriter<W, A> + MonadListen<MA>,
-    MA: ChainM<MAB, Pointed = (A, W)>,
+    MA: Monad<(A, B), Pointed = (A, W), WithPointed = MAB>,
     MAB: ReturnM<Pointed = (A, B)>,
     W: Term,
     A: Term,
@@ -201,11 +201,12 @@ where
     fn censor(self, f: impl FunctionT<W, W>) -> MF;
 }
 
-impl<T, W, B, MA, MF> Censor<W, B, MA, MF> for T
+impl<MT, T, W, B, MA, MF> Censor<W, B, MA, MF> for MT
 where
-    MA: MonadPass<MF> + ReturnM<Pointed = (T::Pointed, Function<W, W>)>,
+    MA: MonadPass<MF> + ReturnM<Pointed = (T, Function<W, W>)>,
     W: Term,
-    T: MonadPass<MA> + ChainM<MA>,
+    MT: Monad<(T, Function<W, W>), Pointed = T, WithPointed = MA> + MonadPass<MA>,
+    T: Term,
 {
     fn censor(self, f: impl FunctionT<W, W>) -> MF {
         let f = f.to_function();

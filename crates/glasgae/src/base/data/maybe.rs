@@ -61,7 +61,7 @@ where
     type WithPointed = Maybe<U>;
 }
 
-impl<T, U> Fmap<U> for Maybe<T>
+impl<T, U> Functor<U> for Maybe<T>
 where
     T: Term,
     U: Term,
@@ -99,7 +99,7 @@ where
 
 impl<T> ReturnM for Maybe<T> where T: Term {}
 
-impl<T, U> ChainM<Maybe<U>> for Maybe<T>
+impl<T, U> ChainM<U> for Maybe<T>
 where
     T: Term,
     U: Term,
@@ -169,7 +169,7 @@ where
 
 impl<T, A, U, B> TraverseT<A, (), B> for Maybe<T>
 where
-    A: Fmap<Maybe<U>, Pointed = U, WithPointed = B>,
+    A: Functor<Maybe<U>, Pointed = U, WithPointed = B>,
     A::WithPointed: PureA<Pointed = Maybe<U>>,
     T: Term,
     U: Term,
@@ -184,7 +184,7 @@ where
 
 impl<A1, A_, A2> SequenceA<(), A2> for Maybe<A1>
 where
-    A1: Fmap<Maybe<A_>, Pointed = A_, WithPointed = A2>,
+    A1: Functor<Maybe<A_>, Pointed = A_, WithPointed = A2>,
     A_: Term,
     A2: PureA<Pointed = Maybe<A_>>,
 {

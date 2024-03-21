@@ -33,7 +33,7 @@ where
     type WithPointed = [U; N];
 }
 
-impl<T, const N: usize, U> Fmap<U> for [T; N]
+impl<T, const N: usize, U> Functor<U> for [T; N]
 where
     T: Term,
     U: Term,
@@ -76,12 +76,12 @@ where
 
 impl<T> ReturnM for [T; 1] where T: Term {}
 
-impl<T, U, const NT: usize, const NU: usize> ChainM<[U; NU]> for [T; NT]
+impl<T, U, const NT: usize> ChainM<U> for [T; NT]
 where
     T: Term,
     U: Term,
 {
-    fn chain_m(self, f: impl FunctionT<T, [U; NU]>) -> [U; NU] {
+    fn chain_m(self, f: impl FunctionT<T, [U; NT]>) -> [U; NT] {
         self.into_iter()
             .flat_map(|t| f.to_function()(t))
             .collect::<Vec<_>>()

@@ -7,7 +7,7 @@
 
 use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
 
-use super::Fmap;
+use super::Functor;
 
 /// Identity functor and monad.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -37,7 +37,7 @@ where
     type WithPointed = Identity<U>;
 }
 
-impl<T, U> Fmap<U> for Identity<T>
+impl<T, U> Functor<U> for Identity<T>
 where
     T: Term,
     U: Term,
@@ -69,7 +69,7 @@ where
 
 impl<T> ReturnM for Identity<T> where T: Term {}
 
-impl<T, U> ChainM<Identity<U>> for Identity<T>
+impl<T, U> ChainM<U> for Identity<T>
 where
     T: Term,
     U: Term,
@@ -131,9 +131,9 @@ where
 
 impl<T, A1, A_, A2> TraverseT<A1, (), A2> for Identity<T>
 where
-    A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
+    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: AppA<A2, A2>,
+    A1::WithPointed: Applicative<A2, A2>,
     T: Term,
     A_: Term,
     A2: PureA<Pointed = Identity<A1::Pointed>>,
@@ -145,8 +145,8 @@ where
 
 impl<A1, A_, A2> SequenceA<(), A2> for Identity<A1>
 where
-    A1: PureA<Pointed = A_> + Fmap<Function<Identity<A_>, Identity<A_>>>,
-    A1::WithPointed: AppA<A2, A2>,
+    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
+    A1::WithPointed: Applicative<A2, A2>,
     A_: Monoid,
     A2: PureA<Pointed = Identity<A1::Pointed>>,
 {

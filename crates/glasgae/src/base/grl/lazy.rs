@@ -50,7 +50,7 @@ where
     type WithPointed = Lazy<U>;
 }
 
-impl<T, U> Fmap<U> for Lazy<T>
+impl<T, U> Functor<U> for Lazy<T>
 where
     T: Term,
     U: Term,
@@ -83,7 +83,7 @@ where
 
 impl<T> ReturnM for Lazy<T> where T: Term {}
 
-impl<T, U> ChainM<Lazy<U>> for Lazy<T>
+impl<T, U> ChainM<U> for Lazy<T>
 where
     T: Term,
     U: Term,

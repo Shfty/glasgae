@@ -107,7 +107,7 @@ where
     type WithPointed = Function<A, C>;
 }
 
-impl<A, B, C> Fmap<C> for Function<A, B>
+impl<A, B, C> Functor<C> for Function<A, B>
 where
     A: Term,
     B: Term,
@@ -148,7 +148,7 @@ where
 {
 }
 
-impl<A, B, C> ChainM<Function<A, C>> for Function<A, B>
+impl<A, B, C> ChainM<C> for Function<A, B>
 where
     A: Term,
     B: Term,

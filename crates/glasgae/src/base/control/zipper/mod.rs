@@ -89,7 +89,7 @@ where
     type WithPointed = Zipper<U, D>;
 }
 
-impl<T, D> Fmap<T> for Zipper<T, D>
+impl<T, D> Functor<T> for Zipper<T, D>
 where
     T: Term,
     D: Term + Default,
@@ -131,7 +131,7 @@ where
 {
 }
 
-impl<T, U, D> ChainM<Zipper<U, D>> for Zipper<T, D>
+impl<T, U, D> ChainM<U> for Zipper<T, D>
 where
     T: Term,
     U: Term,

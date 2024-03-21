@@ -59,7 +59,7 @@ macro_rules ! impl_tuple {
             type WithPointed = (R_,);
         }
 
-        impl<$a, R_> $crate::prelude::Fmap<R_> for ($a,)
+        impl<$a, R_> $crate::prelude::Functor<R_> for ($a,)
         where
             $a: $crate::prelude::Term,
             R_: $crate::prelude::Term,
@@ -117,7 +117,7 @@ macro_rules ! impl_tuple {
             type WithPointed = ($($tuple,)* R_,);
         }
 
-        impl<$($tuple,)* $a, R_> $crate::prelude::Fmap<R_> for ($($tuple,)* $a)
+        impl<$($tuple,)* $a, R_> $crate::prelude::Functor<R_> for ($($tuple,)* $a)
         where
             $(
                 $tuple: $crate::prelude::Term,

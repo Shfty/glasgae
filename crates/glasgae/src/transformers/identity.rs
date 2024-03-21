@@ -49,9 +49,9 @@ where
     type WithPointed = IdentityT<MA::WithPointed>;
 }
 
-impl<MA, T> Fmap<T> for IdentityT<MA>
+impl<MA, T> Functor<T> for IdentityT<MA>
 where
-    MA: Fmap<T>,
+    MA: Functor<T>,
     T: Term,
 {
     fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, T>) -> Self::WithPointed {
@@ -70,7 +70,7 @@ where
 
 impl<MA, A1, A2> AppA<IdentityT<A1>, IdentityT<A2>> for IdentityT<MA>
 where
-    MA: AppA<A1, A2>,
+    MA: Applicative<A1, A2>,
     A1: Term,
     A2: Term,
 {
@@ -91,9 +91,9 @@ where
     }
 }
 
-impl<MA, MB> ChainM<IdentityT<MB>> for IdentityT<MA>
+impl<MA, MB> ChainM<MB> for IdentityT<MA>
 where
-    MA: ChainM<MB>,
+    MA: Monad<MB, WithPointed = MB>,
     MB: Term,
 {
     fn chain_m(
