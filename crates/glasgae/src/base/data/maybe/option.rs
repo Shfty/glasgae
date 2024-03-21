@@ -1,4 +1,7 @@
-use crate::prelude::*;
+use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
+
+derive_kinded_unary!(Option<T>);
+derive_with_kinded_unary!(Option<T>);
 
 impl<T> Pointed for Option<T>
 where

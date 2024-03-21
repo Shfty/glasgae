@@ -11,7 +11,7 @@ use crate::{
         control::exception::{throw, Exception},
         data::function::{Nullary, NullaryT},
     },
-    prelude::*,
+    prelude::*, derive_kinded_unary, derive_with_kinded_unary,
 };
 
 /// A value of type [`IO<A>`] is a computation which, when performed,
@@ -122,6 +122,9 @@ where
         out.report()
     }
 }
+
+derive_kinded_unary!(IO<T>);
+derive_with_kinded_unary!(IO<T>);
 
 impl<T> Pointed for IO<T>
 where

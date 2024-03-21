@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::prelude::*;
+use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RoseTree<T>(pub T, pub Vec<Self>);
@@ -13,6 +13,9 @@ where
         format!("{self:#?}")
     }
 }
+
+derive_kinded_unary!(RoseTree<T>);
+derive_with_kinded_unary!(RoseTree<T>);
 
 impl<T> Pointed for RoseTree<T>
 where

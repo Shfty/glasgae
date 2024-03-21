@@ -73,6 +73,23 @@ where
     }
 }
 
+impl<A, B> Kinded for Function<A, B>
+where
+    A: Term,
+    B: Term,
+{
+    type Kinded = B;
+}
+
+impl<A, B, C> WithKinded<C> for Function<A, B>
+where
+    A: Term,
+    B: Term,
+    C: Term,
+{
+    type WithKinded = Function<A, C>;
+}
+
 impl<A, B> Pointed for Function<A, B>
 where
     A: Term,

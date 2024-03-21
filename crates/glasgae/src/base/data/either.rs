@@ -154,6 +154,23 @@ impl<A, B> Either<A, B> {
     }
 }
 
+impl<E, A> Kinded for Either<E, A>
+where
+    E: Term,
+    A: Term,
+{
+    type Kinded = A;
+}
+
+impl<E, A, B> WithKinded<B> for Either<E, A>
+where
+    E: Term,
+    A: Term,
+    B: Term,
+{
+    type WithKinded = Either<E, B>;
+}
+
 impl<E, A> Pointed for Either<E, A>
 where
     E: Term,

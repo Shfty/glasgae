@@ -4,7 +4,7 @@
 //!
 //! If the value of the exception is not required, the variant in Control.Monad.Trans.Maybe may be used instead.
 
-use crate::prelude::*;
+use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
 
 use super::class::MonadTrans;
 
@@ -204,6 +204,9 @@ where
         })
     }
 }
+
+derive_kinded_unary!(ExceptT<MA>);
+derive_with_kinded_unary!(ExceptT<MA>);
 
 impl<MA, E, A> Pointed for ExceptT<MA>
 where

@@ -1,4 +1,4 @@
-use crate::{base::grl::num::Zero, prelude::*};
+use crate::{base::grl::num::Zero, derive_kinded_unary, derive_with_kinded_unary, prelude::*};
 
 /// Monoid under addition.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -9,6 +9,9 @@ impl<T> Sum<T> {
         self.0
     }
 }
+
+derive_kinded_unary!(Sum<T>);
+derive_with_kinded_unary!(Sum<T>);
 
 impl<T> Pointed for Sum<T>
 where

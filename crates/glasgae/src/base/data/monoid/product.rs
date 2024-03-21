@@ -1,4 +1,4 @@
-use crate::{base::grl::num::One, prelude::*};
+use crate::{base::grl::num::One, prelude::*, derive_kinded_unary, derive_with_kinded_unary};
 
 /// Monoid under multiplication.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -9,6 +9,9 @@ impl<T> Product<T> {
         self.0
     }
 }
+
+derive_kinded_unary!(Product<T>);
+derive_with_kinded_unary!(Product<T>);
 
 impl<T> Pointed for Product<T>
 where

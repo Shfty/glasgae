@@ -5,7 +5,7 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::prelude::*;
+use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
 
 use super::Fmap;
 
@@ -18,6 +18,9 @@ impl<T> Identity<T> {
         self.0
     }
 }
+
+derive_kinded_unary!(Identity<T>);
+derive_with_kinded_unary!(Identity<T>);
 
 impl<T> Pointed for Identity<T>
 where

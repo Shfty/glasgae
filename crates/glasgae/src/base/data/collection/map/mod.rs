@@ -6,6 +6,14 @@ pub mod vec_map;
 #[macro_export]
 macro_rules! derive_iterable_map {
     ($ty:ident<$key:ident, $value:ident>, $append:ident $(, $trait:path)*) => {
+        impl<$key, $value> $crate::prelude::Kinded for $ty<$key, $value>
+        where
+            $key: $crate::prelude::Term,
+            $value: $crate::prelude::Term,
+        {
+            type Kinded = $value;
+        }
+
         impl<$key, $value> $crate::prelude::Pointed for $ty<$key, $value>
         where
             $key: $crate::prelude::Term,

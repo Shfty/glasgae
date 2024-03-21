@@ -218,6 +218,23 @@ where
     }
 }
 
+impl<MR, MA> Kinded for ContT<MR, MA>
+where
+    MR: Pointed,
+    MA: Pointed,
+{
+    type Kinded = MA;
+}
+
+impl<MR, MA, MB> WithKinded<MB> for ContT<MR, MA>
+where
+    MR: Pointed,
+    MA: Pointed,
+    MB: Pointed,
+{
+    type WithKinded = ContT<MR, MB>;
+}
+
 impl<MR, MA> Pointed for ContT<MR, MA>
 where
     MR: Pointed,

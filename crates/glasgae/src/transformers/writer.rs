@@ -183,6 +183,23 @@ where
     }
 }
 
+impl<W, MA> Kinded for WriterT<W, MA>
+where
+    W: Term,
+    MA: Term,
+{
+    type Kinded = MA;
+}
+
+impl<W, MA, MB> WithKinded<MB> for WriterT<W, MA>
+where
+    W: Term,
+    MA: Term,
+    MB: Term,
+{
+    type WithKinded = WriterT<W, MB>;
+}
+
 impl<W, MA, A> Pointed for WriterT<W, MA>
 where
     W: Term,

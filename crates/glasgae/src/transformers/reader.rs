@@ -154,6 +154,23 @@ where
     }
 }
 
+impl<R, M> Kinded for ReaderT<R, M>
+where
+    R: Term,
+    M: Term,
+{
+    type Kinded = M;
+}
+
+impl<R, M, N> WithKinded<N> for ReaderT<R, M>
+where
+    R: Term,
+    M: Term,
+    N: Term,
+{
+    type WithKinded = ReaderT<R, N>;
+}
+
 impl<R, M> Pointed for ReaderT<R, M>
 where
     R: Term,

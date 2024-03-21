@@ -15,7 +15,7 @@
 
 pub mod option;
 
-use crate::prelude::*;
+use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
@@ -42,6 +42,9 @@ impl<T> From<Maybe<T>> for Option<T> {
         }
     }
 }
+
+derive_kinded_unary!(Maybe<T>);
+derive_with_kinded_unary!(Maybe<T>);
 
 impl<T> Pointed for Maybe<T>
 where

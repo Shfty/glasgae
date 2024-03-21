@@ -231,6 +231,23 @@ where
     }
 }
 
+impl<S, M> Kinded for StateT<S, M>
+where
+    S: Term,
+    M: Term,
+{
+    type Kinded = M;
+}
+
+impl<S, M, N> WithKinded<N> for StateT<S, M>
+where
+    S: Term,
+    M: Term,
+    N: Term,
+{
+    type WithKinded = StateT<S, N>;
+}
+
 impl<S, M, A> Pointed for StateT<S, M>
 where
     S: Term,

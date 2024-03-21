@@ -59,6 +59,25 @@ where
     }
 }
 
+impl<LVL, MSG, MA> Kinded for LoggingT<LVL, MSG, MA>
+where
+    LVL: Term,
+    MSG: Term,
+    MA: Term,
+{
+    type Kinded = MA;
+}
+
+impl<LVL, MSG, MA, MB> WithKinded<MB> for LoggingT<LVL, MSG, MA>
+where
+    LVL: Term,
+    MSG: Term,
+    MA: Term,
+    MB: Term,
+{
+    type WithKinded = LoggingT<LVL, MSG, MB>;
+}
+
 impl<LVL, MSG, MA> Pointed for LoggingT<LVL, MSG, MA>
 where
     LVL: Term,

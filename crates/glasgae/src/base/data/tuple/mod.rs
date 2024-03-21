@@ -2,7 +2,7 @@ pub mod one;
 pub mod pair;
 pub mod unit;
 
-use crate::prelude::{Fmap, Pointed, WithPointed};
+use crate::prelude::{Pointed, WithPointed};
 
 pub trait Cons<T>: Sized {
     fn cons(self, t: T) -> (Self, T) {
@@ -32,26 +32,41 @@ impl<A, B, C> Apply<2, A, B, C> for (A, B) {
 
 macro_rules ! impl_tuple {
     ($a:tt) => {
-        impl<$a> Pointed for ($a,) where $a: crate::prelude::Term {
+        impl<$a> $crate::prelude::Kinded for ($a,)
+        where
+            $a: $crate::prelude::Term
+        {
+            type Kinded = $a;
+        }
+
+        impl<$a, U> $crate::prelude::WithKinded<U> for ($a,)
+        where
+            $a: $crate::prelude::Term,
+            U: $crate::prelude::Term
+        {
+            type WithKinded = (U,);
+        }
+
+        impl<$a> $crate::prelude::Pointed for ($a,) where $a: $crate::prelude::Term {
             type Pointed = $a;
         }
 
-        impl<$a, R_> WithPointed<R_> for ($a,)
+        impl<$a, R_> $crate::prelude::WithPointed<R_> for ($a,)
         where
-            $a: crate::prelude::Term,
-            R_: crate::prelude::Term
+            $a: $crate::prelude::Term,
+            R_: $crate::prelude::Term
         {
             type WithPointed = (R_,);
         }
 
-        impl<$a, R_> Fmap<R_> for ($a,)
+        impl<$a, R_> $crate::prelude::Fmap<R_> for ($a,)
         where
-            $a: crate::prelude::Term,
-            R_: crate::prelude::Term,
+            $a: $crate::prelude::Term,
+            R_: $crate::prelude::Term,
         {
             fn fmap(
                 self,
-                f: impl crate::prelude::FunctionT<Self::Pointed, R_>,
+                f: impl $crate::prelude::FunctionT<Self::Pointed, R_>,
             ) -> Self::WithPointed {
                 let (t,) = self;
                 (f(t),)
@@ -59,12 +74,34 @@ macro_rules ! impl_tuple {
         }
     };
     ($a:tt | $($tuple:tt),*) => {
+        impl<$($tuple,)* $a> $crate::prelude::Kinded for ($($tuple,)* $a)
+        where
+            $(
+                $tuple: $crate::prelude::Term,
+            )*
+            $a: $crate::prelude::Term,
+        {
+            type Kinded = $a;
+        }
+
+        impl<$($tuple,)* $a, U> $crate::prelude::WithKinded<U> for ($($tuple,)* $a)
+        where
+            $(
+                $tuple: $crate::prelude::Term,
+            )*
+            $a: $crate::prelude::Term,
+            U: $crate::prelude::Term,
+        {
+            type WithKinded = ($($tuple,)* U,);
+        }
+
+
         impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::prelude::Term,
+                $tuple: $crate::prelude::Term,
             )*
-            $a: crate::prelude::Term,
+            $a: $crate::prelude::Term,
         {
             type Pointed = $a;
         }
@@ -72,25 +109,25 @@ macro_rules ! impl_tuple {
         impl<$($tuple,)* $a, R_> WithPointed<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::prelude::Term,
+                $tuple: $crate::prelude::Term,
             )*
-            $a: crate::prelude::Term,
-            R_: crate::prelude::Term,
+            $a: $crate::prelude::Term,
+            R_: $crate::prelude::Term,
         {
             type WithPointed = ($($tuple,)* R_,);
         }
 
-        impl<$($tuple,)* $a, R_> crate::prelude::Fmap<R_> for ($($tuple,)* $a)
+        impl<$($tuple,)* $a, R_> $crate::prelude::Fmap<R_> for ($($tuple,)* $a)
         where
             $(
-                $tuple: crate::prelude::Term,
+                $tuple: $crate::prelude::Term,
             )*
-            $a: crate::prelude::Term,
-            R_: crate::prelude::Term,
+            $a: $crate::prelude::Term,
+            R_: $crate::prelude::Term,
         {
             fn fmap(
                 self,
-                f: impl crate::prelude::FunctionT<Self::Pointed, R_>,
+                f: impl $crate::prelude::FunctionT<Self::Pointed, R_>,
             ) -> Self::WithPointed {
                 #[allow(non_snake_case)]
                 let ($($tuple,)* t,) = self;

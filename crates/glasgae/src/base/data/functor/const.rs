@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, derive_with_kinded_unary, derive_kinded_unary};
 
 use super::Fmap;
 
@@ -11,6 +11,9 @@ impl<MA> Const<MA> {
         self.0
     }
 }
+
+derive_kinded_unary!(Const<T>);
+derive_with_kinded_unary!(Const<T>);
 
 impl<MA> Pointed for Const<MA>
 where

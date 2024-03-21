@@ -2,7 +2,7 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use crate::{base::control::monad::io::MonadIO, prelude::*};
+use crate::{base::control::monad::io::MonadIO, prelude::*, derive_kinded_unary, derive_with_kinded_unary};
 
 use super::class::MonadTrans;
 
@@ -31,6 +31,9 @@ where
         IdentityT(f(self.run()))
     }
 }
+
+derive_kinded_unary!(IdentityT<MA>);
+derive_with_kinded_unary!(IdentityT<MA>);
 
 impl<MA> Pointed for IdentityT<MA>
 where

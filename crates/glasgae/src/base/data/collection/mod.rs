@@ -6,6 +6,21 @@ pub mod set;
 #[macro_export]
 macro_rules! derive_iterable_collection {
     ($ty:ident<$arg:ident>, $append:ident $(, $trait:path)*) => {
+        impl<$arg> $crate::prelude::Kinded for $ty<$arg>
+        where
+            $arg: $crate::prelude::Term,
+        {
+            type Kinded = $arg;
+        }
+
+        impl<$arg, U> $crate::prelude::WithKinded<U> for $ty<$arg>
+        where
+            $arg: $crate::prelude::Term,
+            U: $crate::prelude::Term,
+        {
+            type WithKinded = $ty<U>;
+        }
+
         impl<$arg> $crate::prelude::Pointed for $ty<$arg>
         where
             $arg: $crate::prelude::Term $(+ $trait)*,

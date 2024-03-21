@@ -2,12 +2,13 @@
 
 use crate::{
     base::data::function::{Nullary, NullaryT},
+    derive_kinded_unary, derive_with_kinded_unary,
     prelude::*,
 };
 
 /// A value of type [`Lazy<T>`] represents a yet-to-be computed value,
 /// allowing expensive computations to be deferred until their output is required.
-/// 
+///
 /// Mechanically, it is similar to [`IO<T>`] absent the impure semantic;
 /// a closure of arity zero that produces some value when executed.
 ///
@@ -30,6 +31,9 @@ where
         self.0()
     }
 }
+
+derive_kinded_unary!(Lazy<T>);
+derive_with_kinded_unary!(Lazy<T>);
 
 impl<T> Pointed for Lazy<T>
 where
@@ -111,4 +115,3 @@ where
         list.foldr(Semigroup::assoc_s, Monoid::mempty())
     }
 }
-
