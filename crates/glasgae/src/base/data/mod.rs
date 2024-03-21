@@ -1,5 +1,7 @@
 //! # Data
 
+pub mod kinded;
+pub mod with_kinded;
 pub mod bifoldable;
 pub mod bifoldable1;
 pub mod bifunctor;
