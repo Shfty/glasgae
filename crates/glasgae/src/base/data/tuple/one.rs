@@ -27,6 +27,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = (U,);
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, (U,)>) -> (U,) {
         f(self.0)
     }

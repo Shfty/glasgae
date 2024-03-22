@@ -80,6 +80,8 @@ where
     T: Term,
     D: Term + Default,
 {
+    type Mapped = Zipper<T, D>;
+
     fn fmap(self, f: impl FunctionT<T, T>) -> Zipper<T, D> {
         match self {
             Zipper::Zipper(t, n) => n((Some(f.to_function()(t)), Default::default())),
@@ -123,6 +125,8 @@ where
     U: Term,
     D: Term,
 {
+    type Chained = Zipper<U, D>;
+
     fn chain_m(self, f: impl FunctionT<T, Zipper<U, D>>) -> Zipper<U, D> {
         f(self.unwrap_unchecked())
     }

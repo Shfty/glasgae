@@ -20,6 +20,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = [U; N];
+
     fn fmap(self, f: impl FunctionT<T, U>) -> [U; N] {
         self.into_iter()
             .map(|t| f.to_function()(t))
@@ -63,6 +65,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = [U; NT];
+
     fn chain_m(self, f: impl FunctionT<T, [U; NT]>) -> [U; NT] {
         self.into_iter()
             .flat_map(|t| f.to_function()(t))

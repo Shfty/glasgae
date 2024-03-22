@@ -82,6 +82,8 @@ where
     B: Term,
     C: Term,
 {
+    type Mapped = Function<A, C>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, C>) -> Function<A, C> {
         self.compose_clone(f.to_function()).boxed()
     }
@@ -123,6 +125,8 @@ where
     B: Term,
     C: Term,
 {
+    type Chained = Function<A, C>;
+
     fn chain_m(self, k: impl FunctionT<Self::Pointed, Function<A, C>>) -> Function<A, C> {
         let f = self;
         let k = k.to_function();

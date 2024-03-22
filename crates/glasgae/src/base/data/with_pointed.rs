@@ -3,7 +3,7 @@ use crate::prelude::Pointed;
 /// A [`WithPointed`] type is a [`Pointed`] with the means to modify its free type parameter.
 pub trait WithPointed<T>: Pointed {
     /// [`Self`], with [`Self::Pointed`](Pointed::Pointed) replaced by `T`.
-    type WithPointed: Pointed<Pointed = T>;
+    type WithPointed: WithPointed<Self::Pointed, Pointed = T, WithPointed = Self>;
 }
 
 /// Convenience alias to [`WithPointed::WithPointed`]

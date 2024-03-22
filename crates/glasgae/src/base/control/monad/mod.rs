@@ -67,8 +67,12 @@ pub trait ReturnM: PureA {
 /// bs(a);
 /// ```
 pub trait ChainM<T: Term>: WithPointed<T> {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::WithPointed>) -> Self::WithPointed;
+    type Chained: ChainM<Self::Pointed, Pointed = T, Chained = Self>;
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::Chained>) -> Self::Chained;
 }
+
+/// Convenience alias to [`ChainM::Chained`]
+pub type ChainedT<T, U> = <T as ChainM<U>>::Chained;
 
 pub trait Monad<U>: ReturnM + ChainM<U>
 where
@@ -113,7 +117,9 @@ macro_rules! derive_monad {
             )*
             B: $crate::prelude::Term,
         {
-            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<B>>) -> $ty<B> {
+            type Chained = $ty<$($_arg,)* B $(,$arg_)*>;
+
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<$($_arg,)* B $(,$arg_)*>>) -> $ty<$($_arg,)* B $(,$arg_)*> {
                 f(self.0)
             }
         }
@@ -150,7 +156,9 @@ macro_rules! derive_monad_via {
             )*
             B: Term,
         {
-            fn chain_m(self, f: impl $crate::prelude::FunctionT<T, $ty<$($_arg,)* B $(,$arg_)*>>) -> $ty<$($_arg,)* B $(,$arg_)*> {
+            type Chained = $ty<$($_arg,)* B $(,$arg_)*>;
+
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<$($_arg,)* B $(,$arg_)*>>) -> $ty<$($_arg,)* B $(,$arg_)*> {
                 let f = f.to_function();
                 $ty(self.0.chain_m(|t| f(t).0))
             }
@@ -187,7 +195,9 @@ macro_rules! derive_monad_iterable {
             )*
             U: $crate::prelude::Term $(+ $trait)*,
         {
-            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<U>>) -> $ty<U> {
+            type Chained = $ty<$($_arg,)* U $(,$arg_)*>;
+
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<$($_arg,)* U $(,$arg_)*>>) -> $ty<$($_arg,)* U $(,$arg_)*> {
                 self.into_iter().flat_map(|t| f.to_function()(t)).collect()
             }
         }
@@ -203,7 +213,7 @@ macro_rules! derive_monad_iterable {
 /// bs();
 /// ```
 pub trait ThenM<T: Term>: Monad<T> {
-    fn then_m(self, t: Self::WithPointed) -> Self::WithPointed {
+    fn then_m(self, t: Self::Chained) -> Self::Chained {
         self.chain_m(|_| t)
     }
 }
@@ -271,7 +281,7 @@ pub trait FoldM<M1, A, B>: ReturnM {
 
 impl<MB, A, B> FoldM<MB, A, B> for Vec<B>
 where
-    MB: Monad<A, Pointed = A, WithPointed = MB>,
+    MB: Monad<A, Pointed = A, Chained = MB>,
     A: Term,
     B: Term,
 {
@@ -337,7 +347,7 @@ where
 
 pub trait LiftM<MA, MB, A, B>: Term + FunctionT<A, B>
 where
-    MA: Monad<B, Pointed = A, WithPointed = MB>,
+    MA: Monad<B, Pointed = A, Chained = MB>,
     MB: ReturnM<Pointed = B>,
     A: Term,
     B: Term,
@@ -350,7 +360,7 @@ where
 impl<F, MA, MB, A, B> LiftM<MA, MB, A, B> for F
 where
     F: Term + FunctionT<A, B>,
-    MA: Monad<B, Pointed = A, WithPointed = MB>,
+    MA: Monad<B, Pointed = A, Chained = MB>,
     MB: ReturnM<Pointed = B>,
     A: Term,
     B: Term,

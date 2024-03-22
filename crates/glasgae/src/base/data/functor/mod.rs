@@ -30,6 +30,8 @@ pub trait Functor<T>: WithPointed<T>
 where
     T: Term,
 {
+    type Mapped: Functor<Self::Pointed, Mapped = Self>;
+
     /// fmap is used to apply a function of type (a -> b) to a value of type f a, where f is a functor, to produce a value of type f b. Note that for any type constructor with more than one parameter (e.g., Either), only the last type parameter can be modified with fmap (e.g., b in `Either a b`).
     ///
     /// Some type constructors with two parameters or more have a Bifunctor instance that allows both the last and the penultimate parameters to be mapped over.
@@ -114,6 +116,8 @@ macro_rules! derive_functor {
             )*
             U: $crate::prelude::Term $(+ $trait$)*,
         {
+            type Mapped = $ty<$($_arg,)* U $(,$arg_)*>;
+
             fn fmap(self, f: impl $crate::prelude::FunctionT<T, U>) -> $ty<$($_arg,)* U $(,$arg_)*> {
                 $ty(f(self.0))
             }
@@ -133,9 +137,11 @@ macro_rules! derive_functor_via {
             $(
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
-            U: $crate::prelude::Term $(+ $trait$)*,
+            U: $crate::prelude::Functor<T> $(+ $trait$)*,
         {
-            fn fmap(self, f: impl $crate::prelude::FunctionT<T, U>) -> $ty<$($_arg,)* U $(,$arg_)*> {
+            type Mapped = $ty<$($_arg,)* U $(,$arg_)*>;
+
+            fn fmap(self, f: impl $crate::prelude::FunctionT<$arg, U>) -> $ty<$($_arg,)* U $(,$arg_)*> {
                 $ty(self.0.fmap(f))
             }
         }
@@ -156,6 +162,8 @@ macro_rules! derive_functor_iterable {
             )*
             U: $crate::prelude::Term $(+ $trait)*
         {
+            type Mapped = $ty<$($_arg,)* U $(,$arg_)*>;
+
             fn fmap(
                 self,
                 f: impl $crate::prelude::FunctionT<

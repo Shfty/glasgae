@@ -67,6 +67,8 @@ where
     A: Term,
     B: Term,
 {
+    type Mapped = Lift<FA::Mapped>;
+
     fn fmap(self, f: impl FunctionT<A, B>) -> Self::WithPointed {
         match self {
             Pure(x) => Pure(f(x)),

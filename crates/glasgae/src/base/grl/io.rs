@@ -132,6 +132,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = IO<U>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Self::WithPointed {
         let f = f.to_function();
         IO::new(|| f(unsafe { self.run() }))
@@ -165,6 +167,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = IO<U>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, IO<U>>) -> IO<U> {
         let f = f.to_function();
         IO::new(|| unsafe { f(self.run()).run() })

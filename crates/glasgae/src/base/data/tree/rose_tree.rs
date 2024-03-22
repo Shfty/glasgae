@@ -22,6 +22,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = RoseTree<U>;
+
     fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::WithPointed {
         let RoseTree(t, children) = self;
         let f = f.to_function();
@@ -62,6 +64,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = RoseTree<U>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, RoseTree<U>>) -> RoseTree<U> {
         let f = f.to_function();
         let RoseTree(x, branches) = self;

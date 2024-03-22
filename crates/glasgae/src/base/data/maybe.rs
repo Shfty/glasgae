@@ -51,6 +51,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = Maybe<U>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Maybe<U> {
         match self {
             Just(t) => Just(f(t)),
@@ -89,6 +91,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = Maybe<U>;
+
     fn chain_m(self, f: impl FunctionT<T, Maybe<U>> + 'static) -> Maybe<U> {
         match self {
             Just(t) => f(t),

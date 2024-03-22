@@ -1,4 +1,4 @@
-use crate::{prelude::*, derive_pointed, derive_with_pointed};
+use crate::{derive_pointed, derive_with_pointed, prelude::*};
 
 derive_pointed!(Option<(T)>);
 derive_with_pointed!(Option<(T)>);
@@ -8,6 +8,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = Option<U>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Option<U> {
         self.map(f)
     }
@@ -40,6 +42,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = Option<U>;
+
     fn chain_m(self, f: impl FunctionT<T, Option<U>> + 'static) -> Option<U> {
         self.and_then(f)
     }

@@ -241,7 +241,7 @@ where
 
 impl<T, S, A> Gets<S, A> for T
 where
-    StateT<S, S>: Monad<A, Pointed = S, WithPointed = T>,
+    StateT<S, S>: Monad<A, Pointed = S, Chained = T>,
     S: ReturnM<Pointed = (S, S)>,
     T: ReturnM<Pointed = A>,
     A: Term,

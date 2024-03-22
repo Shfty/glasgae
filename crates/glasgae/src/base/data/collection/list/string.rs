@@ -9,6 +9,8 @@ impl WithPointed<char> for String {
 }
 
 impl Functor<char> for String {
+    type Mapped = String;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, char>) -> Self::WithPointed {
         self.chars().map(|t| f.to_function()(t)).collect()
     }

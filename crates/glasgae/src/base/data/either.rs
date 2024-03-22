@@ -163,6 +163,8 @@ where
     A: Term,
     B: Term,
 {
+    type Mapped = Either<E, A>;
+
     fn fmap(self, f: impl FunctionT<A, B>) -> Either<E, B> {
         match self {
             Left(l) => Left(l),
@@ -256,6 +258,8 @@ where
     A: Term,
     B: Term,
 {
+    type Chained = Either<E, B>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, Either<E, B>>) -> Either<E, B> {
         match self {
             Left(l) => Left(l),

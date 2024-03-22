@@ -156,13 +156,15 @@ where
 derive_pointed_via!(ReaderT<R, (M)>);
 derive_with_pointed_via!(ReaderT<R, (M)>);
 
-impl<R, M, T> Functor<T> for ReaderT<R, M>
+impl<R, MA, B> Functor<B> for ReaderT<R, MA>
 where
-    T: Term,
-    M: Functor<T>,
+    B: Term,
+    MA: Functor<B>,
     R: Term,
 {
-    fn fmap(self, f: impl FunctionT<M::Pointed, T>) -> ReaderT<R, M::WithPointed> {
+    type Mapped = ReaderT<R, MA::Mapped>;
+
+    fn fmap(self, f: impl FunctionT<MA::Pointed, B>) -> ReaderT<R, MA::WithPointed> {
         let f = f.to_function();
         self.map_t(|y| y.fmap(f))
     }
@@ -198,14 +200,17 @@ where
 {
 }
 
-impl<R, M, N, B> ChainM<B> for ReaderT<R, M>
+impl<R, MA, A, MB, B> ChainM<B> for ReaderT<R, MA>
 where
     R: Term,
-    M: Monad<B, WithPointed = N>,
-    N: Pointed<Pointed = B>,
+    MA: Monad<B, Pointed = A, Chained = MB>,
+    MB: Monad<A, Pointed = B, Chained = MA>,
+    A: Term,
     B: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, N>>) -> ReaderT<R, N> {
+    type Chained = ReaderT<R, MB>;
+
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, ReaderT<R, MB>>) -> ReaderT<R, MB> {
         let m = self;
         let k = k.to_function();
         ReaderT::new_t(|r: R| m.run_t(r.clone()).chain_m(|a| k(a).run_t(r)))

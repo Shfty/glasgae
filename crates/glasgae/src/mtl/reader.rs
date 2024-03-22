@@ -123,7 +123,7 @@ where
 impl<MR, MA, W, R, A> MonadAsk<MR, R, A> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: Monad<(A, W), Pointed = A, WithPointed = MA> + MonadAsk<MR, R, A>,
+    MA::Lowered: Monad<(A, W), Pointed = A, Chained = MA> + MonadAsk<MR, R, A>,
     W: Monoid,
     A: Term,
 {
@@ -147,7 +147,7 @@ where
 impl<MA, W, R, A> MonadReader<R, A> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: Monad<(A, W), Pointed = A, WithPointed = MA> + MonadReader<R, A>,
+    MA::Lowered: Monad<(A, W), Pointed = A, Chained = MA> + MonadReader<R, A>,
     W: Monoid,
     R: Term,
     A: Term,
@@ -210,7 +210,7 @@ where
 
 impl<MR, MR_, MA, R> MonadLocal<MR_, R> for ContT<MR, MA>
 where
-    MR: Monad<R, Pointed = R, WithPointed = MR> + MonadAsk<MR_, R, R> + MonadLocal<MR_, R>,
+    MR: Monad<R, Pointed = R, Chained = MR> + MonadAsk<MR_, R, R> + MonadLocal<MR_, R>,
     MR_: Term,
     R: Term,
     MA: Pointed,
@@ -222,7 +222,7 @@ where
 
 impl<MA, MS, S, R, A> MonadReader<R, A> for ContT<MS, MA>
 where
-    MA: MonadReader<R, A> + Monad<S, WithPointed = MS>,
+    MA: MonadReader<R, A> + Monad<S, Chained = MS>,
     MS: Pointed<Pointed = S>,
     S: Term,
     R: Term,

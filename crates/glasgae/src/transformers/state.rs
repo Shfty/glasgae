@@ -135,7 +135,7 @@ where
     /// evalStateT m s = liftM fst (runStateT m s)
     pub fn eval_t<A, N>(self, s: S) -> N
     where
-        M: Monad<A, Pointed = (A, S), WithPointed = N>,
+        M: Monad<A, Pointed = (A, S), Chained = N>,
         N: ReturnM<Pointed = A>,
         A: Term,
     {
@@ -149,7 +149,7 @@ where
     /// execStateT m s = liftM snd (runStateT m s)
     pub fn exec_t<A, N>(self, s: S) -> N
     where
-        M: Monad<S, Pointed = (A, S), WithPointed = N>,
+        M: Monad<S, Pointed = (A, S), Chained = N>,
         N: ReturnM<Pointed = S>,
         A: Term,
     {
@@ -212,7 +212,7 @@ where
 
     pub fn modify_m<N>(f: impl FunctionT<S, N>) -> StateT<S, M>
     where
-        N: Monad<((), S), Pointed = S, WithPointed = M>,
+        N: Monad<((), S), Pointed = S, Chained = M>,
         M: ReturnM<Pointed = ((), S)>,
     {
         let f = f.to_function();
@@ -250,14 +250,17 @@ where
     type WithPointed = StateT<S, M::WithPointed>;
 }
 
-impl<A, S, M, T> Functor<T> for StateT<S, M>
+impl<S, MA, A, MB, B> Functor<B> for StateT<S, MA>
 where
-    M: Functor<(T, S), Pointed = (A, S)>,
-    T: Term,
+    MA: Functor<(B, S), Pointed = (A, S), Mapped = MB>,
+    MB: Functor<(A, S), Pointed = (B, S), Mapped = MA>,
+    B: Term,
     S: Term,
     A: Term,
 {
-    fn fmap(self, f: impl FunctionT<A, T>) -> Self::WithPointed {
+    type Mapped = StateT<S, MA::Mapped>;
+
+    fn fmap(self, f: impl FunctionT<A, B>) -> Self::WithPointed {
         let m = self;
         let f = f.to_function();
         StateT::new_t(|s: S| m.run_t(s).fmap(|(a, s_)| (f(a), s_)))
@@ -277,8 +280,8 @@ where
 
 impl<S, MF, MA, MB, F, A, B> AppA<StateT<S, MA>, StateT<S, MB>> for StateT<S, MF>
 where
-    MF: Monad<(B, S), Pointed = (F, S), WithPointed = MB>,
-    MA: Monad<(B, S), Pointed = (A, S), WithPointed = MB>,
+    MF: Monad<(B, S), Pointed = (F, S), Chained = MB>,
+    MA: Monad<(B, S), Pointed = (A, S), Chained = MB>,
     MB: ReturnM<Pointed = (B, S)>,
     S: Term,
     F: Term + FunctionT<A, B>,
@@ -302,17 +305,19 @@ where
 {
 }
 
-impl<S, M, N, A, B> ChainM<B> for StateT<S, M>
+impl<S, MA, A, MB, B> ChainM<B> for StateT<S, MA>
 where
     S: Term,
-    M: Monad<(B, S), Pointed = (A, S), WithPointed = N>,
-    N: Pointed<Pointed = (B, S)>,
+    MA: Monad<(B, S), Pointed = (A, S), Chained = MB>,
+    MB: Monad<(A, S), Pointed = (B, S), Chained = MA>,
     A: Term,
     B: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, StateT<S, N>>) -> StateT<S, N>
+    type Chained = StateT<S, MB>;
+
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, StateT<S, MB>>) -> StateT<S, MB>
     where
-        StateT<S, N>: Clone,
+        StateT<S, MB>: Clone,
     {
         let m = self;
         let k = k.to_function();
@@ -348,7 +353,7 @@ where
 impl<MA, S, A> MonadTrans<MA::Lowered> for StateT<S, MA>
 where
     MA: MonadLower<A, S> + ReturnM<Pointed = (A, S)>,
-    MA::Lowered: Monad<(A, S), Pointed = A, WithPointed = MA>,
+    MA::Lowered: Monad<(A, S), Pointed = A, Chained = MA>,
     S: Term,
     A: Term,
 {
@@ -360,7 +365,7 @@ where
 impl<MA, S, A> MonadIO<A> for StateT<S, MA>
 where
     MA: ReturnM<Pointed = (A, S)> + MonadLower<A, S>,
-    MA::Lowered: Monad<(A, S), Pointed = A, WithPointed = MA> + MonadIO<A>,
+    MA::Lowered: Monad<(A, S), Pointed = A, Chained = MA> + MonadIO<A>,
     S: Term,
     A: Term,
 {

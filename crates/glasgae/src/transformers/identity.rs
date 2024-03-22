@@ -2,7 +2,9 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use crate::{base::control::monad::io::MonadIO, prelude::*, derive_pointed_via, derive_with_pointed_via};
+use crate::{
+    base::control::monad::io::MonadIO, derive_pointed_via, derive_with_pointed_via, prelude::*,
+};
 
 use super::class::MonadTrans;
 
@@ -40,6 +42,8 @@ where
     MA: Functor<T>,
     T: Term,
 {
+    type Mapped = IdentityT<MA::Mapped>;
+
     fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, T>) -> Self::WithPointed {
         IdentityT(self.0.fmap(f))
     }
@@ -77,11 +81,15 @@ where
     }
 }
 
-impl<MA, MB> ChainM<MB> for IdentityT<MA>
+impl<MA, A, MB, B> ChainM<B> for IdentityT<MA>
 where
-    MA: Monad<MB, WithPointed = MB>,
-    MB: Term,
+    MA: Monad<B, Pointed = A, Chained = MB>,
+    MB: Monad<A, Pointed = B, Chained = MA>,
+    A: Term,
+    B: Term,
 {
+    type Chained = IdentityT<MB>;
+
     fn chain_m(
         self,
         k: impl crate::prelude::FunctionT<Self::Pointed, IdentityT<MB>>,

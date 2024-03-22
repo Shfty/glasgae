@@ -79,6 +79,8 @@ where
     A: Term,
     B: Term,
 {
+    type Mapped = LoggingT<LVL, MSG, MA::Mapped>;
+
     fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, B>) -> Self::WithPointed {
         let f = f.to_function();
         LoggingT::new_t(|g| self.run_t(g).fmap(f))
@@ -129,11 +131,13 @@ impl<LVL, MSG, MA, MB, A, B> ChainM<B> for LoggingT<LVL, MSG, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: ChainM<B, Pointed = A, WithPointed = MB>,
-    MB: Pointed<Pointed = B>,
+    MA: Monad<B, Pointed = A, Chained = MB>,
+    MB: Monad<A, Pointed = B, Chained = MA>,
     A: Term,
     B: Term,
 {
+    type Chained = LoggingT<LVL, MSG, MA::Chained>;
+
     fn chain_m(self, f: impl FunctionT<A, LoggingT<LVL, MSG, MB>>) -> LoggingT<LVL, MSG, MB> {
         let f = f.to_function();
         LoggingT::new_t(|r| self.0(r.clone()).chain_m(|a| f(a).0(r)))

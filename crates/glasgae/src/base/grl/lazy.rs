@@ -39,6 +39,8 @@ where
     T: Term,
     U: Term,
 {
+    type Mapped = Lazy<U>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, U>) -> Self::WithPointed {
         let f = f.to_function();
         Lazy::new(|| f(self.run()))
@@ -72,6 +74,8 @@ where
     T: Term,
     U: Term,
 {
+    type Chained = Lazy<U>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, Lazy<U>>) -> Lazy<U> {
         let f = f.to_function();
         Lazy::new(|| f(self.run()).run())

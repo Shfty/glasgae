@@ -20,6 +20,8 @@ where
     E: Term,
     U: Term,
 {
+    type Mapped = Result<T, E>;
+
     fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::WithPointed {
         match self {
             Ok(t) => Ok(f(t)),
@@ -63,6 +65,8 @@ where
     E: Term,
     U: Term,
 {
+    type Chained = Result<U, E>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, Result<U, E>>) -> Result<U, E> {
         self.and_then(f)
     }

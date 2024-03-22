@@ -105,10 +105,9 @@ where
     }
 }
 
-fn log_w<MA, MB, A>(m: WriterT<Vec<String>, MA>) -> WriterT<Vec<String>, MB>
+fn log_w<MA, A>(m: WriterT<Vec<String>, MA>) -> WriterT<Vec<String>, MA>
 where
-    MA: Monad<(A, Vec<String>), Pointed = (A, Vec<String>), WithPointed = MB>,
-    MB: Monad<(A, Vec<String>), Pointed = (A, Vec<String>), WithPointed = MB>,
+    MA: Monad<(A, Vec<String>), Pointed = (A, Vec<String>), Chained = MA>,
     A: Term + Debug,
 {
     _do! {

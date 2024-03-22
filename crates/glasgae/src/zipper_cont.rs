@@ -27,7 +27,7 @@ where
 
 impl<M, T, D> ZipMove<D, M> for Cont<T>
 where
-    Self: Monad<T, Pointed = T, WithPointed = M>,
+    Self: Monad<T, Pointed = T, Chained = M>,
     M: ReturnM<Pointed = T>,
     T: ZipMove<D, M>,
     D: Term,
@@ -61,7 +61,7 @@ where
 
 impl<M, T, D> ZipAllTheWay<M, T::Pointed, D> for Cont<T>
 where
-    Self: Monad<T, Pointed = T, WithPointed = M>,
+    Self: Monad<T, Pointed = T, Chained = M>,
     M: ReturnM<Pointed = T>,
     T: Pointed + ZipAllTheWay<M, T::Pointed, D>,
     D: Term,
@@ -89,6 +89,8 @@ impl WithPointed<String> for ZipperTerm {
 }
 
 impl Functor<String> for ZipperTerm {
+    type Mapped = ZipperTerm;
+
     fn fmap(self, f: impl FunctionT<String, String>) -> ZipperTerm {
         match self {
             ZipperTerm::Var(t) => ZipperTerm::var(f(t)),
@@ -196,8 +198,8 @@ pub enum Direction {
 
 impl<M, N> Travel<Direction, M, N> for ZipperTerm
 where
-    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction), WithPointed = N>,
-    N: Monad<ZipperTerm, Pointed = ZipperTerm, WithPointed = N>
+    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction), Chained = N>,
+    N: Monad<ZipperTerm, Pointed = ZipperTerm, Chained = N>
         + ReturnM<Pointed = ZipperTerm>,
 {
     fn travel(self, tf: impl FunctionT<Self, M>) -> N {
@@ -239,8 +241,8 @@ pub enum Direction1 {
 
 impl<M, N> Travel<Direction1, M, N> for ZipperTerm
 where
-    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction1), WithPointed = N>,
-    N: Monad<ZipperTerm, Pointed = ZipperTerm, WithPointed = N>,
+    M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction1), Chained = N>,
+    N: Monad<ZipperTerm, Pointed = ZipperTerm, Chained = N>,
 {
     fn travel(self, tf: impl FunctionT<Self, M>) -> N {
         let tf = tf.to_function();

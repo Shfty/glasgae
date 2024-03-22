@@ -1,6 +1,8 @@
 //! Monad morphisms.
 
-use crate::prelude::{Either, Pointed, PointedT, WithPointed};
+use crate::prelude::{Either, Pointed, PointedT, Term, WithPointed};
+
+use super::Monad;
 
 /// Lift extra data into a monadic type.
 pub trait MonadLift<B>: Pointed + WithPointed<B> {
@@ -31,10 +33,11 @@ pub trait MonadLower<T, A>: Pointed {
 
 impl<MA, A, B> MonadLower<A, B> for MA
 where
-    MA: WithPointed<LoweredT<PointedT<MA>, A, B>>,
+    MA: Monad<LoweredT<PointedT<MA>, A, B>>,
+    LoweredT<PointedT<MA>, A, B>: Term,
     MA::Pointed: Lower<A, B>,
 {
-    type Lowered = MA::WithPointed;
+    type Lowered = MA::Chained;
 }
 
 /// Convenience alias to [`Lower::Lowered`].

@@ -92,7 +92,7 @@ where
     /// execWriterT m = liftM snd (runWriterT m)
     pub fn exec_t<A, N>(self) -> N
     where
-        M: Monad<W, Pointed = (A, W), WithPointed = N>,
+        M: Monad<W, Pointed = (A, W), Chained = N>,
         N: ReturnM<Pointed = W>,
         A: Term,
     {
@@ -123,7 +123,7 @@ where
     /// runWriterT (listen m) = liftM (\ (a, w) -> ((a, w), w)) (runWriterT m)
     pub fn listen<N, A>(self) -> WriterT<W, N>
     where
-        M: Monad<((A, W), W), Pointed = (A, W), WithPointed = N>,
+        M: Monad<((A, W), W), Pointed = (A, W), Chained = N>,
         N: ReturnM<Pointed = ((A, W), W)>,
         A: Term,
     {
@@ -139,7 +139,7 @@ where
     /// runWriterT (listens f m) = liftM (\ (a, w) -> ((a, f w), w)) (runWriterT m)
     pub fn listens<N, A, B>(self, f: impl FunctionT<W, B>) -> WriterT<W, N>
     where
-        M: Monad<((A, B), W), Pointed = (A, W), WithPointed = N>,
+        M: Monad<((A, B), W), Pointed = (A, W), Chained = N>,
         N: ReturnM<Pointed = ((A, B), W)>,
         W: Term,
         A: Term,
@@ -157,7 +157,7 @@ where
     /// runWriterT (pass m) = liftM (\ ((a, f), w) -> (a, f w)) (runWriterT m)
     pub fn pass<F, A, B, N>(self) -> WriterT<W, N>
     where
-        M: Monad<(A, B), Pointed = ((A, F), W), WithPointed = N>,
+        M: Monad<(A, B), Pointed = ((A, F), W), Chained = N>,
         N: ReturnM<Pointed = (A, B)>,
         F: Term + FunctionT<W, B>,
         A: Term,
@@ -175,7 +175,7 @@ where
     /// runWriterT (censor f m) = liftM (\ (a, w) -> (a, f w)) (runWriterT m)
     pub fn censor<A>(self, f: impl FunctionT<W, W>) -> Self
     where
-        M: Clone + Monad<(A, W), WithPointed = M> + ReturnM<Pointed = (A, W)>,
+        M: Clone + Monad<(A, W), Pointed = (A, W), Chained = M>,
         A: Term,
     {
         let f = f.to_function();
@@ -202,13 +202,16 @@ where
     type WithPointed = WriterT<W, M::WithPointed>;
 }
 
-impl<W, M, A, B> Functor<B> for WriterT<W, M>
+impl<W, MA, A, MB, B> Functor<B> for WriterT<W, MA>
 where
-    M: Functor<(B, W), Pointed = (A, W)>,
+    MA: Functor<(B, W), Pointed = (A, W), Mapped = MB>,
+    MB: Functor<(A, W), Pointed = (B, W), Mapped = MA>,
     W: Term,
     A: Term,
     B: Term,
 {
+    type Mapped = WriterT<W, MB>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed {
         let f = f.to_function();
         self.map_t(|t| t.fmap(|(a, w)| (f(a), w)))
@@ -255,23 +258,26 @@ where
 {
 }
 
-impl<W, M, N, A, B> ChainM<B> for WriterT<W, M>
+impl<W, MA, A, MB, B> ChainM<B> for WriterT<W, MA>
 where
     W: Monoid,
-    M: Monad<(B, W), Pointed = (A, W), WithPointed = N>,
-    N: Monad<(B, W), Pointed = (B, W), WithPointed = N>,
+    MA: Monad<(B, W), Pointed = (A, W), Chained = MB> + Monad<(A, W), Chained = MA>,
+    MB: Monad<(B, W), Pointed = (B, W), Chained = MB> + Monad<(A, W), Chained = MA>,
     A: Term,
     B: Term,
 {
-    fn chain_m(self, k: impl FunctionT<Self::Pointed, WriterT<W, N>>) -> WriterT<W, N>
+    type Chained = WriterT<W, MB>;
+
+    fn chain_m(self, k: impl FunctionT<Self::Pointed, WriterT<W, MB>>) -> WriterT<W, MB>
     where
-        WriterT<W, N>: Clone,
+        WriterT<W, MB>: Clone,
     {
         let m = self;
         let k = k.to_function();
-        WriterT::new_t(m.run_t().chain_m(|(a, w)| {
-            k(a).run_t()
-                .chain_m(|(b, w_)| ReturnM::return_m((b, w.assoc_s(w_))))
+        WriterT::new_t(ChainM::<(B, W)>::chain_m(m.run_t(), |(a, w)| {
+            ChainM::<(B, W)>::chain_m(k(a).run_t(), |(b, w_)| {
+                ReturnM::return_m((b, w.assoc_s(w_)))
+            })
         }))
     }
 }
@@ -279,7 +285,7 @@ where
 impl<MA, W, A> MonadTrans<MA::Lowered> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: Monad<(A, W), Pointed = A, WithPointed = MA>,
+    MA::Lowered: Monad<(A, W), Pointed = A, Chained = MA>,
     W: Monoid,
     A: Term,
 {
@@ -291,7 +297,7 @@ where
 impl<MA, W, A> MonadIO<A> for WriterT<W, MA>
 where
     MA: MonadLower<A, W> + ReturnM<Pointed = (A, W)>,
-    MA::Lowered: Monad<(A, W), WithPointed = MA> + MonadIO<A>,
+    MA::Lowered: Monad<(A, W), Chained = MA> + MonadIO<A>,
     W: Monoid,
     A: Term,
 {

@@ -23,13 +23,13 @@ where
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: ReturnM<Pointed = ((), S)> + WithPointed<(S, S)> + WithPointed<()>,
-    WithPointedT<MA, (S, S)>: Monad<((), S), Pointed = (S, S), WithPointed = MA>,
-    WithPointedT<MA, ()>: Monad<((), S), WithPointed = MA> + MonadIO<()>,
+    MA: ReturnM<Pointed = ((), S)> + ChainM<(S, S)> + ChainM<()>,
+    ChainedT<MA, (S, S)>: Monad<((), S), Pointed = (S, S), Chained = MA>,
+    ChainedT<MA, ()>: Monad<((), S), Pointed = (), Chained = MA> + MonadIO<()>,
 {
     fn log(level: LVL, message: MSG) -> Self {
-        StateLoggingT::<LVL, MSG, S, WithPointedT<MA, (S, S)>>::get().chain_m(move |s| {
-            MonadTrans::lift(LoggingT::<LVL, (MSG, S), WithPointedT<MA, ()>>::log(
+        StateLoggingT::<LVL, MSG, S, ChainedT<MA, (S, S)>>::get().chain_m(move |s| {
+            MonadTrans::lift(LoggingT::<LVL, (MSG, S), ChainedT<MA, ()>>::log(
                 level,
                 (message, s),
             ))
@@ -60,11 +60,11 @@ where
         self.0
     }
 
-    pub fn run<A>(self, f: impl BifunT<LVL, (MSG, S), IO<()>>) -> MA::WithPointed
+    pub fn run<A>(self, f: impl BifunT<LVL, (MSG, S), IO<()>>) -> MA::Chained
     where
         S: Default,
         MA: ChainM<A, Pointed = (A, S)>,
-        MA::WithPointed: ReturnM<Pointed = A>,
+        MA::Chained: ReturnM<Pointed = A>,
         A: Term,
     {
         let f = f.to_bifun();
@@ -80,17 +80,17 @@ where
     LVL: Term,
     MSG: Term,
     MA: Monad<usize, Pointed = ((), usize)>,
-    MA::WithPointed: Monad<((), usize), WithPointed = MA>,
+    MA::Chained: Monad<((), usize), Chained = MA>,
 {
     pub fn indent() -> StateLogger<LVL, MSG, usize, MA> {
         StateLogger(StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-            LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s + 1)
+            LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s + 1)
         }))
     }
 
     pub fn unindent() -> Self {
         StateLogger(StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-            LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s - 1)
+            LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s - 1)
         }))
     }
 }
@@ -122,14 +122,18 @@ impl<LVL, MSG, S, MA, A, MB, B> Functor<B> for StateLogger<LVL, MSG, S, MA>
 where
     StateLoggingT<LVL, MSG, S, MA>:
         Functor<B, Pointed = A, WithPointed = StateLoggingT<LVL, MSG, S, MB>>,
+    StateLoggingT<LVL, MSG, S, MB>:
+        Functor<A, Pointed = B, WithPointed = StateLoggingT<LVL, MSG, S, MA>>,
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: Monad<(B, S), Pointed = (A, S), WithPointed = MB>,
-    MB: Term,
+    MA: Functor<(B, S), Pointed = (A, S), WithPointed = MB>,
+    MB: Functor<(A, S), Pointed = (B, S), WithPointed = MA>,
     A: Term,
     B: Term,
 {
+    type Mapped = StateLogger<LVL, MSG, S, MB>;
+
     fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed {
         StateLogger::new_t(self.run_t().fmap(f))
     }
@@ -174,18 +178,20 @@ where
     }
 }
 
-impl<LVL, MSG, S, MA, A, B> ChainM<B> for StateLogger<LVL, MSG, S, MA>
+impl<LVL, MSG, S, MA, A, MB, B> ChainM<B> for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>:
-        Monad<B, Pointed = A, WithPointed = StateLoggingT<LVL, MSG, S, MA>>,
+    StateLoggingT<LVL, MSG, S, MA>: Monad<B, Pointed = A, Chained = StateLoggingT<LVL, MSG, S, MB>>,
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: WithPointed<(B, S), Pointed = (A, S), WithPointed = MA>,
+    MA: Monad<(B, S), Pointed = (A, S), Chained = MB>,
     A: Term,
+    MB: Monad<(A, S), Pointed = (B, S), Chained = MA>,
     B: Term,
 {
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::WithPointed>) -> Self::WithPointed {
+    type Chained = StateLogger<LVL, MSG, S, MA::Chained>;
+
+    fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::Chained>) -> Self::Chained {
         let f = f.to_function();
         StateLogger::new_t(self.run_t().chain_m(|t| f(t).run_t()))
     }
@@ -240,7 +246,7 @@ impl<LVL, MSG, MA, MB, S, T> RunStateLogging<LVL, (MSG, S), MB> for StateLogging
 where
     LVL: Term,
     MSG: Term,
-    MA: Monad<T, Pointed = (T, S), WithPointed = MB>,
+    MA: Monad<T, Pointed = (T, S), Chained = MB>,
     MB: ReturnM<Pointed = T>,
     S: Term + Default,
     T: Term,
@@ -261,11 +267,11 @@ where
     LVL: Term,
     MSG: Term,
     MA: Monad<usize, Pointed = ((), usize)>,
-    MA::WithPointed: Monad<((), usize), Pointed = usize, WithPointed = MA>,
+    MA::Chained: Monad<((), usize), Pointed = usize, Chained = MA>,
 {
     fn indent() -> Self {
         StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-            LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s + 1)
+            LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s + 1)
         })
     }
 }
@@ -279,10 +285,10 @@ where
     LVL: Term,
     MSG: Term,
     MA: Monad<usize, Pointed = ((), usize)>,
-    MA::WithPointed: Monad<((), usize), Pointed = usize, WithPointed = MA>,
+    MA::Chained: Monad<((), usize), Pointed = usize, Chained = MA>,
 {
     fn unindent() -> Self {
-        StateLoggingT::modify_m(|s| LoggingT::<LVL, (MSG, usize), MA::WithPointed>::return_m(s - 1))
+        StateLoggingT::modify_m(|s| LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s - 1))
     }
 }
 

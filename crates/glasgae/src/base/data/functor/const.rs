@@ -26,6 +26,8 @@ where
     MA: Pointed<Pointed = A> + WithPointed<A>,
     A: Term,
 {
+    type Mapped = Const<MA>;
+
     fn fmap(self, _: impl FunctionT<Self::Pointed, A>) -> Self::WithPointed {
         self
     }

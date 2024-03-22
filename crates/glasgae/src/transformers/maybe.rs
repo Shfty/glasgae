@@ -62,12 +62,15 @@ where
     type WithPointed = MaybeT<MA::WithPointed>;
 }
 
-impl<MA, A, B> Functor<B> for MaybeT<MA>
+impl<MA, A, MB, B> Functor<B> for MaybeT<MA>
 where
-    MA: Functor<Maybe<B>, Pointed = Maybe<A>>,
+    MA: Functor<Maybe<B>, Pointed = Maybe<A>, Mapped = MB>,
+    MB: Functor<Maybe<A>, Pointed = Maybe<B>, Mapped = MA>,
     A: Term,
     B: Term,
 {
+    type Mapped = MaybeT<MA::Mapped>;
+
     fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::WithPointed {
         let f = f.to_function();
         self.map(|t| t.fmap(|t| t.fmap(f)))
@@ -86,8 +89,8 @@ where
 
 impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
 where
-    MF: Monad<Maybe<B>, Pointed = Maybe<F>, WithPointed = MB>,
-    MA: Monad<Maybe<B>, Pointed = Maybe<A>, WithPointed = MB>,
+    MF: Monad<Maybe<B>, Pointed = Maybe<F>, Chained = MB>,
+    MA: Monad<Maybe<B>, Pointed = Maybe<A>, Chained = MB>,
     MB: ReturnM<Pointed = Maybe<B>>,
     F: Term + FunctionT<A, B>,
     A: Term,
@@ -119,11 +122,13 @@ where
 
 impl<MA, MB, A, B> ChainM<B> for MaybeT<MA>
 where
-    MA: Monad<Maybe<B>, Pointed = Maybe<A>, WithPointed = MB>,
-    MB: ReturnM<Pointed = Maybe<B>>,
+    MA: Monad<Maybe<B>, Pointed = Maybe<A>, Chained = MB>,
+    MB: Monad<Maybe<A>, Pointed = Maybe<B>, Chained = MA>,
     A: Term,
     B: Term,
 {
+    type Chained = MaybeT<MB>;
+
     fn chain_m(self, f: impl FunctionT<Self::Pointed, MaybeT<MB>>) -> MaybeT<MB> {
         let x = self;
         let f = f.to_function();

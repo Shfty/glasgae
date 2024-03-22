@@ -12,6 +12,8 @@ macro_rules! derive_iterable_map {
             $value: $crate::prelude::Term,
             V_: $crate::prelude::Term,
         {
+            type Mapped = $ty<$key, V_>;
+
             fn fmap(self, f: impl $crate::prelude::FunctionT<Self::Pointed, V_>) -> Self::WithPointed {
                 self.into_iter()
                     .map(move |(k, v)| (k, f.to_function()(v)))
