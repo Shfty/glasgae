@@ -5,7 +5,7 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::{derive_pointed, derive_with_pointed, prelude::*};
+use crate::{derive_pointed, derive_with_pointed, prelude::*, derive_functor};
 
 use super::Functor;
 
@@ -21,16 +21,7 @@ impl<T> Identity<T> {
 
 derive_pointed!(Identity<(T)>);
 derive_with_pointed!(Identity<(T)>);
-
-impl<T, U> Functor<U> for Identity<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn fmap(self, f: impl FunctionT<T, U>) -> Identity<U> {
-        Identity(f(self.0))
-    }
-}
+derive_functor!(Identity<(T)>);
 
 impl<T> PureA for Identity<T>
 where

@@ -1,4 +1,4 @@
-use crate::{base::grl::num::One, derive_pointed, derive_with_pointed, prelude::*};
+use crate::{base::grl::num::One, derive_pointed, derive_with_pointed, prelude::*, derive_functor};
 
 /// Monoid under multiplication.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -12,19 +12,7 @@ impl<T> Product<T> {
 
 derive_pointed!(Product<(T)>);
 derive_with_pointed!(Product<(T)>);
-
-impl<T, U> Functor<U> for Product<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn fmap(
-        self,
-        f: impl FunctionT<Self::Pointed, <Product<U> as Pointed>::Pointed>,
-    ) -> Product<U> {
-        Product(f(self.get()))
-    }
-}
+derive_functor!(Product<(T)>);
 
 impl<T> PureA for Product<T>
 where

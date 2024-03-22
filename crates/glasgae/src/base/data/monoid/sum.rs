@@ -1,4 +1,4 @@
-use crate::{base::grl::num::Zero, prelude::*, derive_pointed, derive_with_pointed};
+use crate::{base::grl::num::Zero, prelude::*, derive_pointed, derive_with_pointed, derive_functor};
 
 /// Monoid under addition.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -12,16 +12,7 @@ impl<T> Sum<T> {
 
 derive_pointed!(Sum<(T)>);
 derive_with_pointed!(Sum<(T)>);
-
-impl<T, U> Functor<U> for Sum<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn fmap(self, f: impl FunctionT<Self::Pointed, <Sum<U> as Pointed>::Pointed>) -> Sum<U> {
-        Sum(f(self.get()))
-    }
-}
+derive_functor!(Sum<(T)>);
 
 impl<T> PureA for Sum<T>
 where

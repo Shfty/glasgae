@@ -99,19 +99,23 @@ where
     }
 }
 
+// Derive Functor over the inner type
 #[macro_export]
-macro_rules! derive_functor_unary {
-    ($ty:ident<$free:ident>) => {
-        impl<$free, U> $crate::prelude::Functor<U> for $ty<$free>
+macro_rules! derive_functor {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::Functor<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
-            $free: $crate::prelude::Functor<U>,
-            U: $crate::prelude::Term,
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait$)*,
         {
-            fn fmap(
-                self,
-                f: impl $crate::prelude::FunctionT<Self::Pointed, U>,
-            ) -> Self::WithPointed {
-                $ty(self.0.fmap(f.to_function()))
+            fn fmap(self, f: impl $crate::prelude::FunctionT<T, U>) -> $ty<$($_arg,)* U $(,$arg_)*> {
+                $ty(f(self.0))
             }
         }
     };
@@ -143,4 +147,3 @@ macro_rules! derive_functor_iterable {
         }
     };
 }
-
