@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
+use crate::{derive_pointed, derive_with_pointed, prelude::*};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RoseTree<T>(pub T, pub Vec<Self>);
@@ -14,23 +14,8 @@ where
     }
 }
 
-derive_kinded_unary!(RoseTree<T>);
-derive_with_kinded_unary!(RoseTree<T>);
-
-impl<T> Pointed for RoseTree<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for RoseTree<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = RoseTree<U>;
-}
+derive_pointed!(RoseTree<(T)>);
+derive_with_pointed!(RoseTree<(T)>);
 
 impl<T, U> Functor<U> for RoseTree<T>
 where

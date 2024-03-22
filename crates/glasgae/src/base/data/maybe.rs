@@ -15,7 +15,7 @@
 
 pub mod option;
 
-use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
+use crate::{prelude::*, derive_pointed, derive_with_pointed};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
@@ -43,23 +43,8 @@ impl<T> From<Maybe<T>> for Option<T> {
     }
 }
 
-derive_kinded_unary!(Maybe<T>);
-derive_with_kinded_unary!(Maybe<T>);
-
-impl<T> Pointed for Maybe<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for Maybe<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = Maybe<U>;
-}
+derive_pointed!(Maybe<(T)>);
+derive_with_pointed!(Maybe<(T)>);
 
 impl<T, U> Functor<U> for Maybe<T>
 where

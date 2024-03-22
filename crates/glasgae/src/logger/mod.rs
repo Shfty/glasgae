@@ -7,6 +7,7 @@ use crate::{
         control::monad::io::MonadIO,
         data::function::bifunction::{Bifun, BifunT},
     },
+    derive_pointed_via,
     prelude::*,
     transformers::class::MonadTrans,
 };
@@ -59,33 +60,7 @@ where
     }
 }
 
-impl<LVL, MSG, MA> Kinded for LoggingT<LVL, MSG, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Term,
-{
-    type Kinded = MA;
-}
-
-impl<LVL, MSG, MA, MB> WithKinded<MB> for LoggingT<LVL, MSG, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Term,
-    MB: Term,
-{
-    type WithKinded = LoggingT<LVL, MSG, MB>;
-}
-
-impl<LVL, MSG, MA> Pointed for LoggingT<LVL, MSG, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Pointed,
-{
-    type Pointed = MA::Pointed;
-}
+derive_pointed_via!(LoggingT<LVL, MSG, (MA)>);
 
 impl<LVL, MSG, MA, B> WithPointed<B> for LoggingT<LVL, MSG, MA>
 where

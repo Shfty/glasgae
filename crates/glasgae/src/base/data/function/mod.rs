@@ -38,7 +38,7 @@ pub use flip::*;
 pub use nullary::*;
 pub use until::*;
 
-use crate::prelude::*;
+use crate::{prelude::*, derive_pointed, derive_with_pointed};
 
 use super::term::TermBase;
 
@@ -73,39 +73,8 @@ where
     }
 }
 
-impl<A, B> Kinded for Function<A, B>
-where
-    A: Term,
-    B: Term,
-{
-    type Kinded = B;
-}
-
-impl<A, B, C> WithKinded<C> for Function<A, B>
-where
-    A: Term,
-    B: Term,
-    C: Term,
-{
-    type WithKinded = Function<A, C>;
-}
-
-impl<A, B> Pointed for Function<A, B>
-where
-    A: Term,
-    B: Term,
-{
-    type Pointed = B;
-}
-
-impl<A, B, C> WithPointed<C> for Function<A, B>
-where
-    A: Term,
-    B: Term,
-    C: Term,
-{
-    type WithPointed = Function<A, C>;
-}
+derive_pointed!(Function<A, (B)>);
+derive_with_pointed!(Function<A, (B)>);
 
 impl<A, B, C> Functor<C> for Function<A, B>
 where

@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{derive_pointed, derive_with_pointed, prelude::*};
 
 use super::{Either, Either::*};
 
@@ -11,39 +11,8 @@ impl<T, E> From<Either<E, T>> for Result<T, E> {
     }
 }
 
-impl<T, E> Kinded for Result<T, E>
-where
-    T: Term,
-    E: Term,
-{
-    type Kinded = T;
-}
-
-impl<T, U, E> WithKinded<U> for Result<T, E>
-where
-    E: Term,
-    T: Term,
-    U: Term,
-{
-    type WithKinded = Result<U, E>;
-}
-
-impl<T, E> Pointed for Result<T, E>
-where
-    T: Term,
-    E: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U, E> WithPointed<U> for Result<T, E>
-where
-    T: Term,
-    U: Term,
-    E: Term,
-{
-    type WithPointed = Result<U, E>;
-}
+derive_pointed!(Result<(T), E>);
+derive_with_pointed!(Result<(T), E>);
 
 impl<T, E, U> Functor<U> for Result<T, E>
 where

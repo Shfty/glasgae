@@ -161,3 +161,28 @@ pub trait Monoid: Semigroup {
         list.foldr(Semigroup::assoc_s, Monoid::mempty())
     }
 }
+
+#[macro_export]
+macro_rules! derive_monoid_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::Monoid for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn mempty() -> Self {
+                Default::default()
+            }
+
+            fn mconcat(list: Vec<Self>) -> Self {
+                list.into_iter().flatten().collect()
+            }
+        }
+    };
+}
+

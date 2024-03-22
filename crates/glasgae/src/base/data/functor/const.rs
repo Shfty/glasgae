@@ -1,4 +1,4 @@
-use crate::{prelude::*, derive_with_kinded_unary, derive_kinded_unary};
+use crate::{derive_pointed_via, prelude::*};
 
 use super::Functor;
 
@@ -12,15 +12,7 @@ impl<MA> Const<MA> {
     }
 }
 
-derive_kinded_unary!(Const<T>);
-derive_with_kinded_unary!(Const<T>);
-
-impl<MA> Pointed for Const<MA>
-where
-    MA: Pointed,
-{
-    type Pointed = MA::Pointed;
-}
+derive_pointed_via!(Const<(MA)>);
 
 impl<MA, T> WithPointed<T> for Const<MA>
 where

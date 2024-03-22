@@ -2,7 +2,7 @@
 //! a value of type [`Either<A, B>`] is either [`Left(A)`](Either::Left) or
 //! [`Right(B)`](Either::Right).
 
-use crate::prelude::*;
+use crate::{prelude::*, derive_pointed, derive_with_pointed};
 
 pub mod result;
 
@@ -154,39 +154,8 @@ impl<A, B> Either<A, B> {
     }
 }
 
-impl<E, A> Kinded for Either<E, A>
-where
-    E: Term,
-    A: Term,
-{
-    type Kinded = A;
-}
-
-impl<E, A, B> WithKinded<B> for Either<E, A>
-where
-    E: Term,
-    A: Term,
-    B: Term,
-{
-    type WithKinded = Either<E, B>;
-}
-
-impl<E, A> Pointed for Either<E, A>
-where
-    E: Term,
-    A: Term,
-{
-    type Pointed = A;
-}
-
-impl<E, A, B> WithPointed<B> for Either<E, A>
-where
-    E: Term,
-    A: Term,
-    B: Term,
-{
-    type WithPointed = Either<E, B>;
-}
+derive_pointed!(Either<E, (A)>);
+derive_with_pointed!(Either<E, (A)>);
 
 impl<E, A, B> Functor<B> for Either<E, A>
 where

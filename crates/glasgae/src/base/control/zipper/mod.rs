@@ -8,7 +8,7 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::prelude::*;
+use crate::{prelude::*, derive_pointed};
 use crate::transformers::cont::Cont;
 
 #[derive(Clone)]
@@ -72,13 +72,7 @@ where
     }
 }
 
-impl<T, D> Pointed for Zipper<T, D>
-where
-    T: Term,
-    D: Term,
-{
-    type Pointed = T;
-}
+derive_pointed!(Zipper<(T), D>);
 
 impl<T, U, D> WithPointed<U> for Zipper<T, D>
 where

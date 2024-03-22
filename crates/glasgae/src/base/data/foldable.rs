@@ -117,3 +117,89 @@ where
     let f = f.to_function();
     this.foldr(|next, acc| f(next).assoc_s(acc), Monoid::mempty())
 }
+
+#[macro_export]
+macro_rules! derive_foldable_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::Foldable<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait)*
+        {
+            fn foldr(
+                self,
+                f: impl $crate::base::data::function::bifunction::BifunT<$arg, U, U>,
+                init: U,
+            ) -> U {
+                self
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rfold(init, |acc, next| f.to_bifun()(next, acc))
+            }
+
+            fn foldl(
+                self,
+                f: impl $crate::base::data::function::bifunction::BifunT<U, $arg, U>,
+                init: U,
+            ) -> U {
+                self.into_iter()
+                    .fold(init, |acc, next| f.to_bifun()(acc, next))
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::Foldable1<$arg> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn foldr1(
+                self,
+                f: impl $crate::base::data::function::bifunction::BifunT<$arg, $arg, $arg>,
+            ) -> $arg {
+                self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
+            }
+
+            fn foldl1(
+                self,
+                f: impl $crate::base::data::function::bifunction::BifunT<$arg, $arg, $arg>,
+            ) -> $arg {
+                self
+                    .into_iter()
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .reduce(|y, x| f.to_bifun()(x, y))
+                    .unwrap()
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::FoldMap<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Monoid $(+ $trait)*
+        {
+            fn fold_map(self, f: impl $crate::prelude::FunctionT<$arg, U> + Clone) -> U {
+                U::mconcat(self.into_iter().map(|t| f.to_function()(t)).collect())
+            }
+        }
+
+    };
+}

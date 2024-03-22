@@ -1,4 +1,4 @@
-use crate::{base::grl::num::Zero, derive_kinded_unary, derive_with_kinded_unary, prelude::*};
+use crate::{base::grl::num::Zero, prelude::*, derive_pointed, derive_with_pointed};
 
 /// Monoid under addition.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -10,23 +10,8 @@ impl<T> Sum<T> {
     }
 }
 
-derive_kinded_unary!(Sum<T>);
-derive_with_kinded_unary!(Sum<T>);
-
-impl<T> Pointed for Sum<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for Sum<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = Sum<U>;
-}
+derive_pointed!(Sum<(T)>);
+derive_with_pointed!(Sum<(T)>);
 
 impl<T, U> Functor<U> for Sum<T>
 where

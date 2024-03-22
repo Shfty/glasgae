@@ -163,6 +163,44 @@ pub trait Applicative<A1, A2>: PureA + AppA<A1, A2> {}
 
 impl<T, A1, A2> Applicative<A1, A2> for T where T: PureA + AppA<A1, A2> {}
 
+#[macro_export]
+macro_rules! derive_applicative_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::PureA for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn pure_a(t: Self::Pointed) -> Self {
+                FromIterator::from_iter([t])
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> $crate::prelude::AppA<$ty<$($_arg,)* A $(,$arg_)*>, $ty<$($_arg,)* B $(,$arg_)*>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term + $crate::prelude::FunctionT<A, B> $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            A: $crate::prelude::Term $(+ $trait)*,
+            B: $crate::prelude::Term $(+ $trait)*,
+        {
+            fn app_a(self, xs: $ty<A>) -> $ty<B> {
+                let fs = self;
+                $crate::prelude::ChainM::chain_m(fs, |f| $crate::prelude::ChainM::chain_m(xs, |x| $crate::prelude::ReturnM::return_m(f(x))))
+            }
+        }
+    };
+}
+
 /// Lift a binary function to actions.
 ///
 /// Some functors support an implementation of [`lift_a2`](LiftA2::lift_a2)

@@ -109,6 +109,56 @@ where
     this.traverse_t(identity)
 }
 
+#[macro_export]
+macro_rules! derive_traversable_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>, $append:ident) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, A_, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            A1: $crate::prelude::Functor<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
+            A1::WithPointed: $crate::prelude::Applicative<A2, A2>,
+            A_: $crate::prelude::Term $(+ $trait)*,
+            A2: $crate::prelude::PureA<Pointed = $ty<A_>> $(+ $trait)*,
+        {
+            fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, A1>) -> A2 {
+                let f = f.to_function();
+                $crate::prelude::Foldable::foldr(
+                    self,
+                    |x, ys|
+                        $crate::prelude::LiftA2::lift_a2($append)(
+                            f(x),
+                            ys
+                        ),
+                    $crate::prelude::PureA::pure_a($ty::new())
+                )
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, A2> $crate::prelude::SequenceA<(), A2> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            Self: $crate::prelude::TraverseT<$arg, (), A2, Pointed = $arg>,
+            A2: $crate::prelude::Term
+        {
+            fn sequence_a(self) -> A2 {
+                $crate::prelude::sequence_a_default(self)
+            }
+        }
+    };
+}
+
 /// SequenceA with additional Monad semantic
 pub trait Sequence<A2, A3>: SequenceA<A2, A3> {
     /// Evaluate each monadic action in the structure from left to right, and collect the results. For a version that ignores the results see sequence_.

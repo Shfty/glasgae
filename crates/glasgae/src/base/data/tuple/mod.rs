@@ -32,21 +32,6 @@ impl<A, B, C> Apply<2, A, B, C> for (A, B) {
 
 macro_rules ! impl_tuple {
     ($a:tt) => {
-        impl<$a> $crate::prelude::Kinded for ($a,)
-        where
-            $a: $crate::prelude::Term
-        {
-            type Kinded = $a;
-        }
-
-        impl<$a, U> $crate::prelude::WithKinded<U> for ($a,)
-        where
-            $a: $crate::prelude::Term,
-            U: $crate::prelude::Term
-        {
-            type WithKinded = (U,);
-        }
-
         impl<$a> $crate::prelude::Pointed for ($a,) where $a: $crate::prelude::Term {
             type Pointed = $a;
         }
@@ -74,28 +59,6 @@ macro_rules ! impl_tuple {
         }
     };
     ($a:tt | $($tuple:tt),*) => {
-        impl<$($tuple,)* $a> $crate::prelude::Kinded for ($($tuple,)* $a)
-        where
-            $(
-                $tuple: $crate::prelude::Term,
-            )*
-            $a: $crate::prelude::Term,
-        {
-            type Kinded = $a;
-        }
-
-        impl<$($tuple,)* $a, U> $crate::prelude::WithKinded<U> for ($($tuple,)* $a)
-        where
-            $(
-                $tuple: $crate::prelude::Term,
-            )*
-            $a: $crate::prelude::Term,
-            U: $crate::prelude::Term,
-        {
-            type WithKinded = ($($tuple,)* U,);
-        }
-
-
         impl<$($tuple,)* $a> Pointed for ($($tuple,)* $a)
         where
             $(

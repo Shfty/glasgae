@@ -1,22 +1,4 @@
-use crate::{
-    base::data::{kinded::Kinded, with_kinded::WithKinded},
-    prelude::*,
-};
-
-impl<T, const N: usize> Kinded for [T; N]
-where
-    T: Term,
-{
-    type Kinded = T;
-}
-
-impl<T, U, const N: usize> WithKinded<U> for [T; N]
-where
-    T: Term,
-    U: Term,
-{
-    type WithKinded = [U; N];
-}
+use crate::prelude::*;
 
 impl<T, const N: usize> Pointed for [T; N]
 where

@@ -2,7 +2,7 @@
 //!
 //! This is useful for functions parameterized by a monad transformer.
 
-use crate::{base::control::monad::io::MonadIO, prelude::*, derive_kinded_unary, derive_with_kinded_unary};
+use crate::{base::control::monad::io::MonadIO, prelude::*, derive_pointed_via, derive_with_pointed_via};
 
 use super::class::MonadTrans;
 
@@ -32,22 +32,8 @@ where
     }
 }
 
-derive_kinded_unary!(IdentityT<MA>);
-derive_with_kinded_unary!(IdentityT<MA>);
-
-impl<MA> Pointed for IdentityT<MA>
-where
-    MA: Pointed,
-{
-    type Pointed = MA::Pointed;
-}
-
-impl<MA, T> WithPointed<T> for IdentityT<MA>
-where
-    MA: WithPointed<T>,
-{
-    type WithPointed = IdentityT<MA::WithPointed>;
-}
+derive_pointed_via!(IdentityT<(MA)>);
+derive_with_pointed_via!(IdentityT<(MA)>);
 
 impl<MA, T> Functor<T> for IdentityT<MA>
 where

@@ -1,6 +1,6 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
-use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
+use crate::{prelude::*, derive_pointed_via, derive_with_pointed_via};
 
 /// Applicative functor formed by adding pure computations to a given applicative functor.
 #[derive(Clone)]
@@ -58,35 +58,8 @@ where
     }
 }
 
-impl<FA> Kinded for Lift<FA>
-where
-    FA: Pointed,
-{
-    type Kinded = FA;
-}
-
-impl<FA, U> WithKinded<U> for Lift<FA>
-where
-    FA: Pointed,
-    U: Pointed,
-{
-    type WithKinded = Lift<U>;
-}
-
-impl<FA> Pointed for Lift<FA>
-where
-    FA: Pointed,
-{
-    type Pointed = FA::Pointed;
-}
-
-impl<FA, B> WithPointed<B> for Lift<FA>
-where
-    FA: Pointed + WithPointed<B>,
-    B: Term,
-{
-    type WithPointed = Lift<FA::WithPointed>;
-}
+derive_pointed_via!(Lift<(FA)>);
+derive_with_pointed_via!(Lift<(FA)>);
 
 impl<FA, A, B> Functor<B> for Lift<FA>
 where

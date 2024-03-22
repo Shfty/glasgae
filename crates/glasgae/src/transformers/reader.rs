@@ -4,6 +4,7 @@
 
 use crate::{
     base::{control::monad::io::MonadIO, data::functor::identity::Identity},
+    derive_pointed_via, derive_with_pointed_via,
     prelude::*,
 };
 
@@ -152,38 +153,8 @@ where
     }
 }
 
-impl<R, M> Kinded for ReaderT<R, M>
-where
-    R: Term,
-    M: Term,
-{
-    type Kinded = M;
-}
-
-impl<R, M, N> WithKinded<N> for ReaderT<R, M>
-where
-    R: Term,
-    M: Term,
-    N: Term,
-{
-    type WithKinded = ReaderT<R, N>;
-}
-
-impl<R, M> Pointed for ReaderT<R, M>
-where
-    R: Term,
-    M: Pointed,
-{
-    type Pointed = M::Pointed;
-}
-
-impl<R, M, T> WithPointed<T> for ReaderT<R, M>
-where
-    R: Term,
-    M: WithPointed<T>,
-{
-    type WithPointed = ReaderT<R, M::WithPointed>;
-}
+derive_pointed_via!(ReaderT<R, (M)>);
+derive_with_pointed_via!(ReaderT<R, (M)>);
 
 impl<R, M, T> Functor<T> for ReaderT<R, M>
 where

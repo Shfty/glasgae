@@ -11,7 +11,8 @@ use crate::{
         control::exception::{throw, Exception},
         data::function::{Nullary, NullaryT},
     },
-    prelude::*, derive_kinded_unary, derive_with_kinded_unary,
+    derive_pointed, derive_with_pointed,
+    prelude::*,
 };
 
 /// A value of type [`IO<A>`] is a computation which, when performed,
@@ -123,23 +124,8 @@ where
     }
 }
 
-derive_kinded_unary!(IO<T>);
-derive_with_kinded_unary!(IO<T>);
-
-impl<T> Pointed for IO<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for IO<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = IO<U>;
-}
+derive_pointed!(IO<(T)>);
+derive_with_pointed!(IO<(T)>);
 
 impl<T, U> Functor<U> for IO<T>
 where

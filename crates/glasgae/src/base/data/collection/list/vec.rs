@@ -1,8 +1,21 @@
 use std::cmp::Ordering;
 
-use crate::{base::data::function::bifunction::BifunT, derive_iterable_collection, prelude::*};
+use crate::{
+    base::data::function::bifunction::BifunT, derive_applicative_iterable,
+    derive_foldable_iterable, derive_functor_iterable, derive_monad_iterable,
+    derive_monoid_iterable, derive_pointed, derive_semigroup_iterable, derive_traversable_iterable,
+    derive_with_pointed, prelude::*,
+};
 
-derive_iterable_collection!(Vec<X>, push);
+derive_pointed!(Vec<(X)>);
+derive_with_pointed!(Vec<(X)>);
+derive_functor_iterable!(Vec<(X)>);
+derive_applicative_iterable!(Vec<(X)>);
+derive_monad_iterable!(Vec<(X)>);
+derive_semigroup_iterable!(Vec<(X)>);
+derive_monoid_iterable!(Vec<(X)>);
+derive_foldable_iterable!(Vec<(X)>);
+derive_traversable_iterable!(Vec<(X)>, push);
 
 pub fn push<T>(t: T, mut v: Vec<T>) -> Vec<T> {
     v.insert(0, t);

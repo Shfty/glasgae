@@ -1,22 +1,7 @@
-use crate::{prelude::*, derive_kinded_unary, derive_with_kinded_unary};
+use crate::{prelude::*, derive_pointed, derive_with_pointed};
 
-derive_kinded_unary!(Option<T>);
-derive_with_kinded_unary!(Option<T>);
-
-impl<T> Pointed for Option<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for Option<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = Option<U>;
-}
+derive_pointed!(Option<(T)>);
+derive_with_pointed!(Option<(T)>);
 
 impl<T, U> Functor<U> for Option<T>
 where

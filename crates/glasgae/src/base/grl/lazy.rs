@@ -2,8 +2,7 @@
 
 use crate::{
     base::data::function::{Nullary, NullaryT},
-    derive_kinded_unary, derive_with_kinded_unary,
-    prelude::*,
+    prelude::*, derive_pointed, derive_with_pointed,
 };
 
 /// A value of type [`Lazy<T>`] represents a yet-to-be computed value,
@@ -32,23 +31,8 @@ where
     }
 }
 
-derive_kinded_unary!(Lazy<T>);
-derive_with_kinded_unary!(Lazy<T>);
-
-impl<T> Pointed for Lazy<T>
-where
-    T: Term,
-{
-    type Pointed = T;
-}
-
-impl<T, U> WithPointed<U> for Lazy<T>
-where
-    T: Term,
-    U: Term,
-{
-    type WithPointed = Lazy<U>;
-}
+derive_pointed!(Lazy<(T)>);
+derive_with_pointed!(Lazy<(T)>);
 
 impl<T, U> Functor<U> for Lazy<T>
 where

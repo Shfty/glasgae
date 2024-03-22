@@ -5,7 +5,6 @@ use crate::{
         control::monad::io::MonadIO,
         data::{function::bifunction::BifunT, tuple::pair::Pair},
     },
-    derive_functor_unary,
     prelude::*,
     transformers::{
         class::MonadTrans,

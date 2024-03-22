@@ -4,7 +4,7 @@
 //!
 //! For a variant allowing a range of exception values, see Control.Monad.Trans.Except.
 
-use crate::{derive_kinded_unary, derive_with_kinded_unary, prelude::*};
+use crate::prelude::*;
 
 use super::class::MonadTrans;
 
@@ -44,9 +44,6 @@ where
         MaybeT(f(self.run()))
     }
 }
-
-derive_kinded_unary!(MaybeT<MA>);
-derive_with_kinded_unary!(MaybeT<MA>);
 
 impl<MA, T> Pointed for MaybeT<MA>
 where

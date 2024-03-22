@@ -116,6 +116,42 @@ where
 {
 }
 
+#[macro_export]
+macro_rules! derive_monad_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::ReturnM for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn return_m(t: Self::Pointed) -> Self {
+                FromIterator::from_iter([t])
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::ChainM<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait)*,
+        {
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<U>>) -> $ty<U> {
+                self.into_iter().flat_map(|t| f.to_function()(t)).collect()
+            }
+        }
+    };
+}
+
 /// Sequentially compose two actions, discarding any value produced by the first,
 /// like sequencing operators (such as the semicolon) in imperative languages.
 ///

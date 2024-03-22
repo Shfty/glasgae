@@ -12,6 +12,7 @@ use crate::{
         control::monad::io::MonadIO,
         data::{function::bifunction::BifunT, functor::identity::Identity},
     },
+    derive_pointed_via, derive_with_pointed_via,
     prelude::*,
 };
 
@@ -218,39 +219,8 @@ where
     }
 }
 
-impl<MR, MA> Kinded for ContT<MR, MA>
-where
-    MR: Pointed,
-    MA: Pointed,
-{
-    type Kinded = MA;
-}
-
-impl<MR, MA, MB> WithKinded<MB> for ContT<MR, MA>
-where
-    MR: Pointed,
-    MA: Pointed,
-    MB: Pointed,
-{
-    type WithKinded = ContT<MR, MB>;
-}
-
-impl<MR, MA> Pointed for ContT<MR, MA>
-where
-    MR: Pointed,
-    MA: Pointed,
-{
-    type Pointed = MA::Pointed;
-}
-
-impl<MR, MA, T> WithPointed<T> for ContT<MR, MA>
-where
-    MR: Pointed,
-    MA: Pointed + WithPointed<T>,
-    T: Term,
-{
-    type WithPointed = ContT<MR, MA::WithPointed>;
-}
+derive_pointed_via!(ContT<MR: Pointed, (MA)>);
+derive_with_pointed_via!(ContT<MR: Pointed, (MA)>);
 
 impl<MR, MA, A> Functor<A> for ContT<MR, MA>
 where

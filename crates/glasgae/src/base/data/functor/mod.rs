@@ -116,3 +116,31 @@ macro_rules! derive_functor_unary {
         }
     };
 }
+
+#[macro_export]
+macro_rules! derive_functor_iterable {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::Functor<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait)*
+        {
+            fn fmap(
+                self,
+                f: impl $crate::prelude::FunctionT<
+                    Self::Pointed,
+                    <$ty<$($_arg,)* U $(,$arg_)*> as $crate::prelude::Pointed>::Pointed,
+                >,
+            ) -> $ty<$($_arg,)* U $(,$arg_)*> {
+                self.into_iter().map(|t| f.to_function()(t)).collect()
+            }
+        }
+    };
+}
+

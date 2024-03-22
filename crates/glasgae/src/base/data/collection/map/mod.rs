@@ -2,35 +2,10 @@ pub mod btree_map;
 pub mod hash_map;
 pub mod vec_map;
 
-/// Implement standard typeclasses for a type with std::collection iterator semantics
+// Implement standard typeclasses for a type with std::collection iterator semantics
 #[macro_export]
 macro_rules! derive_iterable_map {
     ($ty:ident<$key:ident, $value:ident>, $append:ident $(, $trait:path)*) => {
-        impl<$key, $value> $crate::prelude::Kinded for $ty<$key, $value>
-        where
-            $key: $crate::prelude::Term,
-            $value: $crate::prelude::Term,
-        {
-            type Kinded = $value;
-        }
-
-        impl<$key, $value> $crate::prelude::Pointed for $ty<$key, $value>
-        where
-            $key: $crate::prelude::Term,
-            $value: $crate::prelude::Term,
-        {
-            type Pointed = $value;
-        }
-
-        impl<$key, $value, V_> $crate::prelude::WithPointed<V_> for $ty<$key, $value>
-        where
-            $key: $crate::prelude::Term,
-            $value: $crate::prelude::Term,
-            V_: $crate::prelude::Term,
-        {
-            type WithPointed = $ty<$key, V_>;
-        }
-
         impl<$key, $value, V_> $crate::prelude::Functor<V_> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term $(+ $trait)*,
@@ -107,7 +82,7 @@ macro_rules! derive_iterable_map {
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Functor<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,
             $crate::prelude::WithPointedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
-            V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>>,
+            V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>> $(+ $trait)*,
         {
             fn sequence_a(self) -> V2 {
                 $crate::prelude::Foldable::foldr(
@@ -130,7 +105,7 @@ macro_rules! derive_iterable_map {
 
         impl<$key, $value> $crate::prelude::Bipointed for $ty<$key, $value>
         where
-            $key: $crate::prelude::Term,
+            $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
         {
             type Bipointed = K;
@@ -138,8 +113,8 @@ macro_rules! derive_iterable_map {
 
         impl<$key, K_, $value> $crate::prelude::WithBipointed<K_> for $ty<$key, $value>
         where
-            $key: $crate::prelude::Term,
-            K_: $crate::prelude::Term,
+            $key: $crate::prelude::Term $(+ $trait)*,
+            K_: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
         {
             type WithBipointed = $ty<K_, $value>;
@@ -147,7 +122,7 @@ macro_rules! derive_iterable_map {
 
         impl<$key, K_, $value> $crate::prelude::Bifmap<K_> for $ty<$key, $value>
         where
-            $key: $crate::prelude::Term,
+            $key: $crate::prelude::Term $(+ $trait)*,
             K_: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
         {
@@ -169,7 +144,7 @@ macro_rules! derive_iterable_map {
 
         impl<$key, $value, T> $crate::prelude::Bifoldable<T> for $ty<$key, $value>
         where
-            $key: $crate::prelude::Term,
+            $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
             T: $crate::prelude::Term,
         {
@@ -215,7 +190,7 @@ macro_rules! derive_iterable_map {
 
         impl<$key, $value, T, AO> $crate::prelude::BisequenceA<AO> for $ty<$key, $value>
         where
-            $key: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$key>, Vec<$key>>, Pointed = $key>,
+            $key: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$key>, Vec<$key>>, Pointed = $key> $(+ $trait)*,
             $key::WithPointed: $crate::prelude::AppA<AO, AO>,
             $value: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$value>, Vec<$value>>, Pointed = $value>,
             $value::WithPointed: $crate::prelude::AppA<AO, AO>,

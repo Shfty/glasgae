@@ -9,15 +9,42 @@ pub trait WithPointed<T>: Pointed {
 /// Convenience alias to [`WithPointed::WithPointed`]
 pub type WithPointedT<T, U> = <T as WithPointed<U>>::WithPointed;
 
+// Derive WithPointed over the inner type
 #[macro_export]
-macro_rules! derive_with_pointed_unary {
-    ($ty:ident<$free:ident>) => {
-        impl<$free, U> $crate::prelude::WithPointed<U> for $ty<$free>
+macro_rules! derive_with_pointed {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::WithPointed<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
-            $free: $crate::prelude::Term,
-            U: $crate::prelude::Term,
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait)*
         {
-            type WithPointed = $ty<U>;
+            type WithPointed = $ty<$($_arg,)* U $(, $arg_)*>;
+        }
+    };
+}
+
+// Derive WithPointed by recursing into the inner type
+#[macro_export]
+macro_rules! derive_with_pointed_via {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::WithPointed<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::WithPointed<U> $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $($(+ $trait)*)?
+        {
+            type WithPointed = $ty<$($_arg,)* $arg::WithPointed $(, $arg_)*>;
         }
     };
 }
