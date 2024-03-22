@@ -79,20 +79,6 @@ pub trait PureA: Pointed {
     fn pure_a(t: Self::Pointed) -> Self;
 }
 
-#[macro_export]
-macro_rules! derive_pure_a_unary {
-    ($ty:ident<$free:ident>) => {
-        impl<$free> $crate::prelude::PureA for $ty<$free>
-        where
-            $free: $crate::prelude::Term,
-        {
-            fn pure_a(t: Self::Pointed) -> Self {
-                $ty($crate::prelude::PureA::pure_a(t))
-            }
-        }
-    };
-}
-
 /// Sequential application.
 ///
 /// A few functors support an implementation of [`app_a`](AppA::app_a) that is more efficient than the default one.
@@ -162,7 +148,7 @@ macro_rules! derive_applicative {
             }
         }
 
-        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<Identity<A>, Identity<B>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<$ty<A>, $ty<B>> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -174,11 +160,49 @@ macro_rules! derive_applicative {
             A: $crate::prelude::Term,
             B: $crate::prelude::Term,
         {
-            fn app_a(self, a: Identity<A>) -> Identity<B> {
+            fn app_a(self, a: $ty<A>) -> $ty<B> {
                 a.fmap(self.0)
             }
         }
 
+    };
+}
+
+// Derive Applicative by recursing into the inner type
+#[macro_export]
+macro_rules! derive_applicative_via {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> PureA for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn pure_a(t: Self::Pointed) -> Self {
+                $ty($crate::prelude::PureA::pure_a(t))
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<$ty<$($_arg,)* A $(,$arg_)*>, $ty<$($_arg,)* B $(,$arg_)*>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term + $crate::prelude::FunctionT<A, B> + $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            A: $crate::prelude::Term,
+            B: $crate::prelude::Term,
+        {
+            fn app_a(self, a: $ty<A>) -> $ty<B> {
+                $ty($crate::prelude::AppA::app_a(self.0, a.0))
+            }
+        }
     };
 }
 

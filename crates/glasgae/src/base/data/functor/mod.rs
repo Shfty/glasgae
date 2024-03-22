@@ -122,6 +122,27 @@ macro_rules! derive_functor {
 }
 
 #[macro_export]
+macro_rules! derive_functor_via {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::Functor<U> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Functor<U> $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            U: $crate::prelude::Term $(+ $trait$)*,
+        {
+            fn fmap(self, f: impl $crate::prelude::FunctionT<T, U>) -> $ty<$($_arg,)* U $(,$arg_)*> {
+                $ty(self.0.fmap(f))
+            }
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! derive_functor_iterable {
     ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
         impl<$($_arg,)* $arg $(,$arg_)*, U> $crate::prelude::Functor<U> for $ty<$($_arg,)* $arg $(,$arg_)*>

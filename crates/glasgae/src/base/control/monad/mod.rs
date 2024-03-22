@@ -121,6 +121,43 @@ macro_rules! derive_monad {
     };
 }
 
+// Derive Monad by recursing into the inner type
+#[macro_export]
+macro_rules! derive_monad_via {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::ReturnM for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn return_m(t: Self::Pointed) -> Self {
+                $ty(ReturnM::return_m(t))
+            }
+        }
+        impl<$($_arg,)* $arg $(,$arg_)*, B> $crate::prelude::ChainM<B> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            B: Term,
+        {
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<T, $ty<$($_arg,)* B $(,$arg_)*>>) -> $ty<$($_arg,)* B $(,$arg_)*> {
+                let f = f.to_function();
+                $ty(self.0.chain_m(|t| f(t).0))
+            }
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! derive_monad_iterable {
     ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
