@@ -1,4 +1,7 @@
-use crate::{base::grl::num::One, derive_pointed, derive_with_pointed, prelude::*, derive_functor};
+use crate::{
+    base::grl::num::One, derive_applicative, derive_functor, derive_monad, derive_pointed,
+    derive_with_pointed, prelude::*,
+};
 
 /// Monoid under multiplication.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -13,38 +16,8 @@ impl<T> Product<T> {
 derive_pointed!(Product<(T)>);
 derive_with_pointed!(Product<(T)>);
 derive_functor!(Product<(T)>);
-
-impl<T> PureA for Product<T>
-where
-    T: Term,
-{
-    fn pure_a(t: Self::Pointed) -> Self {
-        Product(t)
-    }
-}
-
-impl<F, A, B> AppA<Product<A>, Product<B>> for Product<F>
-where
-    F: Term + FunctionT<A, B>,
-    A: Term,
-    B: Term,
-{
-    fn app_a(self, a: Product<A>) -> Product<B> {
-        Product(self.get()(a.get()))
-    }
-}
-
-impl<T> ReturnM for Product<T> where T: Term {}
-
-impl<T, U> ChainM<U> for Product<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Product<U>>) -> Product<U> {
-        f(self.get())
-    }
-}
+derive_applicative!(Product<(T)>);
+derive_monad!(Product<(T)>);
 
 impl<T> Semigroup for Product<T>
 where

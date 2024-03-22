@@ -8,7 +8,7 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::{prelude::*, derive_pointed, derive_with_pointed, derive_functor};
+use crate::{prelude::*, derive_pointed, derive_with_pointed, derive_functor, derive_applicative};
 use crate::transformers::cont::Cont;
 
 #[derive(Clone)]

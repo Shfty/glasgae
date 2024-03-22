@@ -5,7 +5,10 @@
 //! It can be used with functions parameterized by functor or monad classes.
 //! It can be used as a base monad to which a series of monad transformers may be applied to construct a composite monad. Most monad transformer modules include the special case of applying the transformer to Identity. For example, State s is an abbreviation for StateT s Identity.
 
-use crate::{derive_pointed, derive_with_pointed, prelude::*, derive_functor};
+use crate::{
+    derive_applicative, derive_functor, derive_monad, derive_pointed, derive_with_pointed,
+    prelude::*,
+};
 
 use super::Functor;
 
@@ -22,38 +25,8 @@ impl<T> Identity<T> {
 derive_pointed!(Identity<(T)>);
 derive_with_pointed!(Identity<(T)>);
 derive_functor!(Identity<(T)>);
-
-impl<T> PureA for Identity<T>
-where
-    T: Term,
-{
-    fn pure_a(t: Self::Pointed) -> Self {
-        Identity(t)
-    }
-}
-
-impl<F, A, B> AppA<Identity<A>, Identity<B>> for Identity<F>
-where
-    F: Term + FunctionT<A, B>,
-    A: Term,
-    B: Term,
-{
-    fn app_a(self, a: Identity<A>) -> Identity<B> {
-        a.fmap(self.0)
-    }
-}
-
-impl<T> ReturnM for Identity<T> where T: Term {}
-
-impl<T, U> ChainM<U> for Identity<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Identity<U>>) -> Identity<U> {
-        f(self.0)
-    }
-}
+derive_applicative!(Identity<(T)>);
+derive_monad!(Identity<(T)>);
 
 impl<T> Semigroup for Identity<T>
 where

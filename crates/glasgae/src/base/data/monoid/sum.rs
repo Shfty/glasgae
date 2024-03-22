@@ -1,4 +1,7 @@
-use crate::{base::grl::num::Zero, prelude::*, derive_pointed, derive_with_pointed, derive_functor};
+use crate::{
+    base::grl::num::Zero, derive_applicative, derive_functor, derive_monad, derive_pointed,
+    derive_with_pointed, prelude::*,
+};
 
 /// Monoid under addition.
 #[derive(Debug, Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -13,38 +16,8 @@ impl<T> Sum<T> {
 derive_pointed!(Sum<(T)>);
 derive_with_pointed!(Sum<(T)>);
 derive_functor!(Sum<(T)>);
-
-impl<T> PureA for Sum<T>
-where
-    T: Term,
-{
-    fn pure_a(t: Self::Pointed) -> Self {
-        Sum(t)
-    }
-}
-
-impl<F, A, B> AppA<Sum<A>, Sum<B>> for Sum<F>
-where
-    F: Term + FunctionT<A, B>,
-    A: Term,
-    B: Term,
-{
-    fn app_a(self, a: Sum<A>) -> Sum<B> {
-        Sum(self.get()(a.get()))
-    }
-}
-
-impl<T> ReturnM for Sum<T> where T: Term {}
-
-impl<T, U> ChainM<U> for Sum<T>
-where
-    T: Term,
-    U: Term,
-{
-    fn chain_m(self, f: impl FunctionT<Self::Pointed, Sum<U>>) -> Sum<U> {
-        f(self.get())
-    }
-}
+derive_applicative!(Sum<(T)>);
+derive_monad!(Sum<(T)>);
 
 impl<T> Semigroup for Sum<T>
 where

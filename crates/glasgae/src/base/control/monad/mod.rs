@@ -58,23 +58,6 @@ pub trait ReturnM: PureA {
     }
 }
 
-#[macro_export]
-macro_rules! derive_return_m_unary {
-    ($ty:ident<$free:ident>) => {
-        impl<$free> $crate::prelude::ReturnM for $ty<$free>
-        where
-            $free: $crate::prelude::Term,
-        {
-            fn return_m(t: Self::Pointed) -> Self
-            where
-                Self: Sized,
-            {
-                $ty($crate::prelude::ReturnM::return_m(t))
-            }
-        }
-    };
-}
-
 /// Sequentially compose two actions,
 /// passing any value produced by the first as an argument to the second.
 ///
@@ -85,22 +68,6 @@ macro_rules! derive_return_m_unary {
 /// ```
 pub trait ChainM<T: Term>: WithPointed<T> {
     fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::WithPointed>) -> Self::WithPointed;
-}
-
-#[macro_export]
-macro_rules! derive_chain_m_unary {
-    ($ty:ident<$free:ident>) => {
-        impl<$free, U> $crate::prelude::ChainM<U> for $ty<$free>
-        where
-            $free: $crate::prelude::Term,
-            U: $crate::prelude::Term,
-        {
-            fn chain_m(self, f: impl $crate::prelude::FunctionT<Self::Pointed, $ty<U>>) -> $ty<U> {
-                let f = f.to_function();
-                $ty($crate::prelude::ChainM::chain_m(self.0, |t| f(t).0))
-            }
-        }
-    };
 }
 
 pub trait Monad<U>: ReturnM + ChainM<U>
@@ -114,6 +81,44 @@ where
     T: ReturnM + ChainM<U>,
     U: Term,
 {
+}
+
+// Derive Monad over the inner type
+#[macro_export]
+macro_rules! derive_monad {
+    ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>) => {
+        impl<$($_arg,)* $arg $(,$arg_)*> $crate::prelude::ReturnM for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+        {
+            fn return_m(t: Self::Pointed) -> Self {
+                $ty(t)
+            }
+        }
+
+        impl<$($_arg,)* $arg $(,$arg_)*, B> $crate::prelude::ChainM<B> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        where
+            $(
+                $_arg: $crate::prelude::Term $(+ $_trait)*,
+            )*
+            $arg: $crate::prelude::Term + $(+ $trait)*,
+            $(
+                $arg_: $crate::prelude::Term $(+ $trait_)*,
+            )*
+            B: $crate::prelude::Term,
+        {
+            fn chain_m(self, f: impl $crate::prelude::FunctionT<$arg, $ty<B>>) -> $ty<B> {
+                f(self.0)
+            }
+        }
+
+    };
 }
 
 #[macro_export]
