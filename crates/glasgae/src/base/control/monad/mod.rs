@@ -66,7 +66,7 @@ pub trait ReturnM: PureA {
 /// let a = as();
 /// bs(a);
 /// ```
-pub trait ChainM<T: Term>: WithPointed<T> {
+pub trait ChainM<T: Term>: WithPointed<T, WithPointed = Self::Chained> {
     type Chained: ChainM<Self::Pointed, Pointed = T, Chained = Self>;
     fn chain_m(self, f: impl FunctionT<Self::Pointed, Self::Chained>) -> Self::Chained;
 }
@@ -230,14 +230,15 @@ pub trait FilterM<M1: Term, A: Term, M3>: Term {
     fn filter_m(self, f: impl FunctionT<A, M1>) -> M3;
 }
 
-impl<A, M1, M3> FilterM<M1, A, M3> for Vec<A>
+impl<A, MA, MF, MB> FilterM<MA, A, MB> for Vec<A>
 where
-    M1: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool>,
-    M1::Mapped: Applicative<M3, M3>,
-    M3: Pointed<Pointed = Vec<A>> + PureA,
+    MA: Functor<Function<Vec<A>, Vec<A>>, Pointed = bool, Mapped = MF>
+        + WithPointed<Vec<A>, WithPointed = MB>,
+    MF: Applicative<Vec<A>, Vec<A>, WithA = MB, WithB = MB>,
+    MB: Pointed<Pointed = Vec<A>> + PureA,
     A: Term,
 {
-    fn filter_m(self, f: impl FunctionT<A, M1>) -> M3 {
+    fn filter_m(self, f: impl FunctionT<A, MA>) -> MB {
         let f = f.to_function();
         self.foldr(
             |next, acc| {
@@ -330,8 +331,8 @@ pub trait ReplicateM<MB, T>: Pointed {
 
 impl<MA, MB, T> ReplicateM<MB, T> for MA
 where
-    MA: Functor<Function<Vec<T>, Vec<T>>, Pointed = T>,
-    MA::Mapped: Applicative<MB, MB>,
+    MA: Functor<Function<Vec<T>, Vec<T>>, Pointed = T> + WithPointed<Vec<T>, WithPointed = MB>,
+    MA::Mapped: Applicative<Vec<T>, Vec<T>, WithA = MB, WithB = MB>,
     MB: PureA<Pointed = Vec<T>>,
     T: Term,
 {

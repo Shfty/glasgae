@@ -112,7 +112,7 @@ where
 #[macro_export]
 macro_rules! derive_traversable_iterable {
     ($ty:ident<$($_arg:ident $(: $_trait:path)*,)* ($arg:ident $(: $trait:path)*) $(, $arg_:ident $(: $trait_:path),*)*>, $append:ident) => {
-        impl<$($_arg,)* $arg $(,$arg_)*, A_, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, MA, MF, B, MB> $crate::prelude::TraverseT<MA, (), MB> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -121,12 +121,14 @@ macro_rules! derive_traversable_iterable {
             $(
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
-            A1: $crate::prelude::Functor<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
-            A1::Mapped: $crate::prelude::Applicative<A2, A2>,
-            A_: $crate::prelude::Term $(+ $trait)*,
-            A2: $crate::prelude::PureA<Pointed = $ty<A_>> $(+ $trait)*,
+            MA: $crate::prelude::Functor<$crate::prelude::Function<$ty<B>, $ty<B>>, Pointed = B, Mapped = MF>
+                + $crate::prelude::WithPointed<$ty<B>, WithPointed = MB>
+                $(+ $trait)*,
+            MF: $crate::prelude::Applicative<$ty<B>, $ty<B>, WithA = MB, WithB = MB>,
+            B: $crate::prelude::Term $(+ $trait)*,
+            MB: $crate::prelude::PureA<Pointed = $ty<B>> $(+ $trait)*,
         {
-            fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, A1>) -> A2 {
+            fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, MA>) -> MB {
                 let f = f.to_function();
                 $crate::prelude::Foldable::foldr(
                     self,
@@ -140,7 +142,7 @@ macro_rules! derive_traversable_iterable {
             }
         }
 
-        impl<$($_arg,)* $arg $(,$arg_)*, A2> $crate::prelude::SequenceA<(), A2> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, MB> $crate::prelude::SequenceA<(), MB> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -149,10 +151,10 @@ macro_rules! derive_traversable_iterable {
             $(
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
-            Self: $crate::prelude::TraverseT<$arg, (), A2, Pointed = $arg>,
-            A2: $crate::prelude::Term
+            Self: $crate::prelude::TraverseT<$arg, (), MB, Pointed = $arg>,
+            MB: $crate::prelude::Term
         {
-            fn sequence_a(self) -> A2 {
+            fn sequence_a(self) -> MB {
                 $crate::prelude::sequence_a_default(self)
             }
         }

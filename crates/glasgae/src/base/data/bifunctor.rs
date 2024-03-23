@@ -1,4 +1,4 @@
-use crate::prelude::{Functor, FunctionT, Term, WithPointedT, MappedT};
+use crate::prelude::{FunctionT, Functor, MappedT, Term};
 
 use super::with_bipointed::{WithBipointed, WithBipointedT};
 

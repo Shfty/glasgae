@@ -229,23 +229,28 @@ where
     }
 }
 
-impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
+impl<W, MF, F, MA, A, MB, B> AppA<A, B> for WriterT<W, MF>
 where
-    MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
-    MF::Mapped: Applicative<MA, MB>,
+    MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>
+        + WithPointed<(A, W), WithPointed = MA>
+        + WithPointed<(B, W), WithPointed = MB>,
+    MF::Mapped: Applicative<(A, W), (B, W), WithA = MA, WithB = MB>,
     W: Semigroup,
-    MA: Pointed<Pointed = (A, W)>,
-    MB: Pointed<Pointed = (B, W)>,
+    MA: Pointed<Pointed = (A, W)> + WithPointed<(F, W), WithPointed = MF>,
+    MB: Pointed<Pointed = (B, W)> + WithPointed<(F, W), WithPointed = MF>,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = WriterT<W, MA>;
+    type WithB = WriterT<W, MB>;
+
     fn app_a(self, v: WriterT<W, MA>) -> WriterT<W, MB> {
         let f = self;
-        let k = (|(a, w): MF::Pointed, (b, w_): MA::Pointed| (a(b), w.assoc_s(w_))).lift_a2();
+        let k = (|(f, w): (F, W), (a, w_): (A, W)| (f(a), w.assoc_s(w_))).lift_a2();
         let f: MF = f.run_t();
-        let v: MA = v.run_t();
-        let out: MB = k(f, v);
+        let v: WithPointedT<MF, (A, W)> = v.run_t();
+        let out: WithPointedT<MF, (B, W)> = k(f, v);
         WriterT::new_t(out)
     }
 }

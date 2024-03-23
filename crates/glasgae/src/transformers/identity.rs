@@ -58,13 +58,22 @@ where
     }
 }
 
-impl<MA, A1, A2> AppA<IdentityT<A1>, IdentityT<A2>> for IdentityT<MA>
+impl<MF, F, MA, A, MB, B> AppA<A, B> for IdentityT<MF>
 where
-    MA: Applicative<A1, A2>,
-    A1: Term,
-    A2: Term,
+    MF: Pointed<Pointed = F>
+        + Applicative<A, B, WithA = MA, WithB = MB>
+        + WithPointed<A, WithPointed = MA>
+        + WithPointed<B, WithPointed = MB>,
+    MA: WithPointed<F, Pointed = A, WithPointed = MF>,
+    MB: WithPointed<F, Pointed = B, WithPointed = MF>,
+    F: Term,
+    A: Term,
+    B: Term,
 {
-    fn app_a(self, a: IdentityT<A1>) -> IdentityT<A2> {
+    type WithA = IdentityT<MA>;
+    type WithB = IdentityT<MB>;
+
+    fn app_a(self, a: IdentityT<MA>) -> IdentityT<MB> {
         IdentityT(self.run().app_a(a.run()))
     }
 }

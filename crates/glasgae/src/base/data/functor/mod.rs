@@ -26,7 +26,7 @@ pub mod identity;
 
 use crate::prelude::*;
 
-pub trait Functor<T>: WithPointed<T>
+pub trait Functor<T>: WithPointed<T, WithPointed = Self::Mapped>
 where
     T: Term,
 {

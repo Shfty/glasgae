@@ -78,28 +78,27 @@ where
     }
 }
 
-impl<T, A1, A_, A2> TraverseT<A1, (), A2> for Identity<T>
+impl<T, MA, A, MB> TraverseT<MA, (), MB> for Identity<T>
 where
-    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
-    A1::Pointed: Monoid,
-    A1::Mapped: Applicative<A2, A2>,
+    MA: PureA<Pointed = A> + Functor<Function<Identity<A>, Identity<A>>>,
+    MA::Mapped: Applicative<Identity<A>, Identity<A>, WithA = MB, WithB = MB>,
     T: Term,
-    A_: Term,
-    A2: PureA<Pointed = Identity<A1::Pointed>>,
+    A: Monoid,
+    MB: PureA<Pointed = Identity<A>>,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A1>) -> A2 {
+    fn traverse_t(self, f: impl FunctionT<T, MA>) -> MB {
         traverse_t_default(self, f)
     }
 }
 
-impl<A1, A_, A2> SequenceA<(), A2> for Identity<A1>
+impl<MA, A, MB> SequenceA<(), MB> for Identity<MA>
 where
-    A1: PureA<Pointed = A_> + Functor<Function<Identity<A_>, Identity<A_>>>,
-    A1::Mapped: Applicative<A2, A2>,
-    A_: Monoid,
-    A2: PureA<Pointed = Identity<A1::Pointed>>,
+    MA: PureA<Pointed = A> + Functor<Function<Identity<A>, Identity<A>>>,
+    MA::Mapped: Applicative<Identity<A>, Identity<A>, WithA = MB, WithB = MB>,
+    A: Monoid,
+    MB: PureA<Pointed = Identity<A>>,
 {
-    fn sequence_a(self) -> A2 {
+    fn sequence_a(self) -> MB {
         self.foldr(
             |next, acc| next.fmap(|t| (|_| Identity(t)).boxed()).app_a(acc),
             PureA::pure_a(Identity(Monoid::mempty())),

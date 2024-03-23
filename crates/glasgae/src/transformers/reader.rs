@@ -180,14 +180,23 @@ where
     }
 }
 
-impl<R, F, A, B> AppA<ReaderT<R, A>, ReaderT<R, B>> for ReaderT<R, F>
+impl<R, MF, F, MA, A, MB, B> AppA<A, B> for ReaderT<R, MF>
 where
     R: Term,
-    F: Pointed + Applicative<A, B>,
-    A: Pointed,
-    B: Pointed,
+    MF: Pointed<Pointed = F>
+        + WithPointed<A, WithPointed = MA>
+        + WithPointed<B, WithPointed = MB>
+        + Applicative<A, B, WithA = MA, WithB = MB>,
+    MA: WithPointed<F, Pointed = A, WithPointed = MF>,
+    MB: WithPointed<F, Pointed = B, WithPointed = MF>,
+    F: Term,
+    A: Term,
+    B: Term,
 {
-    fn app_a(self, v: ReaderT<R, A>) -> ReaderT<R, B> {
+    type WithA = ReaderT<R, MA>;
+    type WithB = ReaderT<R, MB>;
+
+    fn app_a(self, v: WithPointedT<Self, A>) -> WithPointedT<Self, B> {
         let f = self;
         ReaderT::new_t(|r: R| f.run_t(r.clone()).app_a(v.run_t(r)))
     }

@@ -98,16 +98,21 @@ where
     }
 }
 
-impl<LVL, MSG, MF, MA, MB> AppA<LoggingT<LVL, MSG, MA>, LoggingT<LVL, MSG, MB>>
-    for LoggingT<LVL, MSG, MF>
+impl<LVL, MSG, MF, F, MA, A, MB, B> AppA<A, B> for LoggingT<LVL, MSG, MF>
 where
     LVL: Term,
     MSG: Term,
-    MF: Applicative<MA, MB>,
-    MA: Pointed,
-    MB: Pointed,
+    MF: Pointed<Pointed = F>
+        + Applicative<MA, MB, WithA = MA, WithB = MB>
+        + WithPointed<A, WithPointed = MA>
+        + WithPointed<B, WithPointed = MB>,
+    MA: WithPointed<F, Pointed = A, WithPointed = MF>,
+    MB: WithPointed<F, Pointed = B, WithPointed = MF>,
 {
-    fn app_a(self, log_a: LoggingT<LVL, MSG, MA>) -> LoggingT<LVL, MSG, MB> {
+    type WithA = LoggingT<LVL, MSG, MA>;
+    type WithB = LoggingT<LVL, MSG, MB>;
+
+    fn app_a(self, log_a: Self::WithA) -> Self::WithB {
         let log_f = self;
         LoggingT::new_t(|f| log_f.run_t(f.clone()).app_a(log_a.run_t(f)))
     }

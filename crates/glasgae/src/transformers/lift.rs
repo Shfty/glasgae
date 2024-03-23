@@ -87,16 +87,21 @@ where
     }
 }
 
-impl<FF, FA, FB, F, A, B> AppA<Lift<FA>, Lift<FB>> for Lift<FF>
+impl<FF, F, FA, A, FB, B> AppA<A, B> for Lift<FF>
 where
-    Lift<FA>: Functor<B, Pointed = A, Mapped = Lift<FB>>,
-    FA: PureA<Pointed = A>,
-    FB: Pointed<Pointed = B>,
-    FF: Pointed<Pointed = F> + Applicative<FA, FB>,
+    FF: WithPointed<A, WithPointed = FA> + WithPointed<B, WithPointed = FB>,
+    FA: PureA<Pointed = A>
+        + Functor<B, Pointed = A, Mapped = FB>
+        + WithPointed<F, WithPointed = FF>,
+    FB: Functor<A, Pointed = B, Mapped = FA> + WithPointed<F, WithPointed = FF>,
+    FF: Pointed<Pointed = F> + Applicative<FA, FB, WithA = FA, WithB = FB>,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = Lift<FA>;
+    type WithB = Lift<FB>;
+
     fn app_a(self, a: Lift<FA>) -> Lift<FB> {
         match self {
             Pure(f) => a.fmap(f),

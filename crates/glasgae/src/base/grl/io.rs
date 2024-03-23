@@ -149,12 +149,15 @@ where
     }
 }
 
-impl<F, A, B> AppA<IO<A>, IO<B>> for IO<F>
+impl<F, A, B> AppA<A, B> for IO<F>
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = IO<A>;
+    type WithB = IO<B>;
+
     fn app_a(self, a: IO<A>) -> IO<B> {
         IO::new(|| unsafe { self.run()(a.run()) })
     }

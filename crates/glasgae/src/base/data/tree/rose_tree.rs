@@ -43,13 +43,21 @@ where
     }
 }
 
-impl<F, A, B> AppA<RoseTree<A>, RoseTree<B>> for RoseTree<F>
+impl<F, A, B> AppA<A, B> for RoseTree<F>
 where
     F: Term + FunctionT<A, B>,
-    Vec<RoseTree<F>>: Applicative<Vec<RoseTree<A>>, Vec<RoseTree<B>>>,
+    Vec<RoseTree<F>>: Applicative<
+        Vec<RoseTree<A>>,
+        Vec<RoseTree<B>>,
+        WithA = Vec<RoseTree<A>>,
+        WithB = Vec<RoseTree<B>>,
+    >,
     A: Term,
     B: Term,
 {
+    type WithA = RoseTree<A>;
+    type WithB = RoseTree<B>;
+
     fn app_a(self, a: RoseTree<A>) -> RoseTree<B> {
         let RoseTree(f, fc) = self;
         let RoseTree(a, ac) = a;
@@ -109,33 +117,43 @@ where
     }
 }
 
-impl<T, A1, A2, U, A3> TraverseT<A1, A2, A3> for RoseTree<T>
+impl<T, A1, AF1, A, A2, A3, AF3> TraverseT<A1, A2, A3> for RoseTree<T>
 where
     T: Term,
-    A1: Term + Functor<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
-    A1::Mapped: Applicative<A2, A3>,
-    A2: PureA<Pointed = Vec<RoseTree<U>>>,
-    U: Term,
-    A3: PureA<Pointed = RoseTree<U>> + Functor<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
-    A3::Mapped: Applicative<A2, A2>,
+    A1: Pointed<Pointed = A>
+        + Functor<Function<Vec<RoseTree<A>>, RoseTree<A>>, Mapped = AF1>
+        + WithPointed<Vec<RoseTree<A>>, WithPointed = A2>
+        + WithPointed<RoseTree<A>, WithPointed = A3>,
+    AF1: Applicative<Vec<RoseTree<A>>, RoseTree<A>, WithA = A2, WithB = A3>,
+    A: Term,
+    A2: PureA<Pointed = Vec<RoseTree<A>>>,
+    A3: Pointed<Pointed = RoseTree<A>>
+        + Functor<Function<Vec<RoseTree<A>>, Vec<RoseTree<A>>>, Mapped = AF3>
+        + WithPointed<Vec<RoseTree<A>>, WithPointed = A2>,
+    AF3: Applicative<Vec<RoseTree<A>>, Vec<RoseTree<A>>, WithA = A2, WithB = A2>,
 {
     fn traverse_t(self, f: impl FunctionT<T, A1>) -> A3 {
         rose_tree_traverse(self, f)
     }
 }
 
-fn rose_tree_traverse<T, A1, A2, U, A3>(
+fn rose_tree_traverse<T, A1, AF1, A, A2, A3, AF3>(
     RoseTree(x, xs): RoseTree<T>,
     f: impl FunctionT<T, A1>,
 ) -> A3
 where
     T: Term,
-    A1: Term + Functor<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
-    A1::Mapped: Applicative<A2, A3>,
-    A2: PureA<Pointed = Vec<RoseTree<U>>>,
-    U: Term,
-    A3: PureA<Pointed = RoseTree<U>> + Functor<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
-    A3::Mapped: Applicative<A2, A2>,
+    A1: Pointed<Pointed = A>
+        + Functor<Function<Vec<RoseTree<A>>, RoseTree<A>>, Mapped = AF1>
+        + WithPointed<Vec<RoseTree<A>>, WithPointed = A2>
+        + WithPointed<RoseTree<A>, WithPointed = A3>,
+    AF1: Applicative<Vec<RoseTree<A>>, RoseTree<A>, WithA = A2, WithB = A3>,
+    A: Term,
+    A2: PureA<Pointed = Vec<RoseTree<A>>>,
+    A3: Pointed<Pointed = RoseTree<A>>
+        + Functor<Function<Vec<RoseTree<A>>, Vec<RoseTree<A>>>, Mapped = AF3>
+        + WithPointed<Vec<RoseTree<A>>, WithPointed = A2>,
+    AF3: Applicative<Vec<RoseTree<A>>, Vec<RoseTree<A>>, WithA = A2, WithB = A2>,
 {
     let f = f.to_function();
     RoseTree.lift_a2()(f.clone()(x), xs.traverse_t(|t| rose_tree_traverse(t, f)))

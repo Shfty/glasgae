@@ -24,12 +24,15 @@ where
     }
 }
 
-impl<F, A, B> AppA<Option<A>, Option<B>> for Option<F>
+impl<F, A, B> AppA<A, B> for Option<F>
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = Option<A>;
+    type WithB = Option<B>;
+
     fn app_a(self, a: Option<A>) -> Option<B> {
         self.and_then(|f| a.map(f))
     }

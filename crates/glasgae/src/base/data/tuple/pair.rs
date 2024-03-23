@@ -44,13 +44,16 @@ where
     }
 }
 
-impl<M, FR, AR, BR> AppA<(M, AR), (M, BR)> for (M, FR)
+impl<M, FR, AR, BR> AppA<AR, BR> for (M, FR)
 where
     M: Monoid,
     FR: Term + FunctionT<AR, BR>,
     AR: Term,
     BR: Term,
 {
+    type WithA = (M, AR);
+    type WithB = (M, BR);
+
     fn app_a(self, a: (M, AR)) -> (M, BR) {
         let (u, f) = self;
         let (v, x) = a;

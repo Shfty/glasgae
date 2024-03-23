@@ -9,12 +9,15 @@ where
     }
 }
 
-impl<F, A, B> AppA<(A,), (B,)> for (F,)
+impl<F, A, B> AppA<A, B> for (F,)
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = (A,);
+    type WithB = (B,);
+
     fn app_a(self, a: (A,)) -> (B,) {
         (self.0(a.0),)
     }
@@ -82,7 +85,7 @@ impl<T, A1, A_, A2> TraverseT<A1, (), A2> for (T,)
 where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::Mapped: Applicative<A2, A2>,
+    A1::Mapped: Applicative<(A1::Pointed,), (A1::Pointed,), WithA = A2, WithB = A2>,
     T: Term,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
@@ -96,7 +99,7 @@ impl<A1, A2, A_> SequenceA<(), A2> for (A1,)
 where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::Mapped: Applicative<A2, A2>,
+    A1::Mapped: Applicative<(A1::Pointed,), (A1::Pointed,), WithA = A2, WithB = A2>,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
 {

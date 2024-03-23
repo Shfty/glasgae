@@ -70,12 +70,15 @@ where
     }
 }
 
-impl<F, A, B> AppA<Maybe<A>, Maybe<B>> for Maybe<F>
+impl<F, A, B> AppA<A, B> for Maybe<F>
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = Maybe<A>;
+    type WithB = Maybe<B>;
+
     fn app_a(self, a: Maybe<A>) -> Maybe<B> {
         match self {
             Just(f) => a.fmap(f),

@@ -83,7 +83,7 @@ macro_rules! derive_iterable_map {
         where
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Functor<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,
-            $crate::prelude::MappedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
+            $crate::prelude::MappedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2, WithA = V2, WithB = V2>,
             V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>> $(+ $trait)*,
         {
             fn sequence_a(self) -> V2 {
@@ -193,9 +193,9 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, T, AO> $crate::prelude::BisequenceA<AO> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$key>, Vec<$key>>, Pointed = $key> $(+ $trait)*,
-            $key::Mapped: $crate::prelude::AppA<AO, AO>,
+            $key::Mapped: $crate::prelude::AppA<AO, AO, WithA = AO, WithB = AO>,
             $value: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$value>, Vec<$value>>, Pointed = $value>,
-            $value::Mapped: $crate::prelude::AppA<AO, AO>,
+            $value::Mapped: $crate::prelude::AppA<AO, AO, WithA = AO, WithB = AO>,
             AO: $crate::prelude::PureA<Pointed = Vec<T>>,
         {
             fn bisequence_a(self) -> AO {

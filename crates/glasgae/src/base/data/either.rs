@@ -230,13 +230,16 @@ where
     }
 }
 
-impl<E, F, A, B> AppA<Either<E, A>, Either<E, B>> for Either<E, F>
+impl<E, F, A, B> AppA<A, B> for Either<E, F>
 where
     E: Term,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = Either<E, A>;
+    type WithB = Either<E, B>;
+
     fn app_a(self, r: Either<E, A>) -> Either<E, B> {
         match self {
             Left(e) => Left(e),

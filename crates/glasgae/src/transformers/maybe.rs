@@ -87,21 +87,24 @@ where
     }
 }
 
-impl<MF, MA, MB, F, A, B> AppA<MaybeT<MA>, MaybeT<MB>> for MaybeT<MF>
+impl<MF, F, MA, A, MB, B> AppA<A, B> for MaybeT<MF>
 where
-    MF: Monad<Maybe<B>, Pointed = Maybe<F>, Chained = MB>,
-    MA: Monad<Maybe<B>, Pointed = Maybe<A>, Chained = MB>,
-    MB: ReturnM<Pointed = Maybe<B>>,
+    MF: ReturnM<Pointed = Maybe<F>> + Monad<Maybe<A>, Chained = MA> + Monad<Maybe<B>, Chained = MB>,
+    MA: Monad<Maybe<B>, Pointed = Maybe<A>, Chained = MB> + Monad<Maybe<F>, Chained = MF>,
+    MB: Monad<Maybe<A>, Pointed = Maybe<B>, Chained = MA> + Monad<Maybe<F>, Chained = MF>,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = MaybeT<MA>;
+    type WithB = MaybeT<MB>;
+
     fn app_a(self, mx: MaybeT<MA>) -> MaybeT<MB> {
         let mf = self;
         MaybeT({
-            mf.run().chain_m(|mb_f| match mb_f {
+            ChainM::<Maybe<B>>::chain_m(mf.run(), |mb_f| match mb_f {
                 Nothing => ReturnM::return_m(Nothing),
-                Just(f) => mx.run().chain_m(|mb_x| match mb_x {
+                Just(f) => ChainM::<Maybe<B>>::chain_m(mx.run(), |mb_x| match mb_x {
                     Nothing => ReturnM::return_m(Nothing),
                     Just(x) => ReturnM::return_m(Just(f(x))),
                 }),

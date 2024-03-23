@@ -41,12 +41,15 @@ where
     }
 }
 
-impl<F, A, B, const N: usize> AppA<[A; N], [B; N]> for [F; N]
+impl<F, A, B, const N: usize> AppA<A, B> for [F; N]
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = [A; N];
+    type WithB = [B; N];
+
     fn app_a(self, a: [A; N]) -> [B; N] {
         self.into_iter()
             .zip(a)

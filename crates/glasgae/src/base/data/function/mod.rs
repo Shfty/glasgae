@@ -99,13 +99,16 @@ where
     }
 }
 
-impl<I, F, A, B> AppA<Function<I, A>, Function<I, B>> for Function<I, F>
+impl<I, F, A, B> AppA<A, B> for Function<I, F>
 where
     F: Term + FunctionT<A, B>,
     I: Term,
     A: Term,
     B: Term,
 {
+    type WithA = Function<I, A>;
+    type WithB = Function<I, B>;
+
     fn app_a(self, g: Function<I, A>) -> Function<I, B> {
         let f = self;
         (|x: I| f(x.clone())(g(x))).boxed()

@@ -278,21 +278,26 @@ where
     }
 }
 
-impl<S, MF, MA, MB, F, A, B> AppA<StateT<S, MA>, StateT<S, MB>> for StateT<S, MF>
+impl<S, MF, F, MA, A, MB, B> AppA<A, B> for StateT<S, MF>
 where
-    MF: Monad<(B, S), Pointed = (F, S), Chained = MB>,
-    MA: Monad<(B, S), Pointed = (A, S), Chained = MB>,
-    MB: ReturnM<Pointed = (B, S)>,
+    MF: ReturnM<Pointed = (F, S)> + Monad<(A, S), Chained = MA> + Monad<(B, S), Chained = MB>,
+    MA: Monad<(B, S), Pointed = (A, S), Chained = MB> + Monad<(F, S), Chained = MF>,
+    MB: Monad<(A, S), Pointed = (B, S), Chained = MA> + Monad<(F, S), Chained = MF>,
     S: Term,
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
-    fn app_a(self, mx: StateT<S, MA>) -> StateT<S, MB> {
+    type WithA = StateT<S, MA>;
+    type WithB = StateT<S, MB>;
+
+    fn app_a(self, mx: WithPointedT<Self, A>) -> WithPointedT<Self, B> {
         let StateT(mf) = self;
         let StateT(mx) = mx;
         StateT::new_t(|s| {
-            mf(s).chain_m(|(f, s_)| mx(s_).chain_m(|(x, s__)| ReturnM::return_m((f(x), s__))))
+            ChainM::<(B, S)>::chain_m(mf(s), |(f, s_)| {
+                ChainM::<(B, S)>::chain_m(mx(s_), |(x, s__)| ReturnM::return_m((f(x), s__)))
+            })
         })
     }
 }

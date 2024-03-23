@@ -125,8 +125,11 @@ pub trait PureA: Pointed {
 ///     .app(produce_bar())
 ///     .app(produce_baz());
 /// ```
-pub trait AppA<A1, A2>: Pointed {
-    fn app_a(self, a: A1) -> A2;
+pub trait AppA<A, B>: WithPointed<A> + WithPointed<B> {
+    type WithA: WithPointed<Self::Pointed, Pointed = A, WithPointed = Self>;
+    type WithB: WithPointed<Self::Pointed, Pointed = B, WithPointed = Self>;
+
+    fn app_a(self, a: Self::WithA) -> Self::WithB;
 }
 
 // Derive Applicative over the inner type
@@ -148,7 +151,7 @@ macro_rules! derive_applicative {
             }
         }
 
-        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<$ty<A>, $ty<B>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<A, B> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -160,6 +163,9 @@ macro_rules! derive_applicative {
             A: $crate::prelude::Term,
             B: $crate::prelude::Term,
         {
+            type WithA = $ty<A>;
+            type WithB = $ty<B>;
+
             fn app_a(self, a: $ty<A>) -> $ty<B> {
                 a.fmap(self.0)
             }
@@ -187,7 +193,7 @@ macro_rules! derive_applicative_via {
             }
         }
 
-        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<$ty<$($_arg,)* A $(,$arg_)*>, $ty<$($_arg,)* B $(,$arg_)*>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> AppA<A, B> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -199,6 +205,9 @@ macro_rules! derive_applicative_via {
             A: $crate::prelude::Term,
             B: $crate::prelude::Term,
         {
+            type WithA = $ty<A>;
+            type WithB = $ty<B>;
+
             fn app_a(self, a: $ty<A>) -> $ty<B> {
                 $ty($crate::prelude::AppA::app_a(self.0, a.0))
             }
@@ -206,9 +215,9 @@ macro_rules! derive_applicative_via {
     };
 }
 
-pub trait Applicative<A1, A2>: PureA + AppA<A1, A2> {}
+pub trait Applicative<A, B>: PureA + AppA<A, B> {}
 
-impl<T, A1, A2> Applicative<A1, A2> for T where T: PureA + AppA<A1, A2> {}
+impl<T, A, B> Applicative<A, B> for T where T: PureA + AppA<A, B> {}
 
 #[macro_export]
 macro_rules! derive_applicative_iterable {
@@ -228,7 +237,7 @@ macro_rules! derive_applicative_iterable {
             }
         }
 
-        impl<$($_arg,)* $arg $(,$arg_)*, A, B> $crate::prelude::AppA<$ty<$($_arg,)* A $(,$arg_)*>, $ty<$($_arg,)* B $(,$arg_)*>> for $ty<$($_arg,)* $arg $(,$arg_)*>
+        impl<$($_arg,)* $arg $(,$arg_)*, A, B> $crate::prelude::AppA<A, B> for $ty<$($_arg,)* $arg $(,$arg_)*>
         where
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
@@ -240,9 +249,18 @@ macro_rules! derive_applicative_iterable {
             A: $crate::prelude::Term $(+ $trait)*,
             B: $crate::prelude::Term $(+ $trait)*,
         {
+            type WithA = $ty<$($_arg,)* A $(,$arg_)*>;
+            type WithB = $ty<$($_arg,)* B $(,$arg_)*>;
+
             fn app_a(self, xs: $ty<A>) -> $ty<B> {
                 let fs = self;
-                $crate::prelude::ChainM::chain_m(fs, |f| $crate::prelude::ChainM::chain_m(xs, |x| $crate::prelude::ReturnM::return_m(f(x))))
+                $crate::prelude::ChainM::chain_m(
+                    fs,
+                    |f| $crate::prelude::ChainM::chain_m(
+                        xs,
+                        |x| $crate::prelude::ReturnM::return_m(f(x))
+                    )
+                )
             }
         }
     };
@@ -265,25 +283,28 @@ macro_rules! derive_applicative_iterable {
 ///     Some((3, 5))
 /// )
 /// ```
-pub trait LiftA2<A1, A2, A3>: Sized + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>
+pub trait LiftA2<MA, B, C>: Term + BifunT<MA::Pointed, B, C>
 where
-    Self: Term,
-    A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::Mapped: Applicative<A2, A3>,
-    A2: Pointed,
-    A3: Pointed,
+    MA: Pointed + WithPointed<B> + WithPointed<C>,
 {
-    fn lift_a2(self) -> impl BifunT<A1, A2, A3> {
-        |a1, a2| a1.fmap(|t| (|v| self(t, v)).boxed()).app_a(a2)
-    }
+    fn lift_a2(self) -> impl BifunT<MA, WithPointedT<MA, B>, WithPointedT<MA, C>>;
 }
 
-impl<F, A1, A2, A3> LiftA2<A1, A2, A3> for F
+impl<F, MF, MA, A, MB, B, MC, C> LiftA2<MA, B, C> for F
 where
-    F: Term + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>,
-    A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::Mapped: Applicative<A2, A3>,
-    A2: Pointed,
-    A3: Pointed,
+    F: Term + BifunT<A, B, C>,
+    MA: Pointed<Pointed = A>
+        + Functor<Function<B, C>, Mapped = MF>
+        + WithPointed<B, WithPointed = MB>
+        + WithPointed<C, WithPointed = MC>,
+    MF: Applicative<B, C, WithA = MB, WithB = MC>,
+    MB: Pointed<Pointed = B>,
+    MC: Pointed<Pointed = C>,
+    A: Term,
+    B: Term,
+    C: Term,
 {
+    fn lift_a2(self) -> impl BifunT<MA, MB, MC> {
+        |ma, mb| ma.fmap(|t| (|v| self(t, v)).boxed()).app_a(mb)
+    }
 }

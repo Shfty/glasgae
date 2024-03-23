@@ -252,21 +252,28 @@ where
     }
 }
 
-impl<MF, MA, MB, E, F, A, B> AppA<ExceptT<MA>, ExceptT<MB>> for ExceptT<MF>
+impl<E, MF, F, MA, A, MB, B> AppA<A, B> for ExceptT<MF>
 where
-    MF: Monad<Either<E, B>, Pointed = Either<E, F>, Chained = MB>,
-    MA: Monad<Either<E, B>, Pointed = Either<E, A>, Chained = MB>,
-    MB: ReturnM<Pointed = Either<E, B>>,
+    MF: ReturnM<Pointed = Either<E, F>>
+        + Monad<Either<E, A>, Chained = MA>
+        + Monad<Either<E, B>, Chained = MB>,
+    MA: Monad<Either<E, B>, Pointed = Either<E, A>, Chained = MB>
+        + Monad<Either<E, F>, Chained = MF, WithPointed = MF>,
+    MB: Monad<Either<E, A>, Pointed = Either<E, B>, Chained = MA>
+        + Monad<Either<E, F>, Chained = MF, WithPointed = MF>,
     F: Term + FunctionT<A, B>,
     E: Term,
     A: Term,
     B: Term,
 {
+    type WithA = ExceptT<MA>;
+    type WithB = ExceptT<MB>;
+
     fn app_a(self, ExceptT(v): ExceptT<MA>) -> ExceptT<MB> {
         let ExceptT(f) = self;
-        ExceptT(f.chain_m(|mf| match mf {
+        ExceptT(ChainM::<Either<E, B>>::chain_m(f, |mf| match mf {
             Left(e) => ReturnM::return_m(Left(e)),
-            Right(k) => v.chain_m(|mv| match mv {
+            Right(k) => ChainM::<Either<E, B>>::chain_m(v, |mv| match mv {
                 Left(e) => ReturnM::return_m(Left(e)),
                 Right(x) => ReturnM::return_m(Right(k(x))),
             }),

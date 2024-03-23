@@ -8,8 +8,8 @@ mod zip_travel;
 pub use travel::*;
 pub use zip_travel::*;
 
-use crate::{prelude::*, derive_pointed, derive_with_pointed, derive_functor, derive_applicative};
 use crate::transformers::cont::Cont;
+use crate::{derive_applicative, derive_functor, derive_pointed, derive_with_pointed, prelude::*};
 
 #[derive(Clone)]
 pub enum Zipper<T, D>
@@ -100,12 +100,15 @@ where
     }
 }
 
-impl<F, T, D> AppA<Zipper<T, D>, Zipper<T, D>> for Zipper<F, D>
+impl<F, T, D> AppA<T, T> for Zipper<F, D>
 where
     F: Term + FunctionT<T, T>,
     T: Term,
     D: Term + Default,
 {
+    type WithA = Zipper<T, D>;
+    type WithB = Zipper<T, D>;
+
     fn app_a(self, a: Zipper<T, D>) -> Zipper<T, D> {
         let f = self.unwrap_unchecked();
         a.fmap(f)

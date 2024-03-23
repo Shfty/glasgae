@@ -247,14 +247,20 @@ where
     }
 }
 
-impl<MR, MF, MA, MB> AppA<ContT<MR, MA>, ContT<MR, MB>> for ContT<MR, MF>
+impl<MR, MF, F, MA, A, MB, B> AppA<A, B> for ContT<MR, MF>
 where
-    MF: Pointed,
-    MF::Pointed: FunctionT<MA::Pointed, MB::Pointed>,
-    MA: Pointed,
-    MB: Pointed,
+    MF: Pointed<Pointed = F> + WithPointed<A, WithPointed = MA> + WithPointed<B, WithPointed = MB>,
+    MF::Pointed: FunctionT<A, B>,
+    MA: WithPointed<F, Pointed = A, WithPointed = MF>,
+    MB: WithPointed<F, Pointed = B, WithPointed = MF>,
     MR: Pointed,
+    F: Term,
+    A: Term,
+    B: Term,
 {
+    type WithA = ContT<MR, MA>;
+    type WithB = ContT<MR, MB>;
+
     fn app_a(self, v: ContT<MR, MA>) -> ContT<MR, MB> {
         let f = self;
         ContT::new_t(|c| f.run_t(|g| v.run_t(|t| c(g(t)))))

@@ -152,16 +152,26 @@ where
     }
 }
 
-impl<LVL, MSG, S, MA, A1, A2> AppA<A1, A2> for StateLogger<LVL, MSG, S, MA>
+impl<LVL, MSG, S, MF, F, MA, A, MB, B> AppA<A, B> for StateLogger<LVL, MSG, S, MF>
 where
-    StateLoggingT<LVL, MSG, S, MA>: AppA<A1, A2>,
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: Pointed,
+    MF: Applicative<A, B, WithA = MA, WithB = MB>
+        + Pointed<Pointed = (F, S)>
+        + Monad<(A, S), Chained = MA>
+        + Monad<(B, S), Chained = MB>,
+    MA: Monad<(F, S), Pointed = (A, S), Chained = MF> + Monad<(B, S), Chained = MB>,
+    MB: Monad<(F, S), Pointed = (B, S), Chained = MF> + Monad<(A, S), Chained = MA>,
+    F: Term + FunctionT<A, B>,
+    A: Term,
+    B: Term,
 {
-    fn app_a(self, a: A1) -> A2 {
-        self.run_t().app_a(a)
+    type WithA = StateLogger<LVL, MSG, S, MA>;
+    type WithB = StateLogger<LVL, MSG, S, MB>;
+
+    fn app_a(self, a: Self::WithA) -> Self::WithB {
+        StateLogger::new_t(self.run_t().app_a(a.run_t()))
     }
 }
 

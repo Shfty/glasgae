@@ -2,7 +2,8 @@
 
 use crate::{
     base::data::function::{Nullary, NullaryT},
-    prelude::*, derive_pointed, derive_with_pointed,
+    derive_pointed, derive_with_pointed,
+    prelude::*,
 };
 
 /// A value of type [`Lazy<T>`] represents a yet-to-be computed value,
@@ -56,12 +57,15 @@ where
     }
 }
 
-impl<F, A, B> AppA<Lazy<A>, Lazy<B>> for Lazy<F>
+impl<F, A, B> AppA<A, B> for Lazy<F>
 where
     F: Term + FunctionT<A, B>,
     A: Term,
     B: Term,
 {
+    type WithA = Lazy<A>;
+    type WithB = Lazy<B>;
+
     fn app_a(self, a: Lazy<A>) -> Lazy<B> {
         Lazy::new(|| self.run()(a.run()))
     }

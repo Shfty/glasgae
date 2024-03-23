@@ -40,13 +40,16 @@ where
     }
 }
 
-impl<F, E, A, B> AppA<Result<A, E>, Result<B, E>> for Result<F, E>
+impl<F, E, A, B> AppA<A, B> for Result<F, E>
 where
     F: Term + FunctionT<A, B>,
     E: Term,
     A: Term,
     B: Term,
 {
+    type WithA = Result<A, E>;
+    type WithB = Result<B, E>;
+
     fn app_a(self, a: Result<A, E>) -> Result<B, E> {
         self.and_then(|f| a.map(f))
     }
