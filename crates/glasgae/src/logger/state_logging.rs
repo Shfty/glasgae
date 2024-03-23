@@ -18,25 +18,6 @@ pub type StateLoggingT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>
 
 pub type HoistStateLoggingT<LVL, MSG, S, MA> = HoistStateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
-impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateLoggingT<LVL, MSG, S, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    S: Term,
-    MA: ReturnM<Pointed = ((), S)> + ChainM<(S, S)> + ChainM<()>,
-    ChainedT<MA, (S, S)>: Monad<((), S), Pointed = (S, S), Chained = MA>,
-    ChainedT<MA, ()>: Monad<((), S), Pointed = (), Chained = MA> + MonadIO<()>,
-{
-    fn log(level: LVL, message: MSG) -> Self {
-        StateLoggingT::<LVL, MSG, S, ChainedT<MA, (S, S)>>::get().chain_m(move |s| {
-            MonadTrans::lift(LoggingT::<LVL, (MSG, S), ChainedT<MA, ()>>::log(
-                level,
-                (message, s),
-            ))
-        })
-    }
-}
-
 #[derive(Clone)]
 pub struct StateLogger<LVL, MSG, S, MA>(StateLoggingT<LVL, MSG, S, MA>)
 where
@@ -72,6 +53,16 @@ where
             .run_t(Default::default())
             .run_t(f)
             .chain_m(Pair::fst.compose_clone(ReturnM::return_m))
+    }
+
+    pub fn map_t<MB>(
+        self,
+        f: impl FunctionT<StateLoggingT<LVL, MSG, S, MA>, StateLoggingT<LVL, MSG, S, MB>>,
+    ) -> StateLogger<LVL, MSG, S, MB>
+    where
+        MB: Term,
+    {
+        StateLogger::new_t(f(self.run_t()))
     }
 }
 
@@ -237,14 +228,18 @@ where
 
 impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: MonadLogger<LVL, MSG>,
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: Term,
+    MA: Monad<(S, S), Pointed = ((), S)> + Monad<()>,
+    MA::Pointed: Lower<(), S, Lowered = ()>,
+    ChainedT<MA, (S, S)>: ReturnM<Pointed = (S, S)>,
+    ChainedT<MA, ()>: ReturnM<Pointed = ()> + MonadIO<()>,
 {
     fn log(level: LVL, message: MSG) -> Self {
-        StateLogger(StateLoggingT::log(level, message))
+        StateLogger::new_t(
+            StateT::get().chain_m(move |s| MonadTrans::lift(LoggingT::log(level, (message, s)))),
+        )
     }
 }
 

@@ -392,17 +392,6 @@ where
     }
 }
 
-trait LowerEither<E, A>: Pointed<Pointed = Either<E, A>> + WithPointed<A> {
-    type Lowered: Pointed<Pointed = A>;
-}
-
-impl<T, E, A> LowerEither<E, A> for T
-where
-    T: Pointed<Pointed = Either<E, A>> + WithPointed<A>,
-{
-    type Lowered = T::WithPointed;
-}
-
 impl<MA, E, A> MonadIO<A> for ExceptT<MA>
 where
     Self: MonadTrans<MA::Lowered>,
@@ -413,4 +402,15 @@ where
     fn lift_io(m: IO<A>) -> Self {
         Self::lift(<MA as LowerEither<E, A>>::Lowered::lift_io(m))
     }
+}
+
+trait LowerEither<E, A>: Pointed<Pointed = Either<E, A>> + WithPointed<A> {
+    type Lowered: Pointed<Pointed = A>;
+}
+
+impl<T, E, A> LowerEither<E, A> for T
+where
+    T: Pointed<Pointed = Either<E, A>> + WithPointed<A>,
+{
+    type Lowered = T::WithPointed;
 }

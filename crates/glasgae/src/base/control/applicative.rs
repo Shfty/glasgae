@@ -125,7 +125,7 @@ pub trait PureA: Pointed {
 ///     .app(produce_bar())
 ///     .app(produce_baz());
 /// ```
-pub trait AppA<A, B>: WithPointed<A> + WithPointed<B> {
+pub trait AppA<A, B>: WithPointed<A, WithPointed = Self::WithA> + WithPointed<B, WithPointed = Self::WithB> {
     type WithA: WithPointed<Self::Pointed, Pointed = A, WithPointed = Self>;
     type WithB: WithPointed<Self::Pointed, Pointed = B, WithPointed = Self>;
 

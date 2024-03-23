@@ -9,7 +9,7 @@ use crate::{
     },
     derive_pointed_via,
     prelude::*,
-    transformers::class::MonadTrans,
+    transformers::{class::MonadTrans, except::ExceptT, state::StateT},
 };
 
 use self::indent::Indent;
@@ -162,7 +162,6 @@ where
 
 impl<LVL, MSG, MA, A> MonadIO<A> for LoggingT<LVL, MSG, MA>
 where
-    Self: MonadTrans<IO<A>>,
     LVL: Term,
     MSG: Term,
     MA: MonadIO<A>,
@@ -185,6 +184,28 @@ where
 {
     fn log(level: LVL, message: MSG) -> Self {
         Self::log(level, message)
+    }
+}
+
+impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateT<S, MA>
+where
+    StateT<S, MA>: MonadTrans<MA>,
+    LVL: Term,
+    MSG: Term,
+    S: Term,
+    MA: MonadLogger<LVL, MSG>,
+{
+    fn log(level: LVL, message: MSG) -> Self {
+        StateT::lift(MA::log(level, message))
+    }
+}
+
+impl<LVL, MSG, MA> MonadLogger<LVL, MSG> for ExceptT<MA>
+where
+    MA: MonadLogger<LVL, MSG>,
+{
+    fn log(level: LVL, message: MSG) -> Self {
+        ExceptT::new_t(MA::log(level, message))
     }
 }
 
@@ -222,7 +243,10 @@ mod test {
 
     use log::Level;
 
-    use crate::{base::control::monad::io::MonadIO, prelude::*, transformers::class::MonadTrans};
+    use crate::{
+        base::control::monad::io::MonadIO, logger::state_logging::StateLogger, prelude::*,
+        transformers::class::MonadTrans,
+    };
 
     use super::{
         indent_logger, print_logger,
@@ -244,9 +268,9 @@ mod test {
 
     #[test]
     fn test_monad_logger_state() -> IO<()> {
-        type S<T> = StateLoggingT<Level, &'static str, usize, IO<T>>;
+        type S<T> = StateLogger<Level, &'static str, usize, IO<(T, usize)>>;
         S::lift(MonadIO::lift_io(IO::new(env_logger::init)))
-            .then_m(S::log(Level::Trace, "hmm..."))
+            .then_m(<S<_> as MonadLogger<_, _>>::log(Level::Trace, "hmm..."))
             .then_m(
                 S::log_scope(
                     S::log(Level::Debug, "hmm..?")
