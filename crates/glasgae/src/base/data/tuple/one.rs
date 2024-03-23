@@ -81,28 +81,36 @@ where
     }
 }
 
-impl<T, A1, A_, A2> TraverseT<A1, (), A2> for (T,)
+impl<T, A1, A, A2> TraverseT<A1, (), A2> for (T,)
 where
-    A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
-    A_: Monoid,
-    A1::Mapped: Applicative<A_, A_, WithA = A2, WithB = A2>,
+    A1: PureA<Pointed = A> + Functor<Function<(A,), (A,)>> + WithPointed<Function<(A1,), (A,)>>,
+    A: Monoid,
+    A1::Mapped: Applicative<A, A, WithA = A2, WithB = A2>,
     T: Term,
-    A_: Term,
+    A: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
 {
+    type Inner = A1;
+    type Value = A;
+    type Traversed = A2;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         traverse_t_default(self, f)
     }
 }
 
-impl<A1, A2, A_> SequenceA<(), A2> for (A1,)
+impl<A1, A2, A> SequenceA<(), A2> for (A1,)
 where
-    A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
-    A_: Monoid,
-    A1::Mapped: Applicative<A_, A_, WithA = A2, WithB = A2>,
-    A_: Term,
+    A1: PureA<Pointed = A> + Functor<Function<(A,), (A,)>> + WithPointed<Function<(A1,), (A,)>>,
+    A: Monoid,
+    A1::Mapped: Applicative<A, A, WithA = A2, WithB = A2>,
+    A: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
 {
+    type Inner = A1;
+    type Value = A;
+    type Sequenced = A2;
+
     fn sequence_a(self) -> A2 {
         self.foldr(
             |next, acc| next.fmap(|t| (|_| (t,)).boxed()).app_a(acc),

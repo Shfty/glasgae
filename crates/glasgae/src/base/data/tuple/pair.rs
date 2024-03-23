@@ -5,8 +5,9 @@ use crate::{
         with_bipointed::WithBipointed,
     },
     prelude::{
-        foldl1_default, foldr1_default, sequence_a_default, AppA, Bifoldable, Functor, FoldMap,
-        Foldable, Foldable1, FunctionT, Monoid, PureA, SequenceA, Term, TraverseT,
+        foldl1_default, foldr1_default, sequence_a_default, AppA, Bifoldable, FoldMap, Foldable,
+        Foldable1, Function, FunctionT, Functor, Monoid, Pointed, PointedT, PureA, SequenceA, Term,
+        TraverseT, WithPointed,
     },
 };
 
@@ -101,14 +102,18 @@ where
     }
 }
 
-impl<L, R, A1, R_, A2> TraverseT<A1, (), A2> for (L, R)
+impl<L, R, A1, A, A2> TraverseT<A1, (), A2> for (L, R)
 where
     L: Term,
     R: Term,
-    A1: Functor<(L, R_), Pointed = R_, Mapped = A2>,
-    R_: Term,
+    A1: Functor<(L, A), Pointed = A, Mapped = A2>,
+    A: Term,
     A2: Term,
 {
+    type Inner = A1;
+    type Value = A;
+    type Traversed = A2;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         f(self.1).fmap(|t| (self.0, t))
     }
@@ -117,9 +122,14 @@ where
 impl<L, A1, A2> SequenceA<(), A2> for (L, A1)
 where
     Self: TraverseT<A1, (), A2, Pointed = A1>,
-    A1: Term,
+    A1: Pointed + WithPointed<Function<(L, A1), (L, PointedT<A1>)>>,
     A2: Term,
+    L: Term,
 {
+    type Inner = A1;
+    type Value = PointedT<A1>;
+    type Sequenced = A2;
+
     fn sequence_a(self) -> A2 {
         sequence_a_default(self)
     }

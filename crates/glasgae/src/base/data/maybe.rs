@@ -15,7 +15,7 @@
 
 pub mod option;
 
-use crate::{prelude::*, derive_pointed, derive_with_pointed};
+use crate::{derive_pointed, derive_with_pointed, prelude::*};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Maybe<T> {
@@ -159,14 +159,18 @@ where
     }
 }
 
-impl<T, A, U, B> TraverseT<A, (), B> for Maybe<T>
+impl<T, MA, A, MB> TraverseT<MA, (), MB> for Maybe<T>
 where
-    A: Functor<Maybe<U>, Pointed = U, Mapped = B>,
-    A::Mapped: PureA<Pointed = Maybe<U>>,
+    MA: Functor<Maybe<A>, Pointed = A, Mapped = MB>,
+    MA::Mapped: PureA<Pointed = Maybe<A>>,
     T: Term,
-    U: Term,
+    A: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A>) -> A::Mapped {
+    type Inner = MA;
+    type Value = A;
+    type Traversed = MB;
+
+    fn traverse_t(self, f: impl FunctionT<T, MA>) -> MA::Mapped {
         match self {
             Just(x) => f(x).fmap(Just.boxed()),
             Nothing => PureA::pure_a(Nothing),
@@ -176,10 +180,14 @@ where
 
 impl<A1, A_, A2> SequenceA<(), A2> for Maybe<A1>
 where
-    A1: Functor<Maybe<A_>, Pointed = A_, Mapped = A2>,
+    A1: Functor<Maybe<A_>, Pointed = A_, Mapped = A2> + WithPointed<Function<Maybe<A1>, Maybe<A_>>>,
     A_: Term,
     A2: PureA<Pointed = Maybe<A_>>,
 {
+    type Inner = A1;
+    type Value = PointedT<A1>;
+    type Sequenced = A2;
+
     fn sequence_a(self) -> A2 {
         match self {
             Just(x) => x.fmap(Just.boxed()),

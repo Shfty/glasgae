@@ -80,28 +80,54 @@ where
 
 impl<T, MA, A, MB> TraverseT<MA, (), MB> for Identity<T>
 where
-    MA: PureA<Pointed = A> + Functor<Function<Identity<A>, Identity<A>>>,
+    MA: PureA<Pointed = A>
+        + Functor<Function<Identity<A>, Identity<A>>>
+        + WithPointed<Function<Identity<MA>, Identity<A>>>,
     MA::Mapped: Applicative<Identity<A>, Identity<A>, WithA = MB, WithB = MB>,
     T: Term,
     A: Monoid,
     MB: PureA<Pointed = Identity<A>>,
 {
+    type Inner = T;
+    type Value = A;
+    type Traversed = MB;
+
     fn traverse_t(self, f: impl FunctionT<T, MA>) -> MB {
         traverse_t_default(self, f)
     }
 }
 
-impl<MA, A, MB> SequenceA<(), MB> for Identity<MA>
+impl<MA, MF, A, MB> SequenceA<(), MB> for Identity<MA>
 where
-    MA: PureA<Pointed = A> + Functor<Function<Identity<A>, Identity<A>>>,
-    MA::Mapped: Applicative<Identity<A>, Identity<A>, WithA = MB, WithB = MB>,
+    MA: PureA<Pointed = A>
+        + Functor<Function<Identity<A>, Identity<A>>, Mapped = MF>
+        + WithPointed<Function<Identity<MA>, Identity<A>>>,
+    MF: Applicative<Identity<A>, Identity<A>, WithA = MB, WithB = MB>,
     A: Monoid,
     MB: PureA<Pointed = Identity<A>>,
 {
+    type Inner = MA;
+    type Value = A;
+    type Sequenced = MB;
+
     fn sequence_a(self) -> MB {
-        self.foldr(
-            |next, acc| next.fmap(|t| (|_| Identity(t)).boxed()).app_a(acc),
-            PureA::pure_a(Identity(Monoid::mempty())),
-        )
+        self.run()
+            .fmap(|t| r#const(Identity(t)).boxed())
+            .app_a(PureA::pure_a(Identity(Monoid::mempty())))
     }
+}
+
+fn test() {
+    // Starting monad-over-monoid
+    let monad_monoid: Identity<Vec<usize>> = Identity(vec![1234]);
+
+    // Unwrap inner monoid
+    let monoid_v: Vec<usize> = monad_monoid.run();
+
+    // Map inner monoid to function from monoid-over-monoid to monad-over-value
+    let monoid_f: Vec<Function<Identity<Vec<usize>>, Identity<usize>>> =
+        monoid_v.fmap(|t| r#const(Identity(t)).to_function());
+
+    // Apply function monoid to identity monad-over-monoid, resulting in monoid-over-monad
+    let _monoid_monad: Vec<Identity<usize>> = monoid_f.app_a(PureA::pure_a(Monoid::mempty()));
 }

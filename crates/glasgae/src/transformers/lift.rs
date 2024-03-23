@@ -141,19 +141,30 @@ where
 impl<FA, A1, A2> TraverseT<A1, (), A2> for Lift<FA>
 where
     Self: Functor<A1>,
-    MappedT<Self, A1>: SequenceA<(), A2>,
+    MappedT<Self, A1>: SequenceA<(), A2, Sequenced = A2>,
     FA: Pointed,
-    A1: Term,
+    A1: Pointed,
 {
+    type Inner = A1;
+    type Value = PointedT<A1>;
+    type Traversed = A2;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         traverse_t_default(self, f)
     }
 }
 
-impl<FA, A2> SequenceA<(), A2> for Lift<FA>
+impl<FA, A, A2> SequenceA<(), A2> for Lift<FA>
 where
-    FA: Pointed,
+    FA: Pointed<Pointed = A>
+        + WithPointed<A>
+        + WithPointed<Function<Lift<FA>, Lift<<FA as WithPointed<A>>::WithPointed>>>,
+    A: Term,
 {
+    type Inner = FA;
+    type Value = A;
+    type Sequenced = A2;
+
     fn sequence_a(self) -> A2 {
         todo!()
     }

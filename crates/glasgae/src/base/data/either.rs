@@ -349,15 +349,19 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, (), A1::Mapped> for Either<E, A>
+impl<E, A, A_, A1, A2> TraverseT<A1, (), A1::Mapped> for Either<E, A>
 where
+    A1: Functor<Either<E, A_>, Pointed = A_, Mapped = A2>,
+    A2: PureA<Pointed = Either<E, A_>>,
     E: Term,
     A: Term,
     A_: Term,
-    A1: Functor<Either<E, A_>, Pointed = A_>,
-    A1::Mapped: PureA<Pointed = Either<E, A_>>,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::Mapped {
+    type Inner = A1;
+    type Value = A_;
+    type Traversed = A2;
+
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         match self {
             Left(x) => PureA::pure_a(Left(x)),
             Right(y) => f(y).fmap(Right.boxed()),
@@ -365,14 +369,19 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<(), A1::Mapped> for Either<E, A1>
+impl<E, A1, A, A2> SequenceA<(), A2> for Either<E, A1>
 where
-    A1: Functor<Either<E, A_>, Pointed = A_>,
-    A1::Mapped: PureA<Pointed = Either<E, A_>>,
+    A1: Functor<Either<E, A>, Pointed = A, Mapped = A2>
+        + WithPointed<Function<Either<E, A1>, Either<E, A>>>,
+    A2: PureA<Pointed = Either<E, A>>,
     E: Term,
-    A_: Term,
+    A: Term,
 {
-    fn sequence_a(self) -> A1::Mapped {
+    type Inner = A1;
+    type Value = A;
+    type Sequenced = A2;
+
+    fn sequence_a(self) -> A2 {
         match self {
             Left(x) => PureA::pure_a(Left(x)),
             Right(y) => y.fmap(Right.boxed()),

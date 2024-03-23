@@ -69,11 +69,15 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$key, $value>
         where
             Self: $crate::prelude::Functor<A1>,
-            $crate::prelude::MappedT<Self, A1>: $crate::prelude::SequenceA<(), A2>,
+            $crate::prelude::MappedT<Self, A1>: $crate::prelude::SequenceA<(), A2, Sequenced = A2>,
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
-            A1: $crate::prelude::Term,
+            A1: $crate::prelude::Pointed,
         {
+            type Inner = $value;
+            type Value = $crate::prelude::PointedT<A1>;
+            type Traversed = A2;
+
             fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, A1>) -> A2 {
                 $crate::prelude::traverse_t_default(self, f)
             }
@@ -82,10 +86,15 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, V2> $crate::prelude::SequenceA<(), V2> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term $(+ $trait)*,
-            $value: $crate::prelude::Functor<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,
+            $value: $crate::prelude::Functor<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>
+                    + $crate::prelude::WithPointed<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $ty<$key, $value>>>>,
             $crate::prelude::MappedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2, WithA = V2, WithB = V2>,
             V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>> $(+ $trait)*,
         {
+            type Inner = $value;
+            type Value = $crate::prelude::PointedT<$value>;
+            type Sequenced = V2;
+
             fn sequence_a(self) -> V2 {
                 $crate::prelude::Foldable::foldr(
                     self,

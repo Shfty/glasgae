@@ -338,6 +338,10 @@ where
     MB: Term,
     MC: Term,
 {
+    type Inner = MB;
+    type Value = A;
+    type Traversed = MC;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, MB>) -> MC {
         todo!()
     }
@@ -346,10 +350,16 @@ where
 impl<S, MB, B, MC> SequenceA<(), MC> for StateT<S, MB>
 where
     S: TraverseT<MB, (), MC>,
-    MB: Pointed<Pointed = (B, S)>,
+    MB: Pointed<Pointed = (B, S)>
+        + WithPointed<(B, S)>
+        + WithPointed<Function<StateT<S, MB>, StateT<S, <MB as WithPointed<(B, S)>>::WithPointed>>>,
     MC: Term,
     B: Term,
 {
+    type Inner = MB;
+    type Value = B;
+    type Sequenced = MC;
+
     fn sequence_a(self) -> MC {
         todo!()
     }

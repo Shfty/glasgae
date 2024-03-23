@@ -174,21 +174,32 @@ where
 impl<A, MA, A1, A2> TraverseT<A1, (), A2> for MaybeT<MA>
 where
     Self: Functor<A1>,
-    MappedT<Self, A1>: SequenceA<(), A2>,
+    MappedT<Self, A1>: SequenceA<(), A2, Sequenced = A2>,
     MA: Pointed<Pointed = Maybe<A>>,
     A: Term,
     A1: Term,
 {
+    type Inner = A1;
+    type Value = A;
+    type Traversed = A2;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
         traverse_t_default(self, f)
     }
 }
 
-impl<A1, A2> SequenceA<(), A2> for MaybeT<A1>
+impl<A1, A, A2> SequenceA<(), A2> for MaybeT<A1>
 where
     Self: TraverseT<A1, (), A2>,
-    A1: Term,
+    A1: Pointed<Pointed = Maybe<A>>
+        + WithPointed<Maybe<A>>
+        + WithPointed<Function<MaybeT<A1>, MaybeT<<A1 as WithPointed<Maybe<A>>>::WithPointed>>>,
+    A: Term,
 {
+    type Inner = A1;
+    type Value = A;
+    type Sequenced = A2;
+
     fn sequence_a(self) -> A2 {
         todo!()
     }

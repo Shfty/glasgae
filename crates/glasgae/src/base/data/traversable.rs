@@ -62,13 +62,20 @@ pub trait TraverseT<A1, A2, A3>: Pointed
 where
     A1: Term,
 {
+    type Inner;
+    type Value;
+    type Traversed;
+
     fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A3;
 }
 
-pub fn traverse_t_default<This, A1, A2, A3>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A3
+pub fn traverse_t_default<This, A1, AF, A2, A3>(
+    this: This,
+    f: impl FunctionT<This::Pointed, A1>,
+) -> A3
 where
-    This: Functor<A1>,
-    This::Mapped: SequenceA<A2, A3>,
+    This: Functor<A1, Mapped = AF>,
+    AF: SequenceA<A2, A3, Sequenced = A3>,
     A1: Term,
 {
     this.fmap(f).sequence_a()
@@ -95,8 +102,12 @@ where
 /// assert_eq!(vec![Some(1), Some(2), Some(3), None].sequence_a(), None);
 /// assert_eq!(vec![Right(1), Right(2), Right(3), Left(4)].sequence_a(), Left(4));
 /// ```
-pub trait SequenceA<A2, A3>: Pointed {
-    fn sequence_a(self) -> A3;
+pub trait SequenceA<A2, A3>: WithPointed<Self::Value> {
+    type Inner: WithPointed<Function<Self, WithPointedT<Self, Self::Value>>>;
+    type Value;
+    type Sequenced;
+
+    fn sequence_a(self) -> Self::Sequenced;
 }
 
 pub fn sequence_a_default<This, A1, A2, A3>(this: This) -> A3
@@ -128,6 +139,10 @@ macro_rules! derive_traversable_iterable {
             B: $crate::prelude::Term $(+ $trait)*,
             MB: $crate::prelude::PureA<Pointed = $ty<B>> $(+ $trait)*,
         {
+            type Inner = $arg;
+            type Value = $crate::prelude::PointedT<MA>;
+            type Traversed = MB;
+
             fn traverse_t(self, f: impl $crate::prelude::FunctionT<Self::Pointed, MA>) -> MB {
                 let f = f.to_function();
                 $crate::prelude::Foldable::foldr(
@@ -147,13 +162,18 @@ macro_rules! derive_traversable_iterable {
             $(
                 $_arg: $crate::prelude::Term $(+ $_trait)*,
             )*
-            $arg: $crate::prelude::Term $(+ $trait)*,
+            $arg: $crate::prelude::WithPointed<$crate::prelude::Function<$ty<$($_arg,)* $arg $(,$arg_)*>, $ty<$crate::prelude::PointedT<$arg>>>> $(+ $trait)*,
+            $crate::prelude::PointedT<$arg>: $($trait +)*,
             $(
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
             Self: $crate::prelude::TraverseT<$arg, (), MB, Pointed = $arg>,
             MB: $crate::prelude::Term
         {
+            type Inner = $arg;
+            type Value = $crate::prelude::PointedT<$arg>;
+            type Sequenced = MB;
+
             fn sequence_a(self) -> MB {
                 $crate::prelude::sequence_a_default(self)
             }
@@ -203,7 +223,7 @@ pub trait Sequence<A2, A3>: SequenceA<A2, A3> {
 
 impl<T, B, C> Sequence<B, C> for T
 where
-    T: SequenceA<B, C>,
+    T: SequenceA<B, C, Sequenced = C>,
 {
     fn sequence(self) -> C {
         self.sequence_a()
