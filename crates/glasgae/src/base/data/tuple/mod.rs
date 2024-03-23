@@ -54,7 +54,7 @@ macro_rules ! impl_tuple {
             fn fmap(
                 self,
                 f: impl $crate::prelude::FunctionT<Self::Pointed, R_>,
-            ) -> Self::WithPointed {
+            ) -> Self::Mapped {
                 let (t,) = self;
                 (f(t),)
             }
@@ -90,12 +90,12 @@ macro_rules ! impl_tuple {
             $a: $crate::prelude::Term,
             R_: $crate::prelude::Term,
         {
-            type Mapped = ($($tuple,)* $a);
+            type Mapped = ($($tuple,)* R_);
 
             fn fmap(
                 self,
                 f: impl $crate::prelude::FunctionT<Self::Pointed, R_>,
-            ) -> Self::WithPointed {
+            ) -> Self::Mapped {
                 #[allow(non_snake_case)]
                 let ($($tuple,)* t,) = self;
                 ($($tuple,)* f(t),)

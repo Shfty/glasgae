@@ -5,22 +5,26 @@ use crate::prelude::{Either, Pointed, PointedT, Term, WithPointed};
 use super::Monad;
 
 /// Lift extra data into a monadic type.
-pub trait MonadLift<B>: Pointed + WithPointed<B> {
+pub trait MonadLift<B>: WithPointed<B> {
     type Lifted: Pointed<Pointed = B>;
 }
 
 impl<MA, A, B> MonadLift<(A, B)> for MA
 where
-    MA: Pointed<Pointed = A> + WithPointed<(A, B)>,
+    MA: Monad<(A, B), Pointed = A>,
+    A: Term,
+    B: Term,
 {
-    type Lifted = MA::WithPointed;
+    type Lifted = MA::Chained;
 }
 
 impl<MA, A, B> MonadLift<Either<A, B>> for MA
 where
-    MA: Pointed<Pointed = B> + WithPointed<Either<A, B>>,
+    MA: Monad<Either<A, B>, Pointed = B>,
+    A: Term,
+    B: Term,
 {
-    type Lifted = MA::WithPointed;
+    type Lifted = MA::Chained;
 }
 
 /// Convenience alias to [`MonadLift::Lifted`].

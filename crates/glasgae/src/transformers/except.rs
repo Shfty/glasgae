@@ -105,7 +105,7 @@ where
     /// Transform any exceptions thrown by the computation using the given function.
     pub fn with_t<MB, E, E_, A>(self, f: impl FunctionT<E, E_>) -> ExceptT<MB>
     where
-        MA: Functor<Either<E_, A>, Pointed = Either<E, A>, WithPointed = MB>,
+        MA: Functor<Either<E_, A>, Pointed = Either<E, A>, Mapped = MB>,
         MB: Pointed<Pointed = Either<E_, A>>,
         E_: Term,
         A: Term,
@@ -235,7 +235,7 @@ where
 {
     type Mapped = ExceptT<MA::Mapped>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::Mapped {
         let f = f.to_function();
         ExceptT(self.run_t().fmap(|t| t.fmap(f)))
     }
@@ -351,7 +351,7 @@ where
 impl<MA, A1, A2, E, A> TraverseT<A1, (), A2> for ExceptT<MA>
 where
     Self: Functor<A1>,
-    WithPointedT<Self, A1>: SequenceA<(), A2>,
+    MappedT<Self, A1>: SequenceA<(), A2>,
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
     A1: Term,

@@ -212,7 +212,7 @@ where
 {
     type Mapped = WriterT<W, MB>;
 
-    fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::Mapped {
         let f = f.to_function();
         self.map_t(|t| t.fmap(|(a, w)| (f(a), w)))
     }
@@ -232,7 +232,7 @@ where
 impl<MF, MA, MB, W, F, A, B> AppA<WriterT<W, MA>, WriterT<W, MB>> for WriterT<W, MF>
 where
     MF: Functor<Function<(A, W), (B, W)>, Pointed = (F, W)>,
-    MF::WithPointed: Applicative<MA, MB>,
+    MF::Mapped: Applicative<MA, MB>,
     W: Semigroup,
     MA: Pointed<Pointed = (A, W)>,
     MB: Pointed<Pointed = (B, W)>,

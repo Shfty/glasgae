@@ -1,4 +1,4 @@
-use crate::prelude::{Functor, FunctionT, Term, WithPointedT};
+use crate::prelude::{Functor, FunctionT, Term, WithPointedT, MappedT};
 
 use super::with_bipointed::{WithBipointed, WithBipointedT};
 
@@ -26,7 +26,7 @@ where
         self,
         fa: impl FunctionT<Self::Bipointed, A>,
         fb: impl FunctionT<Self::Pointed, B>,
-    ) -> WithPointedT<WithBipointedT<Self, A>, B> {
+    ) -> MappedT<WithBipointedT<Self, A>, B> {
         self.bifmap(fa).fmap(fb)
     }
 }

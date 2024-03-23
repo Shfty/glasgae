@@ -68,7 +68,7 @@ where
 pub fn traverse_t_default<This, A1, A2, A3>(this: This, f: impl FunctionT<This::Pointed, A1>) -> A3
 where
     This: Functor<A1>,
-    This::WithPointed: SequenceA<A2, A3>,
+    This::Mapped: SequenceA<A2, A3>,
     A1: Term,
 {
     this.fmap(f).sequence_a()
@@ -122,7 +122,7 @@ macro_rules! derive_traversable_iterable {
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
             A1: $crate::prelude::Functor<$crate::prelude::Function<$ty<A_>, $ty<A_>>, Pointed = A_> $(+ $trait)*,
-            A1::WithPointed: $crate::prelude::Applicative<A2, A2>,
+            A1::Mapped: $crate::prelude::Applicative<A2, A2>,
             A_: $crate::prelude::Term $(+ $trait)*,
             A2: $crate::prelude::PureA<Pointed = $ty<A_>> $(+ $trait)*,
         {

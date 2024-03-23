@@ -102,7 +102,7 @@ impl<L, R, A1, R_, A2> TraverseT<A1, (), A2> for (L, R)
 where
     L: Term,
     R: Term,
-    A1: Functor<(L, R_), Pointed = R_, WithPointed = A2>,
+    A1: Functor<(L, R_), Pointed = R_, Mapped = A2>,
     R_: Term,
     A2: Term,
 {
@@ -162,7 +162,7 @@ where
         self,
         fa: impl crate::prelude::FunctionT<Self::Bipointed, L_>,
         fb: impl crate::prelude::FunctionT<Self::Pointed, R_>,
-    ) -> crate::prelude::WithPointedT<crate::base::data::with_bipointed::WithBipointedT<Self, L_>, R_>
+    ) -> crate::prelude::MappedT<crate::base::data::with_bipointed::WithBipointedT<Self, L_>, R_>
     {
         self.bifmap(fa).fmap(fb)
     }

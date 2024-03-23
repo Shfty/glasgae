@@ -2,7 +2,7 @@
 //! a value of type [`Either<A, B>`] is either [`Left(A)`](Either::Left) or
 //! [`Right(B)`](Either::Right).
 
-use crate::{prelude::*, derive_pointed, derive_with_pointed};
+use crate::{derive_pointed, derive_with_pointed, prelude::*};
 
 pub mod result;
 
@@ -163,7 +163,7 @@ where
     A: Term,
     B: Term,
 {
-    type Mapped = Either<E, A>;
+    type Mapped = Either<E, B>;
 
     fn fmap(self, f: impl FunctionT<A, B>) -> Either<E, B> {
         match self {
@@ -215,7 +215,7 @@ where
         self,
         fa: impl FunctionT<BipointedT<Self>, A_>,
         fb: impl FunctionT<PointedT<Self>, B_>,
-    ) -> WithPointedT<WithBipointedT<Self, A_>, B_> {
+    ) -> MappedT<WithBipointedT<Self, A_>, B_> {
         self.bifmap(fa).fmap(fb)
     }
 }
@@ -346,15 +346,15 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, (), A1::WithPointed> for Either<E, A>
+impl<E, A, A_, A1> TraverseT<A1, (), A1::Mapped> for Either<E, A>
 where
     E: Term,
     A: Term,
     A_: Term,
     A1: Functor<Either<E, A_>, Pointed = A_>,
-    A1::WithPointed: PureA<Pointed = Either<E, A_>>,
+    A1::Mapped: PureA<Pointed = Either<E, A_>>,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::Mapped {
         match self {
             Left(x) => PureA::pure_a(Left(x)),
             Right(y) => f(y).fmap(Right.boxed()),
@@ -362,14 +362,14 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<(), A1::WithPointed> for Either<E, A1>
+impl<E, A1, A_> SequenceA<(), A1::Mapped> for Either<E, A1>
 where
     A1: Functor<Either<E, A_>, Pointed = A_>,
-    A1::WithPointed: PureA<Pointed = Either<E, A_>>,
+    A1::Mapped: PureA<Pointed = Either<E, A_>>,
     E: Term,
     A_: Term,
 {
-    fn sequence_a(self) -> A1::WithPointed {
+    fn sequence_a(self) -> A1::Mapped {
         match self {
             Left(x) => PureA::pure_a(Left(x)),
             Right(y) => y.fmap(Right.boxed()),

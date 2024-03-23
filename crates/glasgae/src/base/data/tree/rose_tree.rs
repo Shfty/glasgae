@@ -24,7 +24,7 @@ where
 {
     type Mapped = RoseTree<U>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::Mapped {
         let RoseTree(t, children) = self;
         let f = f.to_function();
         RoseTree(
@@ -113,11 +113,11 @@ impl<T, A1, A2, U, A3> TraverseT<A1, A2, A3> for RoseTree<T>
 where
     T: Term,
     A1: Term + Functor<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
-    A1::WithPointed: Applicative<A2, A3>,
+    A1::Mapped: Applicative<A2, A3>,
     A2: PureA<Pointed = Vec<RoseTree<U>>>,
     U: Term,
     A3: PureA<Pointed = RoseTree<U>> + Functor<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
-    A3::WithPointed: Applicative<A2, A2>,
+    A3::Mapped: Applicative<A2, A2>,
 {
     fn traverse_t(self, f: impl FunctionT<T, A1>) -> A3 {
         rose_tree_traverse(self, f)
@@ -131,11 +131,11 @@ fn rose_tree_traverse<T, A1, A2, U, A3>(
 where
     T: Term,
     A1: Term + Functor<Function<Vec<RoseTree<U>>, RoseTree<U>>, Pointed = U>,
-    A1::WithPointed: Applicative<A2, A3>,
+    A1::Mapped: Applicative<A2, A3>,
     A2: PureA<Pointed = Vec<RoseTree<U>>>,
     U: Term,
     A3: PureA<Pointed = RoseTree<U>> + Functor<Function<Vec<RoseTree<U>>, Vec<RoseTree<U>>>>,
-    A3::WithPointed: Applicative<A2, A2>,
+    A3::Mapped: Applicative<A2, A2>,
 {
     let f = f.to_function();
     RoseTree.lift_a2()(f.clone()(x), xs.traverse_t(|t| rose_tree_traverse(t, f)))

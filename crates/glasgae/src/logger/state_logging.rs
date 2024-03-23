@@ -121,20 +121,20 @@ where
 impl<LVL, MSG, S, MA, A, MB, B> Functor<B> for StateLogger<LVL, MSG, S, MA>
 where
     StateLoggingT<LVL, MSG, S, MA>:
-        Functor<B, Pointed = A, WithPointed = StateLoggingT<LVL, MSG, S, MB>>,
+        Functor<B, Pointed = A, Mapped = StateLoggingT<LVL, MSG, S, MB>>,
     StateLoggingT<LVL, MSG, S, MB>:
-        Functor<A, Pointed = B, WithPointed = StateLoggingT<LVL, MSG, S, MA>>,
+        Functor<A, Pointed = B, Mapped = StateLoggingT<LVL, MSG, S, MA>>,
     LVL: Term,
     MSG: Term,
     S: Term,
-    MA: Functor<(B, S), Pointed = (A, S), WithPointed = MB>,
-    MB: Functor<(A, S), Pointed = (B, S), WithPointed = MA>,
+    MA: Functor<(B, S), Pointed = (A, S), Mapped = MB>,
+    MB: Functor<(A, S), Pointed = (B, S), Mapped = MA>,
     A: Term,
     B: Term,
 {
     type Mapped = StateLogger<LVL, MSG, S, MB>;
 
-    fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<Self::Pointed, B>) -> Self::Mapped {
         StateLogger::new_t(self.run_t().fmap(f))
     }
 }

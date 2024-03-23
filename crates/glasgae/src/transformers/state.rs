@@ -260,7 +260,7 @@ where
 {
     type Mapped = StateT<S, MA::Mapped>;
 
-    fn fmap(self, f: impl FunctionT<A, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<A, B>) -> Self::Mapped {
         let m = self;
         let f = f.to_function();
         StateT::new_t(|s: S| m.run_t(s).fmap(|(a, s_)| (f(a), s_)))

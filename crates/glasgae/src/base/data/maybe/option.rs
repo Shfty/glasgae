@@ -106,12 +106,12 @@ where
 
 impl<T, A, U, B> TraverseT<A, (), B> for Option<T>
 where
-    A: Functor<Option<U>, Pointed = U, WithPointed = B>,
-    A::WithPointed: PureA<Pointed = Option<U>>,
+    A: Functor<Option<U>, Pointed = U, Mapped = B>,
+    A::Mapped: PureA<Pointed = Option<U>>,
     T: Term,
     U: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<T, A>) -> A::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<T, A>) -> A::Mapped {
         match self {
             Some(x) => f(x).fmap(Some.boxed()),
             None => PureA::pure_a(None),
@@ -121,7 +121,7 @@ where
 
 impl<A1, A_, A2> SequenceA<(), A2> for Option<A1>
 where
-    A1: Clone + Functor<Option<A_>, Pointed = A_, WithPointed = A2>,
+    A1: Clone + Functor<Option<A_>, Pointed = A_, Mapped = A2>,
     A_: Term,
     A2: PureA<Pointed = Option<A_>>,
 {

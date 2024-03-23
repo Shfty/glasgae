@@ -14,7 +14,7 @@ macro_rules! derive_iterable_map {
         {
             type Mapped = $ty<$key, V_>;
 
-            fn fmap(self, f: impl $crate::prelude::FunctionT<Self::Pointed, V_>) -> Self::WithPointed {
+            fn fmap(self, f: impl $crate::prelude::FunctionT<Self::Pointed, V_>) -> Self::Mapped {
                 self.into_iter()
                     .map(move |(k, v)| (k, f.to_function()(v)))
                     .collect()
@@ -69,7 +69,7 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, A1, A2> $crate::prelude::TraverseT<A1, (), A2> for $ty<$key, $value>
         where
             Self: $crate::prelude::Functor<A1>,
-            $crate::prelude::WithPointedT<Self, A1>: $crate::prelude::SequenceA<(), A2>,
+            $crate::prelude::MappedT<Self, A1>: $crate::prelude::SequenceA<(), A2>,
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
             A1: $crate::prelude::Term,
@@ -83,7 +83,7 @@ macro_rules! derive_iterable_map {
         where
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Functor<$crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>, Pointed = $ty<$key, $value>>,
-            $crate::prelude::WithPointedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
+            $crate::prelude::MappedT<$value, $crate::prelude::Function<$ty<$key, $value>, $ty<$key, $value>>>: $crate::prelude::AppA<V2, V2>,
             V2: $crate::prelude::PureA<Pointed = $ty<$key, $value>> $(+ $trait)*,
         {
             fn sequence_a(self) -> V2 {
@@ -177,7 +177,7 @@ macro_rules! derive_iterable_map {
         where
             Self: $crate::prelude::Bifunctor<AC, AD>,
             $crate::prelude::WithBipointedT<Self, AC>: $crate::prelude::Functor<AD>,
-            $crate::prelude::WithPointedT<$crate::prelude::WithBipointedT<Self, AC>, AD>: $crate::prelude::BisequenceA<AO>,
+            $crate::prelude::MappedT<$crate::prelude::WithBipointedT<Self, AC>, AD>: $crate::prelude::BisequenceA<AO>,
             AC: $crate::prelude::Term,
             AD: $crate::prelude::Term,
         {
@@ -193,9 +193,9 @@ macro_rules! derive_iterable_map {
         impl<$key, $value, T, AO> $crate::prelude::BisequenceA<AO> for $ty<$key, $value>
         where
             $key: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$key>, Vec<$key>>, Pointed = $key> $(+ $trait)*,
-            $key::WithPointed: $crate::prelude::AppA<AO, AO>,
+            $key::Mapped: $crate::prelude::AppA<AO, AO>,
             $value: $crate::prelude::Term + $crate::prelude::Functor<$crate::prelude::Function<Vec<$value>, Vec<$value>>, Pointed = $value>,
-            $value::WithPointed: $crate::prelude::AppA<AO, AO>,
+            $value::Mapped: $crate::prelude::AppA<AO, AO>,
             AO: $crate::prelude::PureA<Pointed = Vec<T>>,
         {
             fn bisequence_a(self) -> AO {

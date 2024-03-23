@@ -81,7 +81,7 @@ where
 {
     type Mapped = LoggingT<LVL, MSG, MA::Mapped>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, B>) -> Self::Mapped {
         let f = f.to_function();
         LoggingT::new_t(|g| self.run_t(g).fmap(f))
     }

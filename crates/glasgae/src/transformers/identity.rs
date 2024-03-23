@@ -44,7 +44,7 @@ where
 {
     type Mapped = IdentityT<MA::Mapped>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, T>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, T>) -> Self::Mapped {
         IdentityT(self.0.fmap(f))
     }
 }

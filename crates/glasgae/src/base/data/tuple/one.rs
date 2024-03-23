@@ -82,7 +82,7 @@ impl<T, A1, A_, A2> TraverseT<A1, (), A2> for (T,)
 where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: Applicative<A2, A2>,
+    A1::Mapped: Applicative<A2, A2>,
     T: Term,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
@@ -96,7 +96,7 @@ impl<A1, A2, A_> SequenceA<(), A2> for (A1,)
 where
     A1: PureA<Pointed = A_> + Functor<Function<(A_,), (A_,)>>,
     A1::Pointed: Monoid,
-    A1::WithPointed: Applicative<A2, A2>,
+    A1::Mapped: Applicative<A2, A2>,
     A_: Term,
     A2: PureA<Pointed = (A1::Pointed,)>,
 {

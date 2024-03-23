@@ -164,7 +164,7 @@ where
 {
     type Mapped = ReaderT<R, MA::Mapped>;
 
-    fn fmap(self, f: impl FunctionT<MA::Pointed, B>) -> ReaderT<R, MA::WithPointed> {
+    fn fmap(self, f: impl FunctionT<MA::Pointed, B>) -> ReaderT<R, MA::Mapped> {
         let f = f.to_function();
         self.map_t(|y| y.fmap(f))
     }

@@ -1,6 +1,6 @@
 //! Adding a new kind of pure computation to an applicative functor.
 
-use crate::{prelude::*, derive_pointed_via, derive_with_pointed_via};
+use crate::{derive_pointed_via, derive_with_pointed_via, prelude::*};
 
 /// Applicative functor formed by adding pure computations to a given applicative functor.
 #[derive(Clone)]
@@ -61,15 +61,16 @@ where
 derive_pointed_via!(Lift<(FA)>);
 derive_with_pointed_via!(Lift<(FA)>);
 
-impl<FA, A, B> Functor<B> for Lift<FA>
+impl<FA, A, FB, B> Functor<B> for Lift<FA>
 where
-    FA: Functor<B, Pointed = A>,
+    FA: Functor<B, Pointed = A, Mapped = FB>,
+    FB: Functor<A, Pointed = B, Mapped = FA>,
     A: Term,
     B: Term,
 {
     type Mapped = Lift<FA::Mapped>;
 
-    fn fmap(self, f: impl FunctionT<A, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl FunctionT<A, B>) -> Self::Mapped {
         match self {
             Pure(x) => Pure(f(x)),
             Other(y) => Other(y.fmap(f)),
@@ -88,7 +89,7 @@ where
 
 impl<FF, FA, FB, F, A, B> AppA<Lift<FA>, Lift<FB>> for Lift<FF>
 where
-    Lift<FA>: Functor<B, Pointed = A, WithPointed = Lift<FB>>,
+    Lift<FA>: Functor<B, Pointed = A, Mapped = Lift<FB>>,
     FA: PureA<Pointed = A>,
     FB: Pointed<Pointed = B>,
     FF: Pointed<Pointed = F> + Applicative<FA, FB>,
@@ -135,7 +136,7 @@ where
 impl<FA, A1, A2> TraverseT<A1, (), A2> for Lift<FA>
 where
     Self: Functor<A1>,
-    WithPointedT<Self, A1>: SequenceA<(), A2>,
+    MappedT<Self, A1>: SequenceA<(), A2>,
     FA: Pointed,
     A1: Term,
 {

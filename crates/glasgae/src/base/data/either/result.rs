@@ -20,9 +20,9 @@ where
     E: Term,
     U: Term,
 {
-    type Mapped = Result<T, E>;
+    type Mapped = Result<U, E>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<Self::Pointed, U>) -> Self::Mapped {
         match self {
             Ok(t) => Ok(f(t)),
             Err(e) => Err(e),
@@ -117,15 +117,15 @@ where
     }
 }
 
-impl<E, A, A_, A1> TraverseT<A1, (), A1::WithPointed> for Result<A, E>
+impl<E, A, A_, A1> TraverseT<A1, (), A1::Mapped> for Result<A, E>
 where
     A1: Functor<Result<A_, E>, Pointed = A_>,
-    A1::WithPointed: PureA<Pointed = Result<A_, E>>,
+    A1::Mapped: PureA<Pointed = Result<A_, E>>,
     E: Term,
     A: Term,
     A_: Term,
 {
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::WithPointed {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A1::Mapped {
         match self {
             Ok(y) => f(y).fmap(Ok.boxed()),
             Err(x) => PureA::pure_a(Err(x)),
@@ -133,14 +133,14 @@ where
     }
 }
 
-impl<E, A1, A_> SequenceA<(), A1::WithPointed> for Result<A1, E>
+impl<E, A1, A_> SequenceA<(), A1::Mapped> for Result<A1, E>
 where
     A1: Functor<Result<A_, E>, Pointed = A_>,
-    A1::WithPointed: PureA<Pointed = Result<A_, E>>,
+    A1::Mapped: PureA<Pointed = Result<A_, E>>,
     E: Term,
     A_: Term,
 {
-    fn sequence_a(self) -> A1::WithPointed {
+    fn sequence_a(self) -> A1::Mapped {
         match self {
             Ok(y) => y.fmap(Ok.boxed()),
             Err(x) => PureA::pure_a(Err(x)),

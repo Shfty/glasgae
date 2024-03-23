@@ -71,7 +71,7 @@ where
 {
     type Mapped = MaybeT<MA::Mapped>;
 
-    fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::WithPointed {
+    fn fmap(self, f: impl crate::prelude::FunctionT<A, B>) -> Self::Mapped {
         let f = f.to_function();
         self.map(|t| t.fmap(|t| t.fmap(f)))
     }
@@ -171,7 +171,7 @@ where
 impl<A, MA, A1, A2> TraverseT<A1, (), A2> for MaybeT<MA>
 where
     Self: Functor<A1>,
-    WithPointedT<Self, A1>: SequenceA<(), A2>,
+    MappedT<Self, A1>: SequenceA<(), A2>,
     MA: Pointed<Pointed = Maybe<A>>,
     A: Term,
     A1: Term,

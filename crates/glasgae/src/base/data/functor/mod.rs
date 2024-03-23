@@ -81,7 +81,7 @@ where
     /// # use glasgae::{prelude::Functor, base::grl::num::Even};
     /// assert_eq!(("hello", 1.0, 4).fmap(Even::even), ("hello",1.0,true));
     /// ```
-    fn fmap(self, f: impl FunctionT<Self::Pointed, T>) -> Self::WithPointed;
+    fn fmap(self, f: impl FunctionT<Self::Pointed, T>) -> Self::Mapped;
 
     /// Replace all locations in the input with the same value. The default definition is fmap . const, but this may be overridden with a more efficient version.
     ///
@@ -93,13 +93,15 @@ where
     /// assert_eq!(Some(2).replace('a'), Some('a'));
     /// assert_eq!(None::<usize>.replace('a'), None);
     /// ```
-    fn replace(self, t: T) -> Self::WithPointed
+    fn replace(self, t: T) -> Self::Mapped
     where
         T: 'static,
     {
         self.fmap(|_| t)
     }
 }
+
+pub type MappedT<T, U> = <T as Functor<U>>::Mapped;
 
 // Derive Functor over the inner type
 #[macro_export]

@@ -269,7 +269,7 @@ pub trait LiftA2<A1, A2, A3>: Sized + BifunT<A1::Pointed, A2::Pointed, A3::Point
 where
     Self: Term,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::WithPointed: Applicative<A2, A3>,
+    A1::Mapped: Applicative<A2, A3>,
     A2: Pointed,
     A3: Pointed,
 {
@@ -282,7 +282,7 @@ impl<F, A1, A2, A3> LiftA2<A1, A2, A3> for F
 where
     F: Term + BifunT<A1::Pointed, A2::Pointed, A3::Pointed>,
     A1: Functor<Function<A2::Pointed, A3::Pointed>>,
-    A1::WithPointed: Applicative<A2, A3>,
+    A1::Mapped: Applicative<A2, A3>,
     A2: Pointed,
     A3: Pointed,
 {
