@@ -409,13 +409,12 @@ where
 
 impl<MA, E, A> MonadIO<A> for ExceptT<MA>
 where
-    Self: MonadTrans<MA::Lowered>,
-    MA: LowerEither<E, A> + Pointed<Pointed = Either<E, A>>,
-    MA::Lowered: MonadIO<A>,
+    Self: MonadTrans<IO<A>>,
+    MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
 {
     fn lift_io(m: IO<A>) -> Self {
-        Self::lift(<MA as LowerEither<E, A>>::Lowered::lift_io(m))
+        Self::lift(m)
     }
 }
 

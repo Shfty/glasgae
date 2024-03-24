@@ -78,9 +78,9 @@ where
     /// Construct a writer computation from a (result, output) pair. (The inverse of run.)
     pub fn new<A>((a, w): (A, W)) -> Self
     where
-        M: ReturnM<Pointed = (A, W)>,
+        M: PureA<Pointed = (A, W)>,
     {
-        WriterT::new_t(ReturnM::return_m((a, w)))
+        WriterT::new_t(PureA::pure_a((a, w)))
     }
 
     pub fn run_t(self) -> M {
@@ -221,7 +221,7 @@ where
 impl<W, M, A> PureA for WriterT<W, M>
 where
     W: Monoid,
-    M: ReturnM<Pointed = (A, W)>,
+    M: PureA<Pointed = (A, W)>,
     A: Term,
 {
     fn pure_a(t: Self::Pointed) -> Self {

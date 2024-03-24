@@ -64,6 +64,48 @@ where
     {
         StateLogger::new_t(f(self.run_t()))
     }
+
+    pub fn map_state<MB>(
+        self,
+        f: impl FunctionT<StateLoggingT<LVL, MSG, S, MA>, StateLoggingT<LVL, MSG, S, MB>>,
+    ) -> StateLogger<LVL, MSG, S, MB>
+    where
+        MB: Term,
+    {
+        self.map_t(f)
+    }
+
+    pub fn map_logger<MB>(
+        self,
+        f: impl FunctionT<LoggingT<LVL, (MSG, S), MA>, LoggingT<LVL, (MSG, S), MB>>,
+    ) -> StateLogger<LVL, MSG, S, MB>
+    where
+        MB: Term,
+    {
+        let f = f.to_function();
+        self.map_state(|t| t.map_t(f))
+    }
+
+    pub fn map_inner<MB>(self, f: impl FunctionT<MA, MB>) -> StateLogger<LVL, MSG, S, MB>
+    where
+        MB: Term,
+    {
+        let f = f.to_function();
+        self.map_logger(|t| t.map_t(f))
+    }
+
+    pub fn lift_t<A, MB>(m: MB) -> StateLogger<LVL, MSG, S, MA>
+    where
+        LVL: Term,
+        MSG: Term,
+        S: Term,
+        MB: Monad<(A, S), Pointed = A, Chained = MA>,
+        MA: Monad<A, Pointed = (A, S), Chained = MB>,
+        A: Term,
+        (A, S): Lower<A, S, Lowered = A>,
+    {
+        StateLogger::new_t(StateT::lift(LoggingT::lift(m)))
+    }
 }
 
 impl<LVL, MSG, MA> StateLogger<LVL, MSG, usize, MA>
@@ -198,31 +240,54 @@ where
     }
 }
 
-impl<LVL, MSG, S, MA, T> MonadIO<T> for StateLogger<LVL, MSG, S, MA>
+impl<LVL, MSG, S, MA> MonadTrans<StateT<S, LoggingT<LVL, (MSG, S), MA>>>
+    for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: MonadIO<T>,
+    LVL: Term,
+    MSG: Term,
+    MA: Term,
+    S: Term,
+{
+    fn lift(m: StateLoggingT<LVL, MSG, S, MA>) -> Self {
+        StateLogger::new_t(m)
+    }
+}
+
+impl<LVL, MSG, S, MA> MonadTrans<LoggingT<LVL, (MSG, S), MA>> for StateLogger<LVL, MSG, S, MA>
+where
+    StateLoggingT<LVL, MSG, S, MA>: MonadTrans<LoggingT<LVL, (MSG, S), MA>>,
     LVL: Term,
     MSG: Term,
     MA: Pointed,
+    S: Term,
+{
+    fn lift(m: LoggingT<LVL, (MSG, S), MA>) -> Self {
+        MonadTrans::lift(StateLoggingT::lift(m))
+    }
+}
+
+impl<LVL, MSG, S, T> MonadTrans<IO<T>> for StateLogger<LVL, MSG, S, IO<(T, S)>>
+where
+    LVL: Term,
+    MSG: Term,
+    S: Term,
+    T: Pointed,
+{
+    fn lift(m: IO<T>) -> Self {
+        StateLogger::lift_t(m)
+    }
+}
+
+impl<LVL, MSG, S, T> MonadIO<T> for StateLogger<LVL, MSG, S, IO<(T, S)>>
+where
+    Self: MonadTrans<IO<T>>,
+    LVL: Term,
+    MSG: Term,
     S: Term,
     T: Term,
 {
     fn lift_io(m: IO<T>) -> Self {
-        Self::new_t(MonadIO::lift_io(m))
-    }
-}
-
-impl<LVL, MSG, S, MA, T> MonadTrans<T> for StateLogger<LVL, MSG, S, MA>
-where
-    StateLoggingT<LVL, MSG, S, MA>: MonadTrans<T>,
-    LVL: Term,
-    MSG: Term,
-    MA: Pointed,
-    S: Term,
-    T: Term,
-{
-    fn lift(m: T) -> Self {
-        StateLogger::new_t(StateLoggingT::lift(m))
+        MonadTrans::lift(m)
     }
 }
 

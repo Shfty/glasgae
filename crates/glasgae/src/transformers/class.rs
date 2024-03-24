@@ -12,7 +12,7 @@
 ///
 /// lift . return = return
 /// lift (m >>= f) = lift m >>= (lift . f)
-pub trait MonadTrans<MI> {
+pub trait MonadTrans<MI, Trash = ()> {
     /// Lift a computation from the argument monad to the constructed monad.
     fn lift(m: MI) -> Self;
 }

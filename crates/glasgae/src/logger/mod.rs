@@ -9,7 +9,9 @@ use crate::{
     },
     derive_pointed_via,
     prelude::*,
-    transformers::{class::MonadTrans, except::ExceptT, state::StateT},
+    transformers::{
+        class::MonadTrans, except::ExceptT, reader::ReaderT, state::StateT, writer::WriterT,
+    },
 };
 
 use self::indent::Indent;
@@ -29,7 +31,7 @@ impl<LVL, MSG, MA> LoggingT<LVL, MSG, MA>
 where
     LVL: Term,
     MSG: Term,
-    MA: Pointed,
+    MA: Term,
 {
     pub fn new_t(f: impl FunctionT<Bifun<LVL, MSG, IO<()>>, MA>) -> Self {
         LoggingT(f.to_function())
@@ -44,7 +46,7 @@ where
         LVL: Term,
         MSG: Term,
         MA: Term,
-        MB: Pointed,
+        MB: Term,
     {
         let f = f.to_function();
         LoggingT::new_t(|g| f(self.run_t(g)))
@@ -189,14 +191,13 @@ where
 
 impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateT<S, MA>
 where
-    StateT<S, MA>: MonadTrans<MA>,
     LVL: Term,
     MSG: Term,
-    S: Term,
     MA: MonadLogger<LVL, MSG>,
+    S: Term,
 {
     fn log(level: LVL, message: MSG) -> Self {
-        StateT::lift(MA::log(level, message))
+        StateT::new_t(|_| MA::log(level, message))
     }
 }
 
@@ -206,6 +207,28 @@ where
 {
     fn log(level: LVL, message: MSG) -> Self {
         ExceptT::new_t(MA::log(level, message))
+    }
+}
+
+impl<LVL, MSG, R, MA, A> MonadLogger<LVL, MSG> for ReaderT<R, MA>
+where
+    LVL: Term,
+    MSG: Term,
+    MA: Pointed<Pointed = (A, R)> + MonadLogger<LVL, MSG>,
+    R: Term,
+{
+    fn log(level: LVL, message: MSG) -> Self {
+        ReaderT::new_t(|_| MA::log(level, message))
+    }
+}
+
+impl<LVL, MSG, W, MA> MonadLogger<LVL, MSG> for WriterT<W, MA>
+where
+    MA: MonadLogger<LVL, MSG>,
+    W: Term,
+{
+    fn log(level: LVL, message: MSG) -> Self {
+        WriterT::new_t(MA::log(level, message))
     }
 }
 
@@ -269,7 +292,7 @@ mod test {
     #[test]
     fn test_monad_logger_state() -> IO<()> {
         type S<T> = StateLogger<Level, &'static str, usize, IO<(T, usize)>>;
-        S::lift(MonadIO::lift_io(IO::new(env_logger::init)))
+        S::lift_t(MonadIO::lift_io(IO::new(env_logger::init)))
             .then_m(<S<_> as MonadLogger<_, _>>::log(Level::Trace, "hmm..."))
             .then_m(
                 S::log_scope(
