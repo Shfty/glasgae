@@ -268,15 +268,9 @@ mod test {
 
     use crate::{
         base::control::monad::io::MonadIO, logger::state_logging::StateLogger, prelude::*,
-        transformers::class::MonadTrans,
     };
 
-    use super::{
-        indent_logger, print_logger,
-        rust_logger::rust_logger,
-        state_logging::{LogScope, RunStateLogging, StateLoggingT},
-        LoggingT, MonadLogger,
-    };
+    use super::{indent_logger, print_logger, rust_logger::rust_logger, LoggingT, MonadLogger};
 
     #[test]
     fn test_monad_logger() -> IO<()> {
@@ -294,14 +288,12 @@ mod test {
         type S<T> = StateLogger<Level, &'static str, usize, IO<(T, usize)>>;
         S::lift_t(MonadIO::lift_io(IO::new(env_logger::init)))
             .then_m(<S<_> as MonadLogger<_, _>>::log(Level::Trace, "hmm..."))
-            .then_m(
-                S::log_scope(
-                    S::log(Level::Debug, "hmm..?")
-                        .then_m(S::log_scope(S::log(Level::Info, "hmm?")))
-                        .then_m(S::log(Level::Warn, "ah!")),
-                )
-                .then_m(S::log(Level::Error, "aha!")),
-            )
+            .then_m(S::log(Level::Debug, "hmm..?"))
+            .then_m(S::indent())
+            .then_m(S::log(Level::Info, "hmm?"))
+            .then_m(S::log(Level::Warn, "ah!"))
+            .then_m(S::unindent())
+            .then_m(S::log(Level::Error, "aha!"))
             .run(indent_logger(rust_logger))
     }
 }

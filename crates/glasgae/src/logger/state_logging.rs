@@ -1,3 +1,9 @@
+//! Stateful logger monad.
+//!
+//! Abstracts over [`StateT`] and [`LoggingT`],
+//! transparently lifting the message type into `(Message, State)`
+//! for provision to custom logging implementations.
+
 extern crate self as glasgae;
 
 use crate::{
@@ -14,8 +20,12 @@ use crate::{
 
 use super::{LoggingT, MonadLogger};
 
+// Base Monads
+// -----------------------------------------------------------------------------
 pub type StateLoggingT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
+// Newtype
+// -----------------------------------------------------------------------------
 pub type HoistStateLoggingT<LVL, MSG, S, MA> = HoistStateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
 #[derive(Clone)]
@@ -26,6 +36,8 @@ where
     S: Term,
     MA: Term;
 
+// Generalized impl
+// -----------------------------------------------------------------------------
 impl<LVL, MSG, S, MA> StateLogger<LVL, MSG, S, MA>
 where
     LVL: Term,
@@ -108,6 +120,8 @@ where
     }
 }
 
+// Specialized impl
+// -----------------------------------------------------------------------------
 impl<LVL, MSG, MA> StateLogger<LVL, MSG, usize, MA>
 where
     LVL: Term,
@@ -128,6 +142,8 @@ where
     }
 }
 
+// Basic typeclasses
+// -----------------------------------------------------------------------------
 impl<LVL, MSG, S, MA> Pointed for StateLogger<LVL, MSG, S, MA>
 where
     StateLoggingT<LVL, MSG, S, MA>: Pointed,
@@ -240,6 +256,8 @@ where
     }
 }
 
+// Lifting
+// -----------------------------------------------------------------------------
 impl<LVL, MSG, S, MA> MonadTrans<StateT<S, LoggingT<LVL, (MSG, S), MA>>>
     for StateLogger<LVL, MSG, S, MA>
 where
@@ -291,6 +309,8 @@ where
     }
 }
 
+// Logging
+// -----------------------------------------------------------------------------
 impl<LVL, MSG, S, MA> MonadLogger<LVL, MSG> for StateLogger<LVL, MSG, S, MA>
 where
     LVL: Term,
@@ -308,82 +328,8 @@ where
     }
 }
 
-pub trait RunStateLogging<LVL, MSG, MA>: Term {
-    fn run(self, f: impl BifunT<LVL, MSG, IO<()>>) -> MA;
-}
-
-impl<LVL, MSG, MA, MB, S, T> RunStateLogging<LVL, (MSG, S), MB> for StateLoggingT<LVL, MSG, S, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Monad<T, Pointed = (T, S), Chained = MB>,
-    MB: ReturnM<Pointed = T>,
-    S: Term + Default,
-    T: Term,
-{
-    fn run(self, f: impl BifunT<LVL, (MSG, S), IO<()>>) -> MB {
-        self.run_t(Default::default())
-            .run_t(f)
-            .chain_m(Pair::fst.compose_clone(ReturnM::return_m))
-    }
-}
-
-pub trait Indent {
-    fn indent() -> Self;
-}
-
-impl<LVL, MSG, MA> Indent for StateLoggingT<LVL, MSG, usize, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Monad<usize, Pointed = ((), usize)>,
-    MA::Chained: Monad<((), usize), Pointed = usize, Chained = MA>,
-{
-    fn indent() -> Self {
-        StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
-            LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s + 1)
-        })
-    }
-}
-
-pub trait Unindent {
-    fn unindent() -> Self;
-}
-
-impl<LVL, MSG, MA> Unindent for StateLoggingT<LVL, MSG, usize, MA>
-where
-    LVL: Term,
-    MSG: Term,
-    MA: Monad<usize, Pointed = ((), usize)>,
-    MA::Chained: Monad<((), usize), Pointed = usize, Chained = MA>,
-{
-    fn unindent() -> Self {
-        StateLoggingT::modify_m(|s| LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s - 1))
-    }
-}
-
-pub trait LogScope: Term {
-    fn log_scope(m: Self) -> Self;
-}
-
-impl<LVL, MSG, T> LogScope for StateLoggingT<LVL, MSG, usize, IO<(T, usize)>>
-where
-    LVL: Term,
-    MSG: Term,
-    T: Term,
-{
-    fn log_scope(
-        m: StateLoggingT<LVL, MSG, usize, IO<(T, usize)>>,
-    ) -> StateLoggingT<LVL, MSG, usize, IO<(T, usize)>> {
-        _do! {
-            StateLoggingT::<LVL, MSG, usize, IO<((), usize)>>::indent();
-            out <- m;
-            StateLoggingT::<LVL, MSG, usize, IO<((), usize)>>::unindent();
-            StateLoggingT::<LVL, MSG, usize, IO<(T, usize)>>::return_m(out)
-        }
-    }
-}
-
+// Tests
+// -----------------------------------------------------------------------------
 #[cfg(test)]
 mod test {
     extern crate self as glasgae;
