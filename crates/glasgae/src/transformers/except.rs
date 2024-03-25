@@ -258,9 +258,9 @@ where
         + Monad<Either<E, A>, Chained = MA>
         + Monad<Either<E, B>, Chained = MB>,
     MA: Monad<Either<E, B>, Pointed = Either<E, A>, Chained = MB>
-        + Monad<Either<E, F>, Chained = MF, WithPointed = MF>,
+        + Monad<Either<E, F>, Chained = MF>,
     MB: Monad<Either<E, A>, Pointed = Either<E, B>, Chained = MA>
-        + Monad<Either<E, F>, Chained = MF, WithPointed = MF>,
+        + Monad<Either<E, F>, Chained = MF>,
     F: Term + FunctionT<A, B>,
     E: Term,
     A: Term,

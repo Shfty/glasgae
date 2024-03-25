@@ -25,6 +25,9 @@ use super::class::MonadTrans;
 /// The return function leaves the state unchanged, while >>= uses the final state of the first computation as the initial state of the second.
 pub type State<S, A> = StateT<S, Identity<(A, S)>>;
 
+/// Utility alias for automatically hoisting `T` into the [`State`] monad.
+pub type HoistState<S, T> = StateT<S, HoistTupleT<Identity<T>, S>>;
+
 impl<S, A> State<S, A>
 where
     S: Term,

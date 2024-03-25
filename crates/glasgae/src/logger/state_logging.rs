@@ -22,14 +22,14 @@ use super::{LoggingT, MonadLogger};
 
 // Base Monads
 // -----------------------------------------------------------------------------
-pub type StateLoggingT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>;
+pub type StateLoggerT<LVL, MSG, S, MA> = StateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
 // Newtype
 // -----------------------------------------------------------------------------
 pub type HoistStateLoggingT<LVL, MSG, S, MA> = HoistStateT<S, LoggingT<LVL, (MSG, S), MA>>;
 
 #[derive(Clone)]
-pub struct StateLogger<LVL, MSG, S, MA>(StateLoggingT<LVL, MSG, S, MA>)
+pub struct StateLogger<LVL, MSG, S, MA>(StateLoggerT<LVL, MSG, S, MA>)
 where
     LVL: Term,
     MSG: Term,
@@ -45,11 +45,11 @@ where
     S: Term,
     MA: Term,
 {
-    pub fn new_t(m: StateLoggingT<LVL, MSG, S, MA>) -> Self {
+    pub fn new_t(m: StateLoggerT<LVL, MSG, S, MA>) -> Self {
         StateLogger(m)
     }
 
-    pub fn run_t(self) -> StateLoggingT<LVL, MSG, S, MA> {
+    pub fn run_t(self) -> StateLoggerT<LVL, MSG, S, MA> {
         self.0
     }
 
@@ -69,7 +69,7 @@ where
 
     pub fn map_t<MB>(
         self,
-        f: impl FunctionT<StateLoggingT<LVL, MSG, S, MA>, StateLoggingT<LVL, MSG, S, MB>>,
+        f: impl FunctionT<StateLoggerT<LVL, MSG, S, MA>, StateLoggerT<LVL, MSG, S, MB>>,
     ) -> StateLogger<LVL, MSG, S, MB>
     where
         MB: Term,
@@ -79,7 +79,7 @@ where
 
     pub fn map_state<MB>(
         self,
-        f: impl FunctionT<StateLoggingT<LVL, MSG, S, MA>, StateLoggingT<LVL, MSG, S, MB>>,
+        f: impl FunctionT<StateLoggerT<LVL, MSG, S, MA>, StateLoggerT<LVL, MSG, S, MB>>,
     ) -> StateLogger<LVL, MSG, S, MB>
     where
         MB: Term,
@@ -130,13 +130,13 @@ where
     MA::Chained: Monad<((), usize), Chained = MA>,
 {
     pub fn indent() -> StateLogger<LVL, MSG, usize, MA> {
-        StateLogger(StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
+        StateLogger(StateLoggerT::<LVL, MSG, usize, MA>::modify_m(|s| {
             LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s + 1)
         }))
     }
 
     pub fn unindent() -> Self {
-        StateLogger(StateLoggingT::<LVL, MSG, usize, MA>::modify_m(|s| {
+        StateLogger(StateLoggerT::<LVL, MSG, usize, MA>::modify_m(|s| {
             LoggingT::<LVL, (MSG, usize), MA::Chained>::return_m(s - 1)
         }))
     }
@@ -146,13 +146,13 @@ where
 // -----------------------------------------------------------------------------
 impl<LVL, MSG, S, MA> Pointed for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: Pointed,
+    StateLoggerT<LVL, MSG, S, MA>: Pointed,
     LVL: Term,
     MSG: Term,
     S: Term,
     MA: Pointed,
 {
-    type Pointed = PointedT<StateLoggingT<LVL, MSG, S, MA>>;
+    type Pointed = PointedT<StateLoggerT<LVL, MSG, S, MA>>;
 }
 
 impl<LVL, MSG, S, MA, A, B> WithPointed<B> for StateLogger<LVL, MSG, S, MA>
@@ -169,10 +169,10 @@ where
 
 impl<LVL, MSG, S, MA, A, MB, B> Functor<B> for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>:
-        Functor<B, Pointed = A, Mapped = StateLoggingT<LVL, MSG, S, MB>>,
-    StateLoggingT<LVL, MSG, S, MB>:
-        Functor<A, Pointed = B, Mapped = StateLoggingT<LVL, MSG, S, MA>>,
+    StateLoggerT<LVL, MSG, S, MA>:
+        Functor<B, Pointed = A, Mapped = StateLoggerT<LVL, MSG, S, MB>>,
+    StateLoggerT<LVL, MSG, S, MB>:
+        Functor<A, Pointed = B, Mapped = StateLoggerT<LVL, MSG, S, MA>>,
     LVL: Term,
     MSG: Term,
     S: Term,
@@ -190,7 +190,7 @@ where
 
 impl<LVL, MSG, S, MA> PureA for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: PureA,
+    StateLoggerT<LVL, MSG, S, MA>: PureA,
     LVL: Term,
     MSG: Term,
     S: Term,
@@ -226,7 +226,7 @@ where
 
 impl<LVL, MSG, S, MA> ReturnM for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: ReturnM,
+    StateLoggerT<LVL, MSG, S, MA>: ReturnM,
     LVL: Term,
     MSG: Term,
     S: Term,
@@ -239,13 +239,12 @@ where
 
 impl<LVL, MSG, S, MA, A, MB, B> ChainM<B> for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: Monad<B, Pointed = A, Chained = StateLoggingT<LVL, MSG, S, MB>>,
     LVL: Term,
     MSG: Term,
-    S: Term,
     MA: Monad<(B, S), Pointed = (A, S), Chained = MB>,
-    A: Term,
     MB: Monad<(A, S), Pointed = (B, S), Chained = MA>,
+    S: Term,
+    A: Term,
     B: Term,
 {
     type Chained = StateLogger<LVL, MSG, S, MA::Chained>;
@@ -266,21 +265,21 @@ where
     MA: Term,
     S: Term,
 {
-    fn lift(m: StateLoggingT<LVL, MSG, S, MA>) -> Self {
+    fn lift(m: StateLoggerT<LVL, MSG, S, MA>) -> Self {
         StateLogger::new_t(m)
     }
 }
 
 impl<LVL, MSG, S, MA> MonadTrans<LoggingT<LVL, (MSG, S), MA>> for StateLogger<LVL, MSG, S, MA>
 where
-    StateLoggingT<LVL, MSG, S, MA>: MonadTrans<LoggingT<LVL, (MSG, S), MA>>,
+    StateLoggerT<LVL, MSG, S, MA>: MonadTrans<LoggingT<LVL, (MSG, S), MA>>,
     LVL: Term,
     MSG: Term,
     MA: Pointed,
     S: Term,
 {
     fn lift(m: LoggingT<LVL, (MSG, S), MA>) -> Self {
-        MonadTrans::lift(StateLoggingT::lift(m))
+        MonadTrans::lift(StateLoggerT::lift(m))
     }
 }
 
