@@ -128,7 +128,7 @@ where
     E: Term,
     A: Term,
 {
-    type Inner = MA;
+    type Mapped = MA;
     type Value = A;
     type Traversed = MB;
 

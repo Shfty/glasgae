@@ -114,11 +114,11 @@ where
     T: Term,
     A: Term,
 {
-    type Inner = MA;
+    type Mapped = MA;
     type Value = A;
     type Traversed = MB;
 
-    fn traverse_t(self, f: impl FunctionT<T, Self::Inner>) -> Self::Traversed {
+    fn traverse_t(self, f: impl FunctionT<T, Self::Mapped>) -> Self::Traversed {
         match self {
             Some(x) => f(x).fmap(Some.boxed()),
             None => PureA::pure_a(None),

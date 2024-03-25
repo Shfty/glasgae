@@ -180,11 +180,11 @@ where
     A1: Term,
     A2: Term,
 {
-    type Inner = A1;
+    type Mapped = A1;
     type Value = A;
     type Traversed = A2;
 
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Inner>) -> Self::Traversed {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Mapped>) -> Self::Traversed {
         traverse_t_default(self, f)
     }
 }

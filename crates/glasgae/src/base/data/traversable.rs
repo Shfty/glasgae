@@ -62,11 +62,11 @@ pub trait TraverseT<A1, A2, A3>: Pointed
 where
     A1: Term,
 {
-    type Inner: Term;
+    type Mapped: Term;
     type Value: Term;
     type Traversed: Term;
 
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Inner>) -> Self::Traversed;
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Mapped>) -> Self::Traversed;
 }
 
 pub fn traverse_t_default<This, A1, AF, A2, A3>(
@@ -112,7 +112,7 @@ pub trait SequenceA<A2, A3>: WithPointed<Self::Value> {
 
 pub fn sequence_a_default<This, A1, A2, A3>(this: This) -> A3
 where
-    This: TraverseT<A1, A2, A3, Pointed = A1, Inner = A1, Traversed = A3>,
+    This: TraverseT<A1, A2, A3, Pointed = A1, Mapped = A1, Traversed = A3>,
     A1: Term,
     A2: Term,
     A3: Term,
@@ -139,7 +139,7 @@ macro_rules! derive_traversable_iterable {
             B: $crate::prelude::Term $(+ $trait)*,
             MB: $crate::prelude::PureA<Pointed = $ty<B>> $(+ $trait)*,
         {
-            type Inner = MA;
+            type Mapped = MA;
             type Value = $crate::prelude::PointedT<MA>;
             type Traversed = MB;
 
@@ -167,7 +167,7 @@ macro_rules! derive_traversable_iterable {
             $(
                 $arg_: $crate::prelude::Term $(+ $trait_)*,
             )*
-            Self: $crate::prelude::TraverseT<$arg, (), MB, Pointed = $arg, Inner = $arg, Traversed = MB>,
+            Self: $crate::prelude::TraverseT<$arg, (), MB, Pointed = $arg, Mapped = $arg, Traversed = MB>,
             MB: $crate::prelude::Term
         {
             type Inner = $arg;
@@ -231,7 +231,7 @@ where
 }
 
 /// TraverseT with additional Monad semantic
-pub trait MapM<A, B, C>: TraverseT<A, B, C, Inner = A, Traversed = C>
+pub trait MapM<A, B, C>: TraverseT<A, B, C, Mapped = A, Traversed = C>
 where
     A: Term,
 {
@@ -246,7 +246,7 @@ where
 
 impl<T, A, B, C> MapM<A, B, C> for T
 where
-    T: TraverseT<A, B, C, Inner = A, Traversed = C>,
+    T: TraverseT<A, B, C, Mapped = A, Traversed = C>,
     A: Term,
 {
 }

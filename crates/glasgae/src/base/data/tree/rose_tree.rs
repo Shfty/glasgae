@@ -132,7 +132,7 @@ where
         + WithPointed<Vec<RoseTree<A>>, WithPointed = A2>,
     AF3: Applicative<Vec<RoseTree<A>>, Vec<RoseTree<A>>, WithA = A2, WithB = A2>,
 {
-    type Inner = A1;
+    type Mapped = A1;
     type Value = A;
     type Traversed = A3;
 
@@ -199,7 +199,7 @@ fn test_rose_tree_sequence() {
 
 impl<A1, A2, A3> SequenceA<A2, A3> for RoseTree<A1>
 where
-    Self: TraverseT<A1, A2, A3, Pointed = A1, Inner = A1, Traversed = A3>,
+    Self: TraverseT<A1, A2, A3, Pointed = A1, Mapped = A1, Traversed = A3>,
     A1: Pointed + WithPointed<Function<RoseTree<A1>, RoseTree<PointedT<A1>>>>,
     A2: Term,
     A3: Term,

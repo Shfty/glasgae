@@ -357,7 +357,7 @@ where
     A: Term,
     A_: Term,
 {
-    type Inner = A1;
+    type Mapped = A1;
     type Value = A_;
     type Traversed = A2;
 

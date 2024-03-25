@@ -338,7 +338,7 @@ where
     MB: Term,
     MC: Term,
 {
-    type Inner = MB;
+    type Mapped = MB;
     type Value = A;
     type Traversed = MC;
 
