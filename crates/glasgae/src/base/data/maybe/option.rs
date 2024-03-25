@@ -110,7 +110,7 @@ where
 impl<T, MA, A, MB> TraverseT<MA, (), MB> for Option<T>
 where
     MA: Functor<Option<A>, Pointed = A, Mapped = MB>,
-    MA::Mapped: PureA<Pointed = Option<A>>,
+    MB: PureA<Pointed = Option<A>>,
     T: Term,
     A: Term,
 {
@@ -118,7 +118,7 @@ where
     type Value = A;
     type Traversed = MB;
 
-    fn traverse_t(self, f: impl FunctionT<T, MA>) -> MA::Mapped {
+    fn traverse_t(self, f: impl FunctionT<T, Self::Inner>) -> Self::Traversed {
         match self {
             Some(x) => f(x).fmap(Some.boxed()),
             None => PureA::pure_a(None),

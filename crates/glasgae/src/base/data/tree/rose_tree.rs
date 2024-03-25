@@ -199,7 +199,7 @@ fn test_rose_tree_sequence() {
 
 impl<A1, A2, A3> SequenceA<A2, A3> for RoseTree<A1>
 where
-    Self: TraverseT<A1, A2, A3, Pointed = A1>,
+    Self: TraverseT<A1, A2, A3, Pointed = A1, Inner = A1, Traversed = A3>,
     A1: Pointed + WithPointed<Function<RoseTree<A1>, RoseTree<PointedT<A1>>>>,
     A2: Term,
     A3: Term,

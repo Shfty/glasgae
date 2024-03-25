@@ -73,8 +73,9 @@ macro_rules! derive_iterable_map {
             $key: $crate::prelude::Term $(+ $trait)*,
             $value: $crate::prelude::Term,
             A1: $crate::prelude::Pointed,
+            A2: $crate::prelude::Term,
         {
-            type Inner = $value;
+            type Inner = A1;
             type Value = $crate::prelude::PointedT<A1>;
             type Traversed = A2;
 

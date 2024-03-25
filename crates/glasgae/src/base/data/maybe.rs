@@ -162,7 +162,7 @@ where
 impl<T, MA, A, MB> TraverseT<MA, (), MB> for Maybe<T>
 where
     MA: Functor<Maybe<A>, Pointed = A, Mapped = MB>,
-    MA::Mapped: PureA<Pointed = Maybe<A>>,
+    MB: PureA<Pointed = Maybe<A>>,
     T: Term,
     A: Term,
 {
@@ -170,7 +170,7 @@ where
     type Value = A;
     type Traversed = MB;
 
-    fn traverse_t(self, f: impl FunctionT<T, MA>) -> MA::Mapped {
+    fn traverse_t(self, f: impl FunctionT<T, Self::Inner>) -> Self::Traversed {
         match self {
             Just(x) => f(x).fmap(Just.boxed()),
             Nothing => PureA::pure_a(Nothing),

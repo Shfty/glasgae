@@ -144,12 +144,13 @@ where
     MappedT<Self, A1>: SequenceA<(), A2, Sequenced = A2>,
     FA: Pointed,
     A1: Pointed,
+    A2: Term,
 {
     type Inner = A1;
     type Value = PointedT<A1>;
     type Traversed = A2;
 
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Inner>) -> Self::Traversed {
         traverse_t_default(self, f)
     }
 }
@@ -160,6 +161,7 @@ where
         + WithPointed<A>
         + WithPointed<Function<Lift<FA>, Lift<<FA as WithPointed<A>>::WithPointed>>>,
     A: Term,
+    A2: Term,
 {
     type Inner = FA;
     type Value = A;

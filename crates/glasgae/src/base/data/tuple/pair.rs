@@ -121,7 +121,7 @@ where
 
 impl<L, A1, A2> SequenceA<(), A2> for (L, A1)
 where
-    Self: TraverseT<A1, (), A2, Pointed = A1>,
+    Self: TraverseT<A1, (), A2, Pointed = A1, Inner = A1, Traversed = A2>,
     A1: Pointed + WithPointed<Function<(L, A1), (L, PointedT<A1>)>>,
     A2: Term,
     L: Term,

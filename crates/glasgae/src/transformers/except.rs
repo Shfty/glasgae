@@ -362,13 +362,14 @@ where
     MA: Pointed<Pointed = Either<E, A>>,
     A: Term,
     A1: Term,
+    A2: Term,
     E: Term,
 {
     type Inner = A1;
     type Value = A;
     type Traversed = A2;
 
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Inner>) -> Self::Traversed {
         traverse_t_default(self, f)
     }
 }
@@ -383,6 +384,7 @@ where
                 ExceptT<<A1 as WithPointed<Either<E, Either<E, A>>>>::WithPointed>,
             >,
         >,
+    A2: Term,
     E: Term,
     A: Term,
 {

@@ -88,7 +88,7 @@ where
     A: Monoid,
     MB: PureA<Pointed = Identity<A>>,
 {
-    type Inner = T;
+    type Inner = MA;
     type Value = A;
     type Traversed = MB;
 

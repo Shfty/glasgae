@@ -178,12 +178,13 @@ where
     MA: Pointed<Pointed = Maybe<A>>,
     A: Term,
     A1: Term,
+    A2: Term,
 {
     type Inner = A1;
     type Value = A;
     type Traversed = A2;
 
-    fn traverse_t(self, f: impl FunctionT<Self::Pointed, A1>) -> A2 {
+    fn traverse_t(self, f: impl FunctionT<Self::Pointed, Self::Inner>) -> Self::Traversed {
         traverse_t_default(self, f)
     }
 }
@@ -195,6 +196,7 @@ where
         + WithPointed<Maybe<A>>
         + WithPointed<Function<MaybeT<A1>, MaybeT<<A1 as WithPointed<Maybe<A>>>::WithPointed>>>,
     A: Term,
+    A2: Term,
 {
     type Inner = A1;
     type Value = A;
