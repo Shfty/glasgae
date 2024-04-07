@@ -235,12 +235,26 @@ pub trait MapM<A, B, C>: TraverseT<A, B, C, Mapped = A, Traversed = C>
 where
     A: Term,
 {
-    /// Map each element of a structure to a monadic action, evaluate these actions from left to right, and collect the results. For a version that ignores the results see mapM_.
+    /// Map each element of a structure to a monadic action, evaluate these actions from left to right, and collect the results.
+    /// For a version that ignores the results see [`map_m_`].
     ///
     /// Examples
     /// mapM is literally a traverse with a type signature restricted to Monad. Its implementation may be more efficient due to additional power of Monad.
     fn map_m(self, f: impl FunctionT<Self::Pointed, A>) -> C {
         self.traverse_t(f)
+    }
+
+    // Map each element of a structure to a monadic action, evaluate these actions from left to right, and ignore the results.
+    // For a version that doesn't ignore the results see ['map_m'].
+    fn map_m_<A_>(self, f: impl FunctionT<Self::Pointed, A>) -> A_
+    where
+        Self: Foldable<A_>,
+        A: Monad<(), Chained = A_>,
+        A_: Monad<(), Pointed = (), Chained = A_>,
+    {
+        let f = f.to_function();
+
+        self.foldr(|x, k| f(x).then_m(k), ReturnM::return_m(()))
     }
 }
 

@@ -199,8 +199,7 @@ pub enum Direction {
 impl<M, N> Travel<Direction, M, N> for ZipperTerm
 where
     M: Monad<ZipperTerm, Pointed = (Option<ZipperTerm>, Direction), Chained = N>,
-    N: Monad<ZipperTerm, Pointed = ZipperTerm, Chained = N>
-        + ReturnM<Pointed = ZipperTerm>,
+    N: Monad<ZipperTerm, Pointed = ZipperTerm, Chained = N> + ReturnM<Pointed = ZipperTerm>,
 {
     fn travel(self, tf: impl FunctionT<Self, M>) -> N {
         let tf = tf.to_function();
