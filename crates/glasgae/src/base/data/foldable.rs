@@ -168,13 +168,6 @@ macro_rules! derive_foldable_iterable {
                 self,
                 f: impl $crate::base::data::function::bifunction::BifunT<$arg, $arg, $arg>,
             ) -> $arg {
-                self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
-            }
-
-            fn foldl1(
-                self,
-                f: impl $crate::base::data::function::bifunction::BifunT<$arg, $arg, $arg>,
-            ) -> $arg {
                 self
                     .into_iter()
                     .collect::<Vec<_>>()
@@ -182,6 +175,13 @@ macro_rules! derive_foldable_iterable {
                     .rev()
                     .reduce(|y, x| f.to_bifun()(x, y))
                     .unwrap()
+            }
+
+            fn foldl1(
+                self,
+                f: impl $crate::base::data::function::bifunction::BifunT<$arg, $arg, $arg>,
+            ) -> $arg {
+                self.into_iter().reduce(|x, y| f.to_bifun()(x, y)).unwrap()
             }
         }
 

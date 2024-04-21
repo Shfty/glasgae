@@ -11,87 +11,13 @@ enum Atom {
     Operator(Operator),
 }
 
-fn split_op(toks: &[Atom], op: &Operator) -> Option<(Vec<Atom>, Vec<Atom>)> {
-    let enumerated = toks.iter().enumerate().collect::<Vec<_>>();
-
-    let mut windows = enumerated.windows(op.op().len()).collect::<Vec<_>>();
-
-    if op.fixity() == Fixity::Right {
-        windows.reverse();
-    }
-
-    windows
-        .into_iter()
-        .find_map(|t| {
-            let Ok(t) = t.iter().try_fold(vec![], |mut acc, (i, next)| {
-                let Atom::TokenTree(TokenTree2::Punct(p)) = next else {
-                    return Err(());
-                };
-
-                acc.push((i, p));
-
-                Ok(acc)
-            }) else {
-                return None;
-            };
-
-            if t.iter()
-                .take(t.len() - 1)
-                .any(|(_, t)| t.spacing() != Spacing::Joint)
-            {
-                return None;
-            }
-
-            if t.last().map(|(_, t)| t.spacing()) != Some(Spacing::Alone) {
-                return None;
-            }
-
-            if t.iter()
-                .zip(op.op().chars())
-                .any(|((_, p), c)| p.as_char() != c)
-            {
-                return None;
-            }
-
-            Some((t.first().unwrap().0, t.last().unwrap().0))
-        })
-        .map(|(s, e)| (toks[..*s].to_vec(), toks[*e + 1..].to_vec()))
-}
-
-fn split_ops_impl(input: Vec<Atom>) -> Vec<Atom> {
-    return input;
-    /*
-    let out_dir = std::env!("PROC_ARTIFACT_DIR");
-    let ops = read_operators(out_dir).expect("Failed to read operators");
-
-    match ops
-        .0
-        .iter()
-        .find_map(|(_, op)| split_op(&input, op).map(|(lhs, rhs)| (lhs, op, rhs)))
-    {
-        Some((lhs, op, rhs)) => {
-            let lhs = split_ops_impl(lhs);
-            let rhs = split_ops_impl(rhs);
-            lhs.into_iter()
-                .chain([Atom::Operator(op.clone())])
-                .chain(rhs)
-                .collect()
-        }
-        None => input,
-    }
-    */
-}
-
 fn token_stream_to_atoms(input: TokenStream2) -> Vec<Atom> {
     input.into_iter().map(Atom::TokenTree).collect()
 }
 
 fn split_ops(input: Vec<Atom>) -> Vec<Atom> {
-    // Split into a list of TokenTree and Operator
-    let ops = split_ops_impl(input);
-
     // Join into a list of TokenStream and Operator
-    ops.into_iter().fold(vec![], |mut acc, next| {
+    input.into_iter().fold(vec![], |mut acc, next| {
         let last = acc.pop();
         match (last, next) {
             (None, Atom::TokenTree(tt)) => acc.push(Atom::TokenStream(tt.into())),
@@ -152,16 +78,12 @@ fn parse(op1: Operator, e1: TokenStream2, mut rest: Vec<Atom>) -> (TokenStream2,
     )
 }
 
-fn parse_neg(op1: Operator, mut rest: Vec<Atom>) -> (TokenStream2, Vec<Atom>) {
-    let Atom::TokenStream(e1) = rest.remove(0) else {
+fn resolve(mut input: Vec<Atom>) -> TokenStream2 {
+    let Atom::TokenStream(e1) = input.remove(0) else {
         panic!("Atom is not a TokenStream")
     };
 
-    parse(op1, e1, rest)
-}
-
-fn resolve(input: Vec<Atom>) -> TokenStream2 {
-    let (rest, _) = parse_neg(Operator::new(Fixity::None, -1, "", "", false), input);
+    let (rest, _) = parse(Operator::new(Fixity::None, -1, "", "", false), e1, input);
 
     rest
 }
